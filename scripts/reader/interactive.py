@@ -13,6 +13,7 @@ import logging
 import prettytable
 import time
 
+#DRQA going to me removed
 from drqa.reader import Predictor
 
 logger = logging.getLogger()
