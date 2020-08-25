@@ -116,22 +116,22 @@ if __name__ == '__main__':
     logger.addHandler(console)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('base_dir', type=str, default=None,
+    parser.add_argument('-base_dir', type=str, default=None,
                         help='base directory of the chunked dataset')
-    parser.add_argument('out_dir', type=str, default=None,
+    parser.add_argument('-out_dir', type=str, default=None,
                         help='output directory, where to store the embeddings')
-    parser.add_argument('model_dir', type=str, default=None,
+    parser.add_argument('-model_dir', type=str, default=None,
                         help='model directory of bert model for bert-as-service')
-    parser.add_argument('starting_chunk', type=int, default=0,
+    parser.add_argument('-starting_chunk', type=int, default=0,
                         help='id of chunk to start with')
-    parser.add_argument('end_chunk', type=int, default=100,
+    parser.add_argument('-end_chunk', type=int, default=100,
                         help='number of chunks to encode in this run')
-    parser.add_argument('step_size', type=int, default=1,
+    parser.add_argument('-step_size', type=int, default=1,
                         help='step size to increase the starting chunk id, use 2 and respective start to only encode'
                              'even / odd')
-    parser.add_argument('limit', type=int, default=150,
+    parser.add_argument('-limit', type=int, default=150,
                         help='limit used for paragraph splitting')
-    parser.add_argument('zip_chunks', type=int, default=0,
+    parser.add_argument('-zip_chunks', type=int, default=0,
                         help='number of chunks after which they get compressed into .tar.gz use 0 to not zip')
 
     args = parser.parse_args()
