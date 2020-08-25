@@ -31,20 +31,21 @@ def compress(tar_file, members):
     tar.close()
 
 
-def encode_passages(args, output='embeddings/'):
+def encode_passages(args):
     chunks = []
     base_dir = args.base_dir
     starting_chunk = args.starting_chunk
-    num_of_chunks = args.num_chunks
+    end_chunk = args.end_chunks
     limit = args.limit
     step_size = args.step_size
     bert_client = args.bert_client
     zip_chunks = args.zip_chunks
+    output = args.out_dir
 
-    for chunk_id in tqdm(range(starting_chunk, num_of_chunks, step_size)):
+    for chunk_id in tqdm(range(starting_chunk, end_chunk, step_size)):
 
         # load chunks and set file name for encoded passages
-        fname = base_dir + str(chunk_id) + '_passage_collection_' + str(limit) + '.tsv'  ### id \t passage
+        fname = base_dir + 'chunks/' + str(chunk_id) + '_passage_collection_' + str(limit) + '.tsv'  ### id \t passage
         corpus_in = io.open(fname, 'r', encoding="utf8")
 
         fname = base_dir + output + str(chunk_id) + '_encoded_passages_' + str(limit) + '.json'
@@ -117,11 +118,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('base_dir', type=str, default=None,
                         help='base directory of the chunked dataset')
+    parser.add_argument('out_dir', type=str, default=None,
+                        help='output directory, where to store the embeddings')
     parser.add_argument('model_dir', type=str, default=None,
                         help='model directory of bert model for bert-as-service')
     parser.add_argument('starting_chunk', type=int, default=0,
                         help='id of chunk to start with')
-    parser.add_argument('num_chunks', type=int, default=100,
+    parser.add_argument('end_chunk', type=int, default=100,
                         help='number of chunks to encode in this run')
     parser.add_argument('step_size', type=int, default=1,
                         help='step size to increase the starting chunk id, use 2 and respective start to only encode'
