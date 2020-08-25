@@ -1,0 +1,150 @@
+from timeit import default_timer
+import io
+import os.path
+import json
+import tarfile
+from tqdm import tqdm  # pip3 install tqdm
+import logging
+import argparse
+import time
+
+from bert_serving.server.helper import get_args_parser
+from bert_serving.server import BertServer
+from bert_serving.client import BertClient
+
+
+def compress(tar_file, members):
+    """
+    Adds files (`members`) to a tar_file and compress it
+    """
+    # open file for gzip compressed writing
+    tar = tarfile.open(tar_file, mode="w:gz")
+    # with progress bar
+    # set the progress bar
+    progress = tqdm(members)
+    for member in progress:
+        # add file/folder/link to the tar file (compress)
+        tar.add(member)
+        # set the progress description of the progress bar
+        progress.set_description(f"Compressing {member}")
+    # close the file
+    tar.close()
+
+
+def encode_passages(args, output='embeddings/'):
+    chunks = []
+    base_dir = args.base_dir
+    starting_chunk = args.starting_chunk
+    num_of_chunks = args.num_chunks
+    limit = args.limit
+    step_size = args.step_size
+    bert_client = args.bert_client
+    zip_chunks = args.zip_chunks
+
+    for chunk_id in tqdm(range(starting_chunk, num_of_chunks, step_size)):
+
+        # load chunks and set file name for encoded passages
+        fname = base_dir + str(chunk_id) + '_passage_collection_' + str(limit) + '.tsv'  ### id \t passage
+        corpus_in = io.open(fname, 'r', encoding="utf8")
+
+        fname = base_dir + output + str(chunk_id) + '_encoded_passages_' + str(limit) + '.json'
+
+        # save encoded name in list for compressing later
+        if fname not in chunks:
+            chunks.append(fname)
+
+        # check if file name already exists, skip
+        if not os.path.isfile(fname):
+            passage_dict = dict()
+
+            passages = []
+            pids = []
+
+            # load passages and pids, take time for monitoring
+            start = default_timer()
+            for line in tqdm(corpus_in):
+                split = line.strip().split('\t')
+                passages.append(split[1])
+                pids.append(split[0])
+            end = default_timer()
+            length = len(passages) // 2
+            logger.info(f"Time for appending {chunk_id}-th chunk: {end - start}s")
+            start = default_timer()
+            encoded_passages = bert_client.encode(passages[:length]).tolist()
+            end = default_timer()
+            logger.info(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
+            encoded_passages2 = bert_client.encode(passages[length:]).tolist()
+            start = default_timer()
+            logger.info(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
+            encoded_passages.extend(encoded_passages2)
+
+            # create passage dict to store in json
+            j = 0
+            for pid in tqdm(pids):
+                passage_dict[pid] = encoded_passages[j]
+                j += 1
+
+            with open(fname, 'w') as fp:
+                json.dump(passage_dict, fp)
+
+            # for monitoring
+            fname = base_dir + 'last_odd_chunk.txt'
+            with open(fname, 'w') as fp:
+                fp.write(str(chunk_id) + '\n')
+        else:
+            logger.info(f'chunk id {chunk_id} already encoded...')
+
+        if zip_chunks > 0:
+            if chunk_id != 0 and len(chunks) >= zip_chunks:
+                # add current chunks to zip
+                logger.info('compressing current chunks...')
+                tar_name = base_dir + 'tars_odd/' + str(starting_chunk) + '_to_' + str(chunk_id) + '_odd.tar.gz'
+                compress(tar_name, chunks)
+                chunks = []
+
+        corpus_in.close()
+
+
+if __name__ == '__main__':
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    logger.addHandler(console)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('base_dir', type=str, default=None,
+                        help='base directory of the chunked dataset')
+    parser.add_argument('model_dir', type=str, default=None,
+                        help='model directory of bert model for bert-as-service')
+    parser.add_argument('starting_chunk', type=int, default=0,
+                        help='id of chunk to start with')
+    parser.add_argument('num_chunks', type=int, default=100,
+                        help='number of chunks to encode in this run')
+    parser.add_argument('step_size', type=int, default=1,
+                        help='step size to increase the starting chunk id, use 2 and respective start to only encode'
+                             'even / odd')
+    parser.add_argument('limit', type=int, default=150,
+                        help='limit used for paragraph splitting')
+    parser.add_argument('zip_chunks', type=int, default=0,
+                        help='number of chunks after which they get compressed into .tar.gz use 0 to not zip')
+
+    args = parser.parse_args()
+
+    bert_args = get_args_parser().parse_args(['-model_dir', args.model_dir,
+                                              '-port', '5555',
+                                              '-port_out', '5556',
+                                              '-max_seq_len', '170'
+                                              '-num_worker', '4'])
+    server = BertServer(bert_args)
+    server.start()
+
+    time.sleep(20.0)
+
+    # need started server
+    bc = BertClient()
+    args.bert_client = bc
+
+    encode_passages(bc, args)
