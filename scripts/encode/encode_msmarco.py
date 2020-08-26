@@ -133,14 +133,17 @@ if __name__ == '__main__':
                         help='limit used for paragraph splitting')
     parser.add_argument('-zip_chunks', type=int, default=0,
                         help='number of chunks after which they get compressed into .tar.gz use 0 to not zip')
+    parser.add_argument('-num_worker', type=int, default=1,
+                        help='number of workers used for bert server, should be less or equal to count of gpus')
+
 
     args = parser.parse_args()
 
     bert_args = get_args_parser().parse_args(['-model_dir', args.model_dir,
                                               '-port', '5555',
                                               '-port_out', '5556',
-                                              '-max_seq_len', '170'
-                                              '-num_worker', '4'])
+                                              '-max_seq_len', '170',
+                                              '-num_worker', str(args.num_worker)])
     server = BertServer(bert_args)
     server.start()
 
