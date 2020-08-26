@@ -65,25 +65,25 @@ def encode_passages(args):
                 pids = []
 
                 # load passages and pids, take time for monitoring
-                start = default_timer()
+                #start = default_timer()
                 for line in tqdm(corpus_in):
                     split = line.strip().split('\t')
                     passages.append(split[1])
                     pids.append(split[0])
-                end = default_timer()
-                length = len(passages) // 2
-                print(f"Time for appending {chunk_id}-th chunk: {end - start}s")
+                #end = default_timer()
+                #length = len(passages) // 2
+                #print(f"Time for appending {chunk_id}-th chunk: {end - start}s")
                 #logger.info(f"Time for appending {chunk_id}-th chunk: {end - start}s")
                 start = default_timer()
-                encoded_passages = bert_client.encode(passages[:length]).tolist()
+                encoded_passages = bert_client.encode(passages).tolist()
                 end = default_timer()
-                print(f"Time for encoding first half of {chunk_id} current chunk: {end - start}s")
+                print(f"Time for encoding {chunk_id} current chunk: {end - start}s")
                 #logger.info(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
-                encoded_passages2 = bert_client.encode(passages[length:]).tolist()
-                start = default_timer()
-                print(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
+                #encoded_passages2 = bert_client.encode(passages[length:]).tolist()
+                #start = default_timer()
+                #print(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
                 #logger.info(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
-                encoded_passages.extend(encoded_passages2)
+                #encoded_passages.extend(encoded_passages2)
 
                 # create passage dict to store in json
                 j = 0
