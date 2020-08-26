@@ -45,72 +45,72 @@ def encode_passages(args):
 
     for chunk_id in tqdm(range(starting_chunk, end_chunk, step_size)):
 
-        # load chunks and set file name for encoded passages
+        print('load chunks and set file name for encoded passages..')
         fname = base_dir + 'chunks/' + str(chunk_id) + '_passage_collection_' + str(limit) + '.tsv'  ### id \t passage
-        corpus_in = io.open(fname, 'r', encoding="utf8")
-        print(f'current chunk opened')
+        with open(fname, 'r', encoding="utf8") as corpus_in:
+            print(f'current chunk opened')
 
-        fname = base_dir + output + str(chunk_id) + '_encoded_passages_' + str(limit) + '.json'
+            fname = base_dir + output + str(chunk_id) + '_encoded_passages_' + str(limit) + '.json'
 
-        # save encoded name in list for compressing later
-        if fname not in chunks:
-            chunks.append(fname)
+            # save encoded name in list for compressing later
+            if fname not in chunks:
+                chunks.append(fname)
 
-        # check if file name already exists, skip
-        if not os.path.isfile(fname):
-            passage_dict = dict()
+            # check if file name already exists, skip
+            if not os.path.isfile(fname):
+                passage_dict = dict()
 
-            passages = []
-            pids = []
+                passages = []
+                pids = []
 
-            # load passages and pids, take time for monitoring
-            start = default_timer()
-            for line in tqdm(corpus_in):
-                split = line.strip().split('\t')
-                passages.append(split[1])
-                pids.append(split[0])
-            end = default_timer()
-            length = len(passages) // 2
-            print(f"Time for appending {chunk_id}-th chunk: {end - start}s")
-            #logger.info(f"Time for appending {chunk_id}-th chunk: {end - start}s")
-            start = default_timer()
-            encoded_passages = bert_client.encode(passages[:length]).tolist()
-            end = default_timer()
-            print(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
-            #logger.info(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
-            encoded_passages2 = bert_client.encode(passages[length:]).tolist()
-            start = default_timer()
-            print(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
-            #logger.info(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
-            encoded_passages.extend(encoded_passages2)
+                # load passages and pids, take time for monitoring
+                start = default_timer()
+                for line in tqdm(corpus_in):
+                    split = line.strip().split('\t')
+                    passages.append(split[1])
+                    pids.append(split[0])
+                end = default_timer()
+                length = len(passages) // 2
+                print(f"Time for appending {chunk_id}-th chunk: {end - start}s")
+                #logger.info(f"Time for appending {chunk_id}-th chunk: {end - start}s")
+                start = default_timer()
+                encoded_passages = bert_client.encode(passages[:length]).tolist()
+                end = default_timer()
+                print(f"Time for encoding first half of {chunk_id} current chunk: {end - start}s")
+                #logger.info(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
+                encoded_passages2 = bert_client.encode(passages[length:]).tolist()
+                start = default_timer()
+                print(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
+                #logger.info(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
+                encoded_passages.extend(encoded_passages2)
 
-            # create passage dict to store in json
-            j = 0
-            for pid in tqdm(pids):
-                passage_dict[pid] = encoded_passages[j]
-                j += 1
+                # create passage dict to store in json
+                j = 0
+                for pid in tqdm(pids):
+                    passage_dict[pid] = encoded_passages[j]
+                    j += 1
 
-            with open(fname, 'w') as fp:
-                json.dump(passage_dict, fp)
+                with open(fname, 'w') as fp:
+                    json.dump(passage_dict, fp)
 
-            # for monitoring
-            #fname = base_dir + 'last_odd_chunk.txt'
-            #with open(fname, 'w') as fp:
-            #    fp.write(str(chunk_id) + '\n')
-        else:
-            print(f'chunk id {chunk_id} already encoded...')
-            #logger.info(f'chunk id {chunk_id} already encoded...')
+                # for monitoring
+                #fname = base_dir + 'last_odd_chunk.txt'
+                #with open(fname, 'w') as fp:
+                #    fp.write(str(chunk_id) + '\n')
+            else:
+                print(f'chunk id {chunk_id} already encoded...')
+                #logger.info(f'chunk id {chunk_id} already encoded...')
 
-        if zip_chunks > 0:
-            if chunk_id != 0 and len(chunks) >= zip_chunks:
-                # add current chunks to zip
-                print('compressing current chunks...')
-                #logger.info('compressing current chunks...')
-                tar_name = base_dir + 'tars_odd/' + str(starting_chunk) + '_to_' + str(chunk_id) + '_odd.tar.gz'
-                compress(tar_name, chunks)
-                chunks = []
+            if zip_chunks > 0:
+                if chunk_id != 0 and len(chunks) >= zip_chunks:
+                    # add current chunks to zip
+                    print('compressing current chunks...')
+                    #logger.info('compressing current chunks...')
+                    tar_name = base_dir + 'tars_odd/' + str(starting_chunk) + '_to_' + str(chunk_id) + '_odd.tar.gz'
+                    compress(tar_name, chunks)
+                    chunks = []
 
-        corpus_in.close()
+            corpus_in.close()
 
 
 if __name__ == '__main__':
