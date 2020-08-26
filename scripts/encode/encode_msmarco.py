@@ -7,6 +7,7 @@ from tqdm import tqdm  # pip3 install tqdm
 import logging
 import argparse
 import time
+import sys
 
 from bert_serving.server.helper import get_args_parser
 from bert_serving.server import BertServer
@@ -111,7 +112,8 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
-    console = logging.StreamHandler()
+    console = logging.StreamHandler(sys.stdout)
+    console.setLevel(logging.INFO)
     console.setFormatter(fmt)
     logger.addHandler(console)
 
