@@ -146,6 +146,8 @@ if __name__ == '__main__':
                                               '-port_out', '5556',
                                               '-max_seq_len', '170',
                                               '-num_worker', str(args.num_worker)])
+
+    logger.info('starting Bert server and waiting 20 seconds to get it started')
     server = BertServer(bert_args)
     server.start()
 
@@ -153,6 +155,11 @@ if __name__ == '__main__':
 
     # need started server
     bc = BertClient()
+
+    logger.info('testing server: embed text: "hello there, let\'s start encoding" ...')
+    test = bc.encode(['Hello there, let\'s start encoding'])
+    logger.info(f'encoding successful, first values of embedding = {test[:10]}')
+
     args.bert_client = bc
 
-    encode_passages(bc, args)
+    encode_passages(args)
