@@ -36,12 +36,13 @@ def encode_passages(args):
     chunks = []
     base_dir = args.base_dir
     starting_chunk = args.starting_chunk
-    end_chunk = args.end_chunks
+    end_chunk = args.end_chunk
     limit = args.limit
     step_size = args.step_size
     bert_client = args.bert_client
     zip_chunks = args.zip_chunks
     output = args.out_dir
+    print('loaded args in encode_passages..')
 
     for chunk_id in tqdm(range(starting_chunk, end_chunk, step_size)):
 
@@ -169,5 +170,4 @@ if __name__ == '__main__':
     test = args.bert_client.encode(['Hello there, let\'s start encoding'])
     #logger.info(f'encoding successful, first values of embedding = {test[0][:10]}')
     print(f'encoding successful, first values of embedding = {test[0][:10]}')
-
     encode_passages(args)
