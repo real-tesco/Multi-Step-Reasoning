@@ -48,6 +48,7 @@ def encode_passages(args):
         # load chunks and set file name for encoded passages
         fname = base_dir + 'chunks/' + str(chunk_id) + '_passage_collection_' + str(limit) + '.tsv'  ### id \t passage
         corpus_in = io.open(fname, 'r', encoding="utf8")
+        print(f'current chunk opened')
 
         fname = base_dir + output + str(chunk_id) + '_encoded_passages_' + str(limit) + '.json'
 
@@ -70,14 +71,17 @@ def encode_passages(args):
                 pids.append(split[0])
             end = default_timer()
             length = len(passages) // 2
-            logger.info(f"Time for appending {chunk_id}-th chunk: {end - start}s")
+            print(f"Time for appending {chunk_id}-th chunk: {end - start}s")
+            #logger.info(f"Time for appending {chunk_id}-th chunk: {end - start}s")
             start = default_timer()
             encoded_passages = bert_client.encode(passages[:length]).tolist()
             end = default_timer()
-            logger.info(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
+            print(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
+            #logger.info(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
             encoded_passages2 = bert_client.encode(passages[length:]).tolist()
             start = default_timer()
-            logger.info(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
+            print(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
+            #logger.info(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
             encoded_passages.extend(encoded_passages2)
 
             # create passage dict to store in json
@@ -90,16 +94,18 @@ def encode_passages(args):
                 json.dump(passage_dict, fp)
 
             # for monitoring
-            fname = base_dir + 'last_odd_chunk.txt'
-            with open(fname, 'w') as fp:
-                fp.write(str(chunk_id) + '\n')
+            #fname = base_dir + 'last_odd_chunk.txt'
+            #with open(fname, 'w') as fp:
+            #    fp.write(str(chunk_id) + '\n')
         else:
-            logger.info(f'chunk id {chunk_id} already encoded...')
+            print(f'chunk id {chunk_id} already encoded...')
+            #logger.info(f'chunk id {chunk_id} already encoded...')
 
         if zip_chunks > 0:
             if chunk_id != 0 and len(chunks) >= zip_chunks:
                 # add current chunks to zip
-                logger.info('compressing current chunks...')
+                print('compressing current chunks...')
+                #logger.info('compressing current chunks...')
                 tar_name = base_dir + 'tars_odd/' + str(starting_chunk) + '_to_' + str(chunk_id) + '_odd.tar.gz'
                 compress(tar_name, chunks)
                 chunks = []
@@ -147,7 +153,8 @@ if __name__ == '__main__':
                                               '-max_seq_len', '170',
                                               '-num_worker', str(args.num_worker)])
 
-    logger.info('starting Bert server and waiting 20 seconds to get it started')
+    print('starting Bert server and waiting 20 seconds to get it started')
+    #logger.info('starting Bert server and waiting 20 seconds to get it started')
     server = BertServer(bert_args)
     server.start()
 
@@ -155,11 +162,12 @@ if __name__ == '__main__':
 
     # need started server
     bc = BertClient()
-
-    logger.info('testing server: embed text: "hello there, let\'s start encoding" ...')
-    test = bc.encode(['Hello there, let\'s start encoding'])
-    logger.info(f'encoding successful, first values of embedding = {test[:10]}')
-
     args.bert_client = bc
+
+    #logger.info('testing server: embed text: "hello there, let\'s start encoding" ...')
+    print('testing server: embed text: "hello there, let\'s start encoding" ...')
+    test = args.bert_client.encode(['Hello there, let\'s start encoding'])
+    #logger.info(f'encoding successful, first values of embedding = {test[0][:10]}')
+    print(f'encoding successful, first values of embedding = {test[0][:10]}')
 
     encode_passages(args)
