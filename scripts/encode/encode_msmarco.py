@@ -132,7 +132,7 @@ def encode_queries(args):
             split = line.split('\t')
             qids.append(split[0])
             queries.append(split[1])
-        logger.info('encoding queries...')
+        logger.info(f'encoding {len(qids)} queries...')
         encoded_queries = bert_client.encode(queries)
         logger.info('encoding done!')
         if args.output_numpy:
