@@ -358,8 +358,8 @@ class Model(object):
 
             # Transfer to GPU
             if torch.is_tensor(start):
-                target_s = Variable(start.cuda(async=True))
-                target_e = Variable(end.cuda(async=True))
+                target_s = Variable(start.cuda())
+                target_e = Variable(end.cuda())
             else:
                 # shape of doc is B X (1 + num_low_ranked_paras) X L
                 # label mask would be B X ((1 + num_low_ranked_paras) X L)
@@ -382,10 +382,10 @@ class Model(object):
                       doc_masks.view(-1, docs.size(2)), question.contiguous().view(-1, question.size(2)),
                       question_mask.contiguous().view(-1, question_mask.size(2))]
             if self.use_cuda:
-                inputs = [e if e is None else Variable(e.cuda(async=True))
+                inputs = [e if e is None else Variable(e.cuda())
                           for e in inputs]
-                target_s = Variable(target_s.cuda(async=True))
-                target_e = Variable(target_e.cuda(async=True))
+                target_s = Variable(target_s.cuda())
+                target_e = Variable(target_e.cuda())
             else:
                 inputs = [e if e is None else Variable(e) for e in inputs]
                 if torch.is_tensor(start):
@@ -679,7 +679,7 @@ class Model(object):
             # Transfer to GPU
             inputs = [docs, doc_feats, doc_masks, ques, ques_mask]
             if self.use_cuda:
-                inputs = [e if e is None else Variable(e.cuda(async=True))
+                inputs = [e if e is None else Variable(e.cuda())
                           for e in inputs]
             else:
                 inputs = [e if e is None else Variable(e) for e in inputs]
