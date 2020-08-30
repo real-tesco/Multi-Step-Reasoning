@@ -17,6 +17,10 @@ from bert_serving.client import BertClient
 logger = logging.getLogger()
 
 
+def str2bool(v):
+    return v.lower() in ('yes', 'true', 't', '1', 'y')
+
+
 def compress(tar_file, members):
     """
     Adds files (`members`) to a tar_file and compress it
@@ -173,8 +177,8 @@ def convert_to_numpy(args):
 
 if __name__ == '__main__':
 
-
     parser = argparse.ArgumentParser()
+    parser.register('type', 'bool', str2bool)
     parser.add_argument('-encode_queries', type=bool, default=False,
                         help='encode msmarco queries')
     parser.add_argument('-query_file_name', type=str, default='docleaderboard-queries.tsv',
