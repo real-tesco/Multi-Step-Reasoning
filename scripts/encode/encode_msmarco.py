@@ -191,6 +191,8 @@ if __name__ == '__main__':
                         help='output directory, where to store the embeddings')
     parser.add_argument('-model_dir', type=str, default=None,
                         help='model directory of bert model for bert-as-service')
+    parser.add_argument('-max_seq_len', type=int, default=256,
+                        help='maximum sequence length used by bert')
     parser.add_argument('-starting_chunk', type=int, default=0,
                         help='id of chunk to start with')
     parser.add_argument('-end_chunk', type=int, default=100,
@@ -218,7 +220,7 @@ if __name__ == '__main__':
     bert_args = get_args_parser().parse_args(['-model_dir', args.model_dir,
                                               '-port', '5555',
                                               '-port_out', '5556',
-                                              '-max_seq_len', '170',
+                                              '-max_seq_len', str(args.max_seq_len),
                                               '-num_worker', str(args.num_worker)])
 
     print('starting Bert server and waiting 20 seconds to get it started')
