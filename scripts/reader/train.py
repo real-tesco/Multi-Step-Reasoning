@@ -6,12 +6,16 @@
 # LICENSE file in the root directory of this source tree.
 """Main DrQA reader training script."""
 
+import sys
+import os
+sys.path.append('/home/brandt/Multistep_Query_Modelling')
+sys.path.append('/home/brandt/Multistep_Query_Modelling/paragraph_encoder')
+
 import socket
 import argparse
 import torch
 import numpy as np
 import json
-import os
 import sys
 import subprocess
 import logging
@@ -26,6 +30,7 @@ from msr.reader.model import Model
 from multi_corpus import MultiCorpus
 
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
+
 logger = logging.getLogger()
 
 # ------------------------------------------------------------------------------
