@@ -8,10 +8,13 @@ import logging
 import argparse
 import time
 import sys
+import numpy as np
 
 from bert_serving.server.helper import get_args_parser
 from bert_serving.server import BertServer
 from bert_serving.client import BertClient
+
+logger = logging.getLogger()
 
 
 def compress(tar_file, members):
@@ -114,17 +117,74 @@ def encode_passages(args):
             corpus_in.close()
 
 
+def encode_queries(args):
+    query_file_name = os.path.join(args.base_dir, args.query_file_name)
+
+    qids = []
+    queries = []
+    bert_client = args.bert_client
+    with open(query_file_name) as f:
+        for line in f:
+            split = line.split('\t')
+            qids.append(split[0])
+            queries.append(split[1])
+        logger.info('encoding queries...')
+        encoded_queries = bert_client.encode(queries)
+        logger.info('encoding done!')
+        if args.output_numpy:
+            logger.info('save qids and queries as .npy')
+            qids = np.asarray(qids)
+            np.save(os.path.join(args.base_dir, 'msmarco_queries.npy'), encoded_queries)
+            np.save(os.path.join(args.base_dir, 'msmarco_qids.npy'), qids)
+        else:
+            logger.info('save qids and queries as python dict in json')
+            encoded_queries = encoded_queries.tolist()
+            encoded_query_dict = {}
+            i = 0
+            for qid in qids:
+                encoded_query_dict[qid] = encoded_queries[i]
+                i += 1
+            with open(os.path.join(args.base_dir, 'msmarco_queries.json'), 'w') as fp:
+                json.dump(encoded_query_dict, fp)
+        logger.info('queries encoded and saved!')
+
+
+def convert_to_numpy(args):
+    passages = []
+    pids = []
+    for chunk_id in tqdm(range(0, args.end_chunk)):
+        if chunk_id % 100 == 0:
+            logger.info(f'loading chunk {chunk_id}/{args.end_chunk} into list')
+        chunk_file = os.path.join(args.base_dir, args.out_dir, str(chunk_id) + '_encoded_passages_' + args.limit + '.json')
+
+        with open(chunk_file, 'r') as f:
+            passage_dict = json.load(f)
+            for pid in passage_dict:
+                passages.append(passage_dict[pid])
+                pids.append(pid)
+    fname = os.path.join(args.base_dir, 'msmarco_encoded_passages.npy')
+    logger.info(f'convert passages to numpy and store into file: {fname}')
+    passages = np.asarray(passages)
+    fname = os.path.join(args.base_dir, 'pids_msmarco_encoded_passages.npy')
+    logger.info(f'convert passages to numpy and store into file: {fname}')
+    pids = np.asarray(pids)
+    np.save(fname, pids)
+
+
 if __name__ == '__main__':
 
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
-    console = logging.StreamHandler(sys.stdout)
-    console.setLevel(logging.INFO)
-    console.setFormatter(fmt)
-    logger.addHandler(console)
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-encode_queries', type=bool, default=False,
+                        help='encode msmarco queries')
+    parser.add_argument('-query_file_name', type=str, default='docleaderboard-queries.tsv',
+                        help='name of the file with qid<tab>query')
+    parser.add_argument('-encode_chunks', type=bool, default=True,
+                        help='encode msmarco chunks')
+    parser.add_argument('-output_numpy', type=bool, default=False,
+                        help='if true output in npy file, else every chunk in a single json file')
+    parser.add_argument('-convert_to_npy', type=bool, default=False,
+                        help='convert already encoded chunks to numpy format')
     parser.add_argument('-base_dir', type=str, default=None,
                         help='base directory of the chunked dataset')
     parser.add_argument('-out_dir', type=str, default=None,
@@ -145,6 +205,13 @@ if __name__ == '__main__':
     parser.add_argument('-num_worker', type=int, default=1,
                         help='number of workers used for bert server, should be less or equal to count of gpus')
 
+    # Set logging
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
+                            '%m/%d/%Y %I:%M:%S %p')
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    logger.addHandler(console)
 
     args = parser.parse_args()
 
@@ -170,4 +237,9 @@ if __name__ == '__main__':
     test = args.bert_client.encode(['Hello there, let\'s start encoding'])
     #logger.info(f'encoding successful, first values of embedding = {test[0][:10]}')
     print(f'encoding successful, first values of embedding = {test[0][:10]}')
-    encode_passages(args)
+    if args.encode_chunks:
+        encode_passages(args)
+    if args.encode_queries:
+        encode_queries(args)
+    if args.convert_to_numpy:
+        convert_to_numpy(args)
