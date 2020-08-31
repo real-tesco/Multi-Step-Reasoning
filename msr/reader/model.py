@@ -463,7 +463,8 @@ class Model(object):
                 # rearrange the scores
                 logits_for_rl_loss = []
                 for q_counter in range(len(sorted_para_ids_per_query)):
-                    actual_idx = np.argsort(sorted_para_ids_per_query[q_counter])
+                    actual_idx = np.argsort(sorted_para_ids_per_query[q_counter].cpu().numpy())
+                    #TODO look into that issue
                     sorted_para_scores_per_query[q_counter] = sorted_para_scores_per_query[q_counter][actual_idx]
                     # also take log-softmax
                     sorted_para_scores_per_query[q_counter] = F.log_softmax(sorted_para_scores_per_query[q_counter], dim=0)
