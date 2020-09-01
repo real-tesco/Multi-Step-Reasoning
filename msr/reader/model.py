@@ -899,6 +899,7 @@ class Model(object):
             'word_dict': self.word_dict,
             'feature_dict': self.feature_dict,
             'args': self.args,
+            'epoch': epoch
         }
         try:
             torch.save(params, filename)
