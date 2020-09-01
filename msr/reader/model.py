@@ -916,6 +916,7 @@ class Model(object):
         word_dict = saved_params['word_dict']
         feature_dict = saved_params['feature_dict']
         state_dict = saved_params['state_dict']
+        #epoch = saved_params['epoch'] #TODO check when training next model
         multi_step_reasoner_state_dict = None
         if 'multi_step_reasoner_state_dict' in saved_params:
             multi_step_reasoner_state_dict = saved_params['multi_step_reasoner_state_dict']
@@ -932,7 +933,8 @@ class Model(object):
             args = override_model_args(args, new_args)
         return Model(args, word_dict, feature_dict, state_dict, multi_step_reasoner_state_dict,
                      multi_step_reader_state_dict=multi_step_reader_state_dict,
-                     multi_step_reader_self_attn_state_dict=multi_step_reader_self_attn_state_dict, normalize=normalize)
+                     multi_step_reader_self_attn_state_dict=multi_step_reader_self_attn_state_dict, normalize=normalize)\
+            , 50
 
     @staticmethod
     def load_checkpoint(filename, new_args, normalize=True):

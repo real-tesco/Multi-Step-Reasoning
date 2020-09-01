@@ -452,7 +452,7 @@ def main(args):
         # Just resume training, no modifications.
         logger.info('Found a checkpoint...')
         checkpoint_file = args.model_file + '.checkpoint'
-        model, start_epoch = Model.load_checkpoint(checkpoint_file, args)
+        model, start_epoch = Model.load(checkpoint_file, args) #TODO check this
     else:
         # Training starts fresh. But the model state is either pretrained or
         # newly (randomly) initialized.
