@@ -934,7 +934,7 @@ class Model(object):
         return Model(args, word_dict, feature_dict, state_dict, multi_step_reasoner_state_dict,
                      multi_step_reader_state_dict=multi_step_reader_state_dict,
                      multi_step_reader_self_attn_state_dict=multi_step_reader_self_attn_state_dict, normalize=normalize)\
-            , 50
+            , 40
 
     @staticmethod
     def load_checkpoint(filename, new_args, normalize=True):
