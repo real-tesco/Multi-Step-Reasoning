@@ -9,13 +9,13 @@ import argparse
 import time
 import sys
 import numpy as np
-import hnswlib
-import pyserini
+#import hnswlib
+#import pyserini
 
 #import os
 #os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
 
-from jnius import autoclass
+#from jnius import autoclass
 
 
 logger = logging.getLogger()
@@ -59,7 +59,7 @@ def convert_tsv_to_json(args):
     number_of_chunks = len([name for name in os.listdir(args.embedding_dir)])
 
     logger.info('Starting loading passage chunks...')
-    fout = args.embedding_dir + 'json/msmarco_passage_collection_150.json'
+    fout = args.embedding_dir + 'full_msmarco_passage_collection_150.jsonl'
     current_dict = {}
     for chunk_id in tqdm(range(0, number_of_chunks)):
         fin = args.embedding_dir + str(chunk_id) + '_passage_collection_150.tsv'
@@ -69,10 +69,11 @@ def convert_tsv_to_json(args):
                 pid = split[0]
                 passage = split[1]
                 current_dict[pid] = passage
-    logger.info(f'Creating Dict done! Storing at {fout}')
-    with open(fout) as fout:
-        json.dump(current_dict, fout)
-
+    logger.info(f'Creating Dict done! writing into {fout}')
+    with open(fout, 'w') as fout:
+        for pid in current_dict:
+	    fout.write(f'{"id": "{str(pid)}", "contents": "{current_dict[pid]}"}\n')
+    logger.info('Conversion done!')
 
 if __name__ == '__main__':
 
@@ -108,9 +109,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logger.info('testing pyjnius')
-    JString = autoclass('java.lang.String')
-    test = JString('Hello world')
-    logger.info(test)
+    #JString = autoclass('java.lang.String')
+    #test = JString('Hello world')
+    #logger.info(test)
     if args.convert_tsv_to_json:
         convert_tsv_to_json(args)
     if args.index_type == 'knn':
