@@ -61,7 +61,7 @@ def convert_tsv_to_json(args):
     logger.info('Starting loading passage chunks and writing to jsonl...')
     fout = args.out_dir + 'full_msmarco_passage_collection_150_pyseriniformat.jsonl'
     current_dict = {}
-    with open(fout, 'w') as fout:
+    with open(fout, 'w', encoding='utf8') as fout:
         for chunk_id in tqdm(range(0, number_of_chunks)):
             fin = args.embedding_dir + str(chunk_id) + '_passage_collection_150.tsv'
             with open(fin, 'r') as f:
