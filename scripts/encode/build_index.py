@@ -65,12 +65,20 @@ def convert_tsv_to_json(args):
         for chunk_id in tqdm(range(0, number_of_chunks)):
             fin = args.embedding_dir + str(chunk_id) + '_passage_collection_150.tsv'
             with open(fin, 'r') as f:
+                j = 0
                 for line in f:
+                    #hotfix
+                    #if chunk_id == 0 and 1308 <= j <= 1310:
+                    #    continue
+                    #j += 1
+                    #hotfix end
                     split = line.split('\t')
                     pid = split[0]
                     passage = split[1].replace('"', '').strip('\n')
-                    current_dict[pid] = passage
-                    fout.write(f'{{"id": "{str(pid)}", "contents": "{current_dict[pid]}"}}\n')
+                    if not isinstance(passage, str):
+                        logger.info(f"pid {pid} just got skipped with passage:\n {passage}")
+                        continue
+                    fout.write(f'{{"id": "{str(pid)}", "contents": "{passage}"}}\n')
     logger.info('Conversion done!')
 
 
