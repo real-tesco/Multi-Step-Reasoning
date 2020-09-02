@@ -58,21 +58,19 @@ def create_knn_index(args):
 def convert_tsv_to_json(args):
     number_of_chunks = len([name for name in os.listdir(args.embedding_dir)])
 
-    logger.info('Starting loading passage chunks...')
-    fout = args.embedding_dir + 'full_msmarco_passage_collection_150.jsonl'
+    logger.info('Starting loading passage chunks and writing to jsonl...')
+    fout = args.embedding_dir + 'full_msmarco_passage_collection_150_pyseriniformat.jsonl'
     current_dict = {}
-    for chunk_id in tqdm(range(0, number_of_chunks)):
-        fin = args.embedding_dir + str(chunk_id) + '_passage_collection_150.tsv'
-        with open(fin, 'r') as f:
-            for line in f:
-                split = line.split('\t')
-                pid = split[0]
-                passage = split[1]
-                current_dict[pid] = passage
-    logger.info(f'Creating Dict done! writing into {fout}')
     with open(fout, 'w') as fout:
-        for pid in current_dict:
-            fout.write(f'{{"id": "{str(pid)}", "contents": "{current_dict[pid]}"}}\n')
+        for chunk_id in tqdm(range(0, number_of_chunks)):
+            fin = args.embedding_dir + str(chunk_id) + '_passage_collection_150.tsv'
+            with open(fin, 'r') as f:
+                for line in f:
+                    split = line.split('\t')
+                    pid = split[0]
+                    passage = split[1].strip('\n')
+                    current_dict[pid] = passage
+                    fout.write(f'{{"id": "{str(pid)}", "contents": "{current_dict[pid]}"}}\n')
     logger.info('Conversion done!')
 
 
@@ -117,7 +115,7 @@ if __name__ == '__main__':
         convert_tsv_to_json(args)
     if args.index_type == 'knn':
         pass
-        create_knn_index(args)
+        #create_knn_index(args)
     elif args.index_type == 'bm25':
         pass
 
