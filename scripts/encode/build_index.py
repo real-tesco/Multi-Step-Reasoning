@@ -1,0 +1,98 @@
+from timeit import default_timer
+import io
+import os.path
+import json
+import tarfile
+from tqdm import tqdm  # pip3 install tqdm
+import logging
+import argparse
+import time
+import sys
+import numpy as np
+import hnswlib
+import pyserini
+
+import os
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
+
+from jnius import autoclass
+
+JString = autoclass('java.lang.String')
+JString('Hello world')
+
+
+logger = logging.getLogger()
+
+
+def str2bool(v):
+    return v.lower() in ('yes', 'true', 't', '1', 'y')
+
+
+def create_knn_index(args):
+    number_of_chunks = len([name for name in os.listdir(args.embedding_dir)])
+    pids = []
+    passages = []
+
+    logger.info('Starting to load encoded passage chunks into memory')
+    for chunk_id in tqdm(range(0, number_of_chunks)):
+        fin = args.embedding_dir + str(chunk_id) + '_encoded_passages_150.json'
+        with open(fin, 'r') as f:
+            chunk = json.load(f)
+            for pid in chunk:
+                pids.append(pid)
+                passages.append(chunk[pid])
+    num_elem = len(pids)
+    pids = np.asarray(pids)
+    passages = np.asarray(passages)
+    logger.info('Starting to create knn index...')
+    p = hnswlib.Index(space=args.similarity, dim=args.dimension)
+
+    p.init_index(max_elements=num_elem, ef_construction=400, M=64)  # parameter tuning
+
+    p.add_items(passages, pids)
+    logger.info('Finished creating index, starting saving index')
+    p.save_index(args.out_dir)
+
+    if args.test:
+        labels, distances = p.knn_query(passages, k=1)
+        logger.info("Recall for dataset: ", np.mean(labels.reshape(-1) == pids))
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.register('type', 'bool', str2bool)
+    parser.add_argument('-index_type', type=str, default='knn', choices=['knn', 'bm25'],
+                        help='type of index to build: choose from knn and bm25')
+    parser.add_argument('-embedding_dir', type=str,
+                        help='path to encoded passages, should be in chunks as dicts in .json files with pid:passage')
+    parser.add_argument('-out_dir', type=str, default='./',
+                        help='output directory for the index')
+    parser.add_argument('-similarity', type=str, default='cosine', choices=['cosine', 'l2', 'ip'],
+                        help='similarity score to use when knn index is chosen')
+    parser.add_argument('-dimension', type=int, default=768,
+                        help='dimension of the embeddings for knn index')
+    parser.add_argument('-test', type=bool, default=False,
+                        help='if true testing recall for knn index with querying dataset and receive top 1')
+    parser.add_argument('-ef_construction', type=int, default=400,
+                        help='hnswlib parameter, the size of the dynamic list for the nearest neighbors, higher ef'
+                             ' leads to higher accuracy but slower search/construction time ')
+    parser.add_argument('-M', type=int, default=64,
+                        help='hnswlib parameter, the number of bi-directional links created for every new element '
+                             'during construction. Range: 0-100. For embeddings 48-64 is reasonable')
+
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
+                            '%m/%d/%Y %I:%M:%S %p')
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    logger.addHandler(console)
+
+    args = parser.parse_args()
+
+    if args.index_type == 'knn':
+        pass
+        create_knn_index(args)
+    elif args.index_type == 'bm25':
+        pass
+
