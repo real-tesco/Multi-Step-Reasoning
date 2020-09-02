@@ -68,7 +68,7 @@ def convert_tsv_to_json(args):
                 for line in f:
                     split = line.split('\t')
                     pid = split[0]
-                    passage = split[1].strip('\n')
+                    passage = split[1].replace('"', '').strip('\n')
                     current_dict[pid] = passage
                     fout.write(f'{{"id": "{str(pid)}", "contents": "{current_dict[pid]}"}}\n')
     logger.info('Conversion done!')
