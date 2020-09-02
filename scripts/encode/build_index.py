@@ -12,13 +12,10 @@ import numpy as np
 import hnswlib
 import pyserini
 
-import os
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
+#import os
+#os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
 
 from jnius import autoclass
-
-JString = autoclass('java.lang.String')
-JString('Hello world')
 
 
 logger = logging.getLogger()
@@ -89,6 +86,11 @@ if __name__ == '__main__':
     logger.addHandler(console)
 
     args = parser.parse_args()
+
+    logger.info('testing pyjnius')
+    JString = autoclass('java.lang.String')
+    test = JString('Hello world')
+    logger.info(test)
 
     if args.index_type == 'knn':
         pass
