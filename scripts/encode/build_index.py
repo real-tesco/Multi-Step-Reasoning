@@ -72,8 +72,9 @@ def convert_tsv_to_json(args):
     logger.info(f'Creating Dict done! writing into {fout}')
     with open(fout, 'w') as fout:
         for pid in current_dict:
-	    fout.write(f'{"id": "{str(pid)}", "contents": "{current_dict[pid]}"}\n')
+            fout.write(f'{{"id": "{str(pid)}", "contents": "{current_dict[pid]}"}}\n')
     logger.info('Conversion done!')
+
 
 if __name__ == '__main__':
 
