@@ -55,6 +55,25 @@ def create_knn_index(args):
         logger.info("Recall for dataset: ", np.mean(labels.reshape(-1) == pids))
 
 
+def convert_tsv_to_json(args):
+    number_of_chunks = len([name for name in os.listdir(args.embedding_dir)])
+
+    logger.info('Starting loading passage chunks...')
+    fout = args.embedding_dir + 'json/msmarco_passage_collection_150.json'
+    current_dict = {}
+    for chunk_id in tqdm(range(0, number_of_chunks)):
+        fin = args.embedding_dir + str(chunk_id) + '_passage_collection_150.tsv'
+        with open(fin, 'r') as f:
+            for line in f:
+                split = line.split('\t')
+                pid = split[0]
+                passage = split[1]
+                current_dict[pid] = passage
+    logger.info(f'Creating Dict done! Storing at {fout}')
+    with open(fout) as fout:
+        json.dump(current_dict, fout)
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -77,7 +96,8 @@ if __name__ == '__main__':
     parser.add_argument('-M', type=int, default=64,
                         help='hnswlib parameter, the number of bi-directional links created for every new element '
                              'during construction. Range: 0-100. For embeddings 48-64 is reasonable')
-
+    parser.add_argument('-convert_tsv_to_json', type=bool, default=False,
+                        help='convert chunks in tsv files in folder to .json files for indexing')
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
                             '%m/%d/%Y %I:%M:%S %p')
@@ -91,7 +111,8 @@ if __name__ == '__main__':
     JString = autoclass('java.lang.String')
     test = JString('Hello world')
     logger.info(test)
-
+    if args.convert_tsv_to_json:
+        convert_tsv_to_json(args)
     if args.index_type == 'knn':
         pass
         create_knn_index(args)

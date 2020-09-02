@@ -169,6 +169,7 @@ def convert_to_numpy(args):
     fname = os.path.join(args.base_dir, 'msmarco_encoded_passages.npy')
     logger.info(f'convert passages to numpy and store into file: {fname}')
     passages = np.asarray(passages)
+    np.save(fname, passages)
     fname = os.path.join(args.base_dir, 'pids_msmarco_encoded_passages.npy')
     logger.info(f'convert passages to numpy and store into file: {fname}')
     pids = np.asarray(pids)
