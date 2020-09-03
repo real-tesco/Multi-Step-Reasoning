@@ -78,7 +78,7 @@ def convert_tsv_to_json(args):
                     #hotfix end
                     split = line.split('\t')
                     pid = split[0]
-                    passage = split[1].replace('"', '').strip('\n')
+                    passage = split[1].replace('"', '').replace("\\", "/").strip('\n')
                     if not isinstance(passage, str):
                         logger.info(f"pid {pid} just got skipped with passage:\n {passage}")
                         continue
