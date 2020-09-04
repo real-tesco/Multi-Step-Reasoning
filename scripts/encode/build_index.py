@@ -2,7 +2,7 @@
 
 from timeit import default_timer
 import io
-import os.path
+import os
 import json
 import tarfile
 from tqdm import tqdm  # pip3 install tqdm
@@ -28,33 +28,34 @@ def str2bool(v):
 
 
 def create_knn_index(args):
-    number_of_chunks = len([name for name in os.listdir(args.embedding_dir)])
-    pids = []
-    passages = []
 
-    logger.info('Starting to load encoded passage chunks into memory')
-    for chunk_id in tqdm(range(0, number_of_chunks)):
-        fin = args.embedding_dir + str(chunk_id) + '_encoded_passages_150.json'
-        with open(fin, 'r') as f:
-            chunk = json.load(f)
-            for pid in chunk:
-                pids.append(pid)
-                passages.append(chunk[pid])
-    num_elem = len(pids)
-    pids = np.asarray(pids)
-    passages = np.asarray(passages)
+    logger.info('Starting to load encoded numpy file')
+    with open(args.passage_file, 'rb') as f:
+        data = np.load(f)
+    with open(args.indices_file, 'rb') as f:
+        indices = np.load(f).astype(int)
+
+    num_elem = len(indices)
     logger.info('Starting to create knn index...')
     p = hnswlib.Index(space=args.similarity, dim=args.dimension)
 
-    p.init_index(max_elements=num_elem, ef_construction=400, M=64)  # parameter tuning
+    p.init_index(max_elements=num_elem, ef_construction=800, M=84)  # parameter tuning
+    step_size = num_elem // 10
+    for i in range(0, 10):
+        if i == 9:
+            p.add_items(data[i * step_size:])
+            p.add_items(indices[i * step_size:])
+        else:
+            p.add_items(data[i*step_size:(i+1)*step_size])
+            p.add_items(indices[i*step_size:(i+1)*step_size])
+        logger.info(f'Indexed {(i+1) * step_size} / {num_elem} passages!')
 
-    p.add_items(passages, pids)
     logger.info('Finished creating index, starting saving index')
     p.save_index(args.out_dir)
 
     if args.test:
-        labels, distances = p.knn_query(passages, k=1)
-        logger.info("Recall for dataset: ", np.mean(labels.reshape(-1) == pids))
+        labels, distances = p.knn_query(data, k=1)
+        logger.info("Recall for dataset: ", np.mean(labels.reshape(labels.shape[0]) == indices))
 
 
 def convert_tsv_to_json(args):
@@ -110,6 +111,10 @@ if __name__ == '__main__':
                              'during construction. Range: 0-100. For embeddings 48-64 is reasonable')
     parser.add_argument('-convert_tsv_to_json', type=bool, default=False,
                         help='convert chunks in tsv files in folder to .json files for indexing')
+    parser.add_argument('-passage_file', type=str, default='./msmarco_passages.npy',
+                        help='path to the passage encoding file')
+    parser.add_argument('-indices_file', type=str, default='./msmarco_indices.npy',
+                        help='path to the indices for the passages')
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
                             '%m/%d/%Y %I:%M:%S %p')
@@ -125,9 +130,8 @@ if __name__ == '__main__':
     #logger.info(test)
     if args.convert_tsv_to_json:
         convert_tsv_to_json(args)
-    if args.index_type == 'knn':
-        pass
-        #create_knn_index(args)
+    elif args.index_type == 'knn':
+        create_knn_index(args)
     elif args.index_type == 'bm25':
         pass
 
