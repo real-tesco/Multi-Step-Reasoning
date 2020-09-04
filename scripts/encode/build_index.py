@@ -39,10 +39,10 @@ def create_knn_index(args):
     logger.info('Starting to create knn index...')
     p = hnswlib.Index(space=args.similarity, dim=args.dimension)
 
-    p.init_index(max_elements=num_elem, ef_construction=800, M=84)  # parameter tuning
-    step_size = num_elem // 10
-    for i in range(0, 10):
-        if i == 9:
+    p.init_index(max_elements=num_elem, ef_construction=args.ef_construction, M=args.M)  # parameter tuning
+    step_size = num_elem // 100
+    for i in range(0, 100):
+        if i+1 not in range(0, 100):
             p.add_items(data[i * step_size:])
             p.add_items(indices[i * step_size:])
         else:
@@ -51,7 +51,8 @@ def create_knn_index(args):
         logger.info(f'Indexed {(i+1) * step_size} / {num_elem} passages!')
 
     logger.info('Finished creating index, starting saving index')
-    p.save_index(args.out_dir)
+    index_name = args.out_dir + f'msmarco_knn_index_M_{args.M}_efc_{args.ef_construction}.bin'
+    p.save_index(index_name)
 
     if args.test:
         labels, distances = p.knn_query(data, k=1)
@@ -88,7 +89,8 @@ def convert_tsv_to_json(args):
 
 
 if __name__ == '__main__':
-
+    #start indexing on hadoop:
+    # python3 build_index.py -index_type knn -out_dir ./index/M84ef_construction800/ -ef_construction 800 -M 84
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
     parser.add_argument('-index_type', type=str, default='knn', choices=['knn', 'bm25'],
