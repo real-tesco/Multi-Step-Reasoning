@@ -43,11 +43,9 @@ def create_knn_index(args):
     step_size = num_elem // 100
     for i in range(0, 100):
         if i+1 not in range(0, 100):
-            p.add_items(data[i * step_size:])
-            p.add_items(indices[i * step_size:])
+            p.add_items(data[i * step_size:], indices[i * step_size:])
         else:
-            p.add_items(data[i*step_size:(i+1)*step_size])
-            p.add_items(indices[i*step_size:(i+1)*step_size])
+            p.add_items(data[i*step_size:(i+1)*step_size], indices[i*step_size:(i+1)*step_size])
         logger.info(f'Indexed {(i+1) * step_size} / {num_elem} passages!')
 
     logger.info('Finished creating index, starting saving index')
