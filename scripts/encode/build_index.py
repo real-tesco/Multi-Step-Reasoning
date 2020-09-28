@@ -88,7 +88,7 @@ def convert_tsv_to_json(args):
 
 if __name__ == '__main__':
     #start indexing on hadoop:
-    # python3 build_index.py -index_type knn -out_dir ./index/M84ef_construction800/ -ef_construction 800 -M 84
+    # python3 build_index.py -index_type knn -out_dir ./index/M84ef_construction800/ -ef_construction 800 -M 84 -similarity ip
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
     parser.add_argument('-index_type', type=str, default='knn', choices=['knn', 'bm25'],
@@ -97,7 +97,7 @@ if __name__ == '__main__':
                         help='path to encoded passages, should be in chunks as dicts in .json files with pid:passage')
     parser.add_argument('-out_dir', type=str, default='./',
                         help='output directory for the index')
-    parser.add_argument('-similarity', type=str, default='cosine', choices=['cosine', 'l2', 'ip'],
+    parser.add_argument('-similarity', type=str, default='ip', choices=['cosine', 'l2', 'ip'],
                         help='similarity score to use when knn index is chosen')
     parser.add_argument('-dimension', type=int, default=768,
                         help='dimension of the embeddings for knn index')
