@@ -133,7 +133,7 @@ def encode_queries(args):
             qids.append(split[0])
             queries.append(split[1])
         logger.info(f'encoding {len(qids)} queries...')
-        encoded_queries = bert_client.encode(queries).tolist()
+        encoded_queries = bert_client.encode(queries)
         logger.info('encoding done!')
         if args.output_numpy:
             logger.info('save qids and queries as .npy')
@@ -177,6 +177,10 @@ def convert_to_numpy(args):
 
 
 if __name__ == '__main__':
+    #Arguments = /home/brandt/Multistep_Query_Modelling/scripts/encode/encode_msmarco.py -model_dir /home/brandt/data/
+    #models -base_dir /home/brandt/msmarco/ -end_chunk 1114 -limit 150 -max_seq_len 256 -encode_queries 1 -output_numpy 1
+
+
 
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
