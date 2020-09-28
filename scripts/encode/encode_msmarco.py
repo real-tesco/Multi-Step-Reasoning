@@ -186,9 +186,9 @@ if __name__ == '__main__':
     parser.register('type', 'bool', str2bool)
     parser.add_argument('-encode_queries', type=bool, default=False,
                         help='encode msmarco queries')
-    parser.add_argument('-query_file_name', type=str, default='docleaderboard-queries.tsv',
+    parser.add_argument('-query_file_name', type=str, default='msmarco-doctrain-queries.tsv',
                         help='name of the file with qid<tab>query')
-    parser.add_argument('-encode_chunks', type=bool, default=True,
+    parser.add_argument('-encode_chunks', type=bool, default=False,
                         help='encode msmarco chunks')
     parser.add_argument('-output_numpy', type=bool, default=False,
                         help='if true output in npy file, else every chunk in a single json file')
