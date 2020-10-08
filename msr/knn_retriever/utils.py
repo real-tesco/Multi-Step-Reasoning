@@ -1,4 +1,5 @@
 import torch
+import time
 
 
 def batchify(args, para_mode, train_time):
@@ -15,26 +16,69 @@ def batchify_(args, batch, para_mode, train_time):
     batch = new_batch
     if len(batch) == 0:
         return None
-    ids = [ex[-1] for ex in batch]
-    docs = [ex[0] for ex in batch]
-    questions = [ex[1] for ex in batch]
-    num_occurances = [ex[-2] for ex in batch]
-    num_occurances = torch.LongTensor(num_occurances)
-    # Batch documents and features
-    max_length = max([d.size(0) for d in docs])
-    x1 = torch.LongTensor(len(docs), max_length).zero_()
-    x1_mask = torch.ByteTensor(len(docs), max_length).fill_(1)
 
-    for i, d in enumerate(docs):
-        x1[i, :d.size(0)].copy_(d)
-        x1_mask[i, :d.size(0)].fill_(0)
+    #qid, pid, nid, query, positive, negative
 
-    # Batch questions
-    max_length = max([q.size(0) for q in questions])
-    x2 = torch.LongTensor(len(questions), max_length).zero_()
-    x2_mask = torch.ByteTensor(len(questions), max_length).fill_(1)
-    for i, q in enumerate(questions):
-        x2[i, :q.size(0)].copy_(q)
-        x2_mask[i, :q.size(0)].fill_(0)
+    qids = [ex[0] for ex in batch]
+    pids = [ex[1] for ex in batch]
+    nids = [ex[2] for ex in batch]
+    queries = [ex[3] for ex in batch]
+    positives = [ex[4] for ex in batch]
+    negatives = [ex[6] for ex in batch]
 
-    return x1, x1_mask, x2, x2_mask, num_occurances, ids
+    queries = torch.LongTensor(queries)
+    positives = torch.LongTensor(positives)
+    negatives = torch.LongTensor(negatives)
+
+    return qids, pids, nids, queries, positives, negatives
+
+
+class Timer(object):
+    """Computes elapsed time."""
+
+    def __init__(self):
+        self.running = True
+        self.total = 0
+        self.start = time.time()
+
+    def reset(self):
+        self.running = True
+        self.total = 0
+        self.start = time.time()
+        return self
+
+    def resume(self):
+        if not self.running:
+            self.running = True
+            self.start = time.time()
+        return self
+
+    def stop(self):
+        if self.running:
+            self.running = False
+            self.total += time.time() - self.start
+        return self
+
+    def time(self):
+        if self.running:
+            return self.total + time.time() - self.start
+        return self.total
+
+
+class AverageMeter(object):
+    """Computes and stores the average and current value."""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count

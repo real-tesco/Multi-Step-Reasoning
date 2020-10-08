@@ -163,7 +163,7 @@ class MultiCorpusDataset(Dataset):
     def __getitem__(self, index):
         if self.para_mode:
             ex = {}
-            pid =  self.pid_list[index]
+            pid = self.pid_list[index]
             para = self.corpus.paragraphs[pid]
             assert pid == para.pid
             ex['document'] = para.text

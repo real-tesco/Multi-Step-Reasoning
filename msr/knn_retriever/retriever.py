@@ -7,13 +7,13 @@ import copy
 
 logger = logging.getLogger()
 
-
 class KnnIndex:
+
     def __init__(self, args):
         self.args = args
         self.index = hnswlib.Index(space=args.similarity, dim=args.dim)
         logger.info('Loadingg KNN index...')
-        self.index.load_index(args.path_to_index)
+        self.index.load_index(args.index)
         self.query_transformer = QueryTransformer(args)
         if args.state_dict is not None:
             self.query_transformer.load_state_dict(args.state_dict)
@@ -24,6 +24,9 @@ class KnnIndex:
         query = self.query_transformer.forward(query)
         labels, distances = self.index.knn_query(query=query, k=k)
         return labels, distances
+
+    def get_trainable_parameters(self):
+        return [p for p in self.query_transformer.parameters() if p.requires_grad]
 
     def init_optimizer(self):
         """Initialize an optimizer for the free parameters of the Query transformer.
@@ -80,6 +83,12 @@ class KnnIndex:
         args.state_dict = state_dict
 
         return KnnIndex(args)
+
+    def score_documents(self, queries, positives, negatives):
+        queries = self.query_transformer.forward(queries)
+        scores_positive = queries * positives
+        scores_negative = queries * negatives
+        return queries, scores_positive, scores_negative
 
     '''@staticmethod
     def load_checkpoint(filename, new_args, normalize=True):
