@@ -130,6 +130,7 @@ def main(args):
     # load training data with data loaders
     training_loader = make_dataloader(passages, pids, queries, qids, pid2docid, qrels, triples, train_time=True)
 
+    logger.info("Starting training")
     for epoch in range(0, args.epochs):
         #train for 1 epoch
         #evaluation for this epoch

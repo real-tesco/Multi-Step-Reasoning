@@ -15,8 +15,12 @@ class KnnIndex:
         logger.info('Loadingg KNN index...')
         self.index.load_index(args.index)
         self.query_transformer = QueryTransformer(args)
+        self.document_transformer = DocumentTransformer(args)
         if args.state_dict is not None:
-            self.query_transformer.load_state_dict(args.state_dict)
+            if 'q_transformer' in args.state_dict:
+                self.query_transformer.load_state_dict(args.state_dict['q_transformer'])
+            if 'd_transformer' in args.state_dict:
+                self.document_transformer.load_state_dict(args.state_dict['d_transformer'])
             #self.query_transformer.eval()
         self.init_optimizer()
 
@@ -47,7 +51,9 @@ class KnnIndex:
                                self.args.optimizer)
 
     def save(self, filename):
-        state_dict = copy.copy(self.query_transformer.state_dict())
+        state_dict = {'q_transformer': copy.copy(self.query_transformer.state_dict()),
+                      'd_transformer': copy.copy(self.document_transformer.state_dict())}
+        #for document
 
         params = {
             'state_dict': state_dict,
@@ -60,7 +66,9 @@ class KnnIndex:
             logger.warning('WARN: Saving failed... continuing anyway.')
 
     def checkpoint(self, filename, epoch):
-        state_dict = copy.copy(self.query_transformer.state_dict())
+        state_dict = {'q_transformer': copy.copy(self.query_transformer.state_dict()),
+                      'd_transformer': copy.copy(self.document_transformer.state_dict())}
+        # for document
         params = {
             'state_dict': state_dict,
             'args': self.args,
@@ -108,6 +116,16 @@ class KnnIndex:
         model.init_optimizer(optimizer)
         return model, epoch
         '''
+
+
+class DocumentTransformer(nn.Module):
+    def __init__(self, args):
+        super(DocumentTransformer, self).__init__()
+        self.linear_layer = nn.Linear(args.dim, args.dim)
+
+    def forward(self, document):
+        doc = self.linear_layer(document)
+        return doc
 
 
 class QueryTransformer(nn.Module):
