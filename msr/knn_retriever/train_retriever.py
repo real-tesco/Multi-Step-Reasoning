@@ -2,8 +2,8 @@ import os
 
 import argparse
 import torch
-from .msmarco import MSMARCO
-from .retriever import KnnIndex
+from msmarco import MSMARCO
+from retriever import KnnIndex
 import msr.knn_retriever.utils as utils
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
 import torch.optim as optim
