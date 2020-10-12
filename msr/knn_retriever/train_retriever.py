@@ -198,6 +198,8 @@ if __name__ == '__main__':
     args.pid_file = os.path.join(args.base_dir, args.pid_file)
     args.triples_file = os.path.join(args.base_dir, args.triples_file)
 
+    args.state_dict = None
+
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
                             '%m/%d/%Y %I:%M:%S %p')

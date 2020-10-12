@@ -30,7 +30,14 @@ class KnnIndex:
         return labels, distances
 
     def get_trainable_parameters(self):
-        return [p for p in self.query_transformer.parameters() if p.requires_grad]
+        params = []
+        for p in self.query_transformer.parameters():
+            if p.requires_grad:
+                params.append(p)
+        for p in self.document_transformer.parameters():
+            if p.requires_grad:
+                params.append(p)
+        return params
 
     def init_optimizer(self):
         """Initialize an optimizer for the free parameters of the Query transformer.
