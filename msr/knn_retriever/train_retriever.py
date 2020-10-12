@@ -116,6 +116,7 @@ def main(args):
     if args.checkpoint:
         pass
     else:
+        logger.info('Initializing model from scratch')
         retriever_model, optimizer = init_from_scratch(args)
 
     #load data from files
@@ -196,5 +197,12 @@ if __name__ == '__main__':
     args.passage_file = os.path.join(args.base_dir, args.passage_file)
     args.pid_file = os.path.join(args.base_dir, args.pid_file)
     args.triples_file = os.path.join(args.base_dir, args.triples_file)
+
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
+                            '%m/%d/%Y %I:%M:%S %p')
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    logger.addHandler(console)
 
     main(args)
