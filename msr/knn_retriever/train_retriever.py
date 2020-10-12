@@ -184,6 +184,8 @@ if __name__ == '__main__':
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
+    parser.add_argument('-checkpoint', type=bool, default=False, help='Wether to use a checkpoint or not')
+    parser.add_argument('-model_name', type=str, default='', help='Model name to load from as checkpoint')
     args = parser.parse_args()
 
     args.index = os.path.join(args.base_dir, args.index)
