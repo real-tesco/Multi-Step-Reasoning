@@ -12,8 +12,10 @@ import logging
 import json
 from torch.autograd import Variable
 
+
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
+
 
 logger = logging.getLogger()
 
@@ -33,6 +35,7 @@ def make_dataloader(passages, pids, queries, qids, pid2docid, qrels, triples, tr
         pin_memory=True
     )
     return loader
+
 
 def init_from_scratch(args):
     retriever_model = KnnIndex(args)
@@ -67,6 +70,7 @@ def load_qrels(path_to_qrels):
                 qrel[topicid].append(docid)
             else:
                 qrel[topicid] = [docid]
+
 
 #TODO: look here
 def train_binary_classification(args, ret_model, optimizer, train_loader, verified_dev_loader=None):
@@ -153,6 +157,8 @@ def main(args):
             logger.info("Logs saved at {}".format(args.log_file))
             save(args, ret_model.model, optimizer, args.model_file, epoch=stats['epoch'])
         """
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
@@ -168,13 +174,13 @@ if __name__ == '__main__':
     parser.add_argument('-base_dir', type=str, help='base directory of training/evaluation files')
     parser.add_argument('-index', type=str, default='msmarco_knn_index_M_96_efc_300.bin',
                         help='path to the hnswlib vector index')
-    parser.add_argument('-query_file', type=str, default='train.msmarco_queries_normed.npy' ,help='name of query file')
-    parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy' ,help='name of qid file')
-    parser.add_argument('-qrels_file', type=str, default='qrels.train.tsv' ,help='name of qrels file')
-    parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json' ,help='name of passage to doc file')
-    parser.add_argument('-pid_file', type=str, default='msmarco_indices.npy' ,help='name of pids file')
-    parser.add_argument('-passage_file', type=str, default='msmarco_passages_normed.npy' ,help='name of qrels file')
-    parser.add_argument('-triples_file', type=str, default='triples.tsv' ,help='name of triples file with training data')
+    parser.add_argument('-query_file', type=str, default='train.msmarco_queries_normed.npy', help='name of query file')
+    parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy', help='name of qid file')
+    parser.add_argument('-qrels_file', type=str, default='qrels.train.tsv', help='name of qrels file')
+    parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json', help='name of passage to doc file')
+    parser.add_argument('-pid_file', type=str, default='msmarco_indices.npy', help='name of pids file')
+    parser.add_argument('-passage_file', type=str, default='msmarco_passages_normed.npy', help='name of qrels file')
+    parser.add_argument('-triples_file', type=str, default='triples.json', help='name of triples file with training data')
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
