@@ -11,7 +11,7 @@ import numpy as np
 import logging
 import json
 from torch.autograd import Variable
-
+import math
 
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
@@ -112,13 +112,6 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
 
 def main(args):
 
-    # initialize Model
-    if args.checkpoint:
-        pass
-    else:
-        logger.info('Initializing model from scratch')
-        retriever_model, optimizer = init_from_scratch(args)
-
     #load data from files
     logger.info('loading files...')
     logger.info(f'using cuda: {args.cuda}')
@@ -136,8 +129,14 @@ def main(args):
         #key qid -> (key 'pos' -> list of positive , key 'neg' -> list of negatives)
         triples = json.load(f)
 
-    # load training data with data loaders
     training_loader = make_dataloader(passages, pids, queries, qids, pid2docid, qrels, triples, train_time=True)
+
+    # initialize Model
+    if args.checkpoint:
+        pass
+    else:
+        logger.info('Initializing model from scratch')
+        retriever_model, optimizer = init_from_scratch(args)
 
     logger.info("Starting training")
     for epoch in range(0, args.epochs):
