@@ -121,7 +121,11 @@ def main(args):
 
     #load data from files
     logger.info('loading files...')
-    passages = np.load(args.passage_file)
+    logger.info(f'using cuda: {args.cuda}')
+    if args.cuda:
+        passages = torch.cuda.FloatTensor(np.load(args.passage_file))
+    else:
+        passages = np.load(args.passage_file)
     pids = np.load(args.pid_file)
     queries = np.load(args.query_file)
     qids = np.load(args.qid_file)
@@ -187,6 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
     parser.add_argument('-checkpoint', type=bool, default=False, help='Wether to use a checkpoint or not')
     parser.add_argument('-model_name', type=str, default='', help='Model name to load from as checkpoint')
+    parser.add_argument('-cuda', type=bool, default=torch.cuda.is_available(), help='use cuda and gpu')
     args = parser.parse_args()
 
     args.index = os.path.join(args.base_dir, args.index)

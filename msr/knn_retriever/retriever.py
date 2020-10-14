@@ -43,8 +43,7 @@ class KnnIndex:
         """Initialize an optimizer for the free parameters of the Query transformer.
         """
 
-        if self.query_transformer is not None:
-            parameters = [p for p in self.query_transformer.parameters() if p.requires_grad]
+        parameters = self.get_trainable_parameters()
 
         if self.args.optimizer == 'sgd':
             self.optimizer = optim.SGD(parameters, self.args.learning_rate,
@@ -101,8 +100,10 @@ class KnnIndex:
 
     def score_documents(self, queries, positives, negatives):
         queries = self.query_transformer.forward(queries)
-        scores_positive = queries * positives
-        scores_negative = queries * negatives
+        positives = self.document_transformer.forward(positives)
+        negatives = self.document_transformer.forward(negatives)
+        scores_positive = queries * positives.transpose()
+        scores_negative = queries * negatives.transpose()
         return queries, scores_positive, scores_negative
 
     '''@staticmethod
