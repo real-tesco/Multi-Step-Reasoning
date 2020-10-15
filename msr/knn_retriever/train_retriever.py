@@ -126,7 +126,7 @@ def main(args):
     triple_ids = np.load(args.triple_ids_file)
     queries = np.load(args.query_file)
     qids = np.load(args.qid_file)
-    qrels = load_qrels(args.qrels_file)
+    #qrels = load_qrels(args.qrels_file)
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
 
