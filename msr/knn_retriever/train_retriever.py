@@ -4,7 +4,7 @@ import argparse
 import torch
 from msmarco import MSMARCO
 from retriever import KnnIndex
-import utils
+import utilities as utils
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
 import torch.optim as optim
 import numpy as np
