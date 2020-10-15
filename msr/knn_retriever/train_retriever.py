@@ -130,7 +130,7 @@ def main(args):
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
 
-    training_loader = make_dataloader(queries, qids, pid2docid, qrels, triples, triple_ids, train_time=True)
+    training_loader = make_dataloader(queries, qids, pid2docid, None, triples, triple_ids, train_time=True)
 
     # initialize Model
     if args.checkpoint:
