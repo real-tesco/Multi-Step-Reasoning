@@ -23,8 +23,8 @@ global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 
-def make_dataloader(passages, pids, queries, qids, pid2docid, qrels, triples, train_time=False):
-    dataset = MSMARCO(passages, pids, queries, qids, pid2docid, qrels, triples, train_time=train_time)
+def make_dataloader(queries, qids, pid2docid, qrels, triples, triple_ids, train_time=False):
+    dataset = MSMARCO(queries, qids, pid2docid, qrels, triples, triple_ids, train_time=train_time)
     sampler = SequentialSampler(dataset) if not train_time else RandomSampler(dataset)
     loader = torch.utils.data.DataLoader(
         dataset,
@@ -70,6 +70,7 @@ def load_qrels(path_to_qrels):
                 qrel[topicid].append(docid)
             else:
                 qrel[topicid] = [docid]
+    return qrel
 
 
 #TODO: look here
@@ -113,7 +114,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
 def main(args):
 
     #load data from files
-    logger.info('loading files...')
+    logger.info('loading files and initializing dataloader...')
     logger.info(f'using cuda: {args.cuda}')
     #if args.cuda:
     #    passages = torch.cuda.FloatTensor(np.load(args.passage_file))
@@ -122,22 +123,23 @@ def main(args):
     # pids = np.load(args.pid_file)
 
     triples = np.load(args.triples_file)
+    triple_ids = np.load(args.triple_ids_file)
     queries = np.load(args.query_file)
     qids = np.load(args.qid_file)
-    #qrels = load_qrels(args.qrels_file)
+    qrels = load_qrels(args.qrels_file)
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
 
-    training_loader = make_dataloader(None, None, queries, qids, pid2docid, qrels, triples, train_time=True)
+    training_loader = make_dataloader(queries, qids, pid2docid, qrels, triples, triple_ids, train_time=True)
 
     # initialize Model
     if args.checkpoint:
         pass
     else:
-        logger.info('Initializing model from scratch')
+        logger.info('Initializing model from scratch...')
         retriever_model, optimizer = init_from_scratch(args)
 
-    logger.info("Starting training")
+    logger.info("Starting training...")
     for epoch in range(0, args.epochs):
         #train for 1 epoch
         #evaluation for this epoch
@@ -183,7 +185,8 @@ if __name__ == '__main__':
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json', help='name of passage to doc file')
     parser.add_argument('-pid_folder', type=str, default='msmarco_passage_encodings/', help='name of pids file')
     parser.add_argument('-passage_folder', type=str, default='msmarco_passage_encodings/', help='name of folder with msmarco passage embeddings')
-    parser.add_argument('-triples_file', type=str, default='triples.json', help='name of triples file with training data')
+    parser.add_argument('-triples_file', type=str, default='train.triples_msmarco.npy', help='name of triples file with training data')
+    parser.add_argument('-triple_ids', type=str, default='train.triples.idx_msmarco.npy')
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
@@ -200,6 +203,7 @@ if __name__ == '__main__':
     args.passage_folder = os.path.join(args.base_dir, args.passage_folder)
     args.pid_folder = os.path.join(args.base_dir, args.pid_folder)
     args.triples_file = os.path.join(args.base_dir, args.triples_file)
+    args.triple_ids = os.path.join(args.base_dir, args.triple_ids)
 
     args.state_dict = None
 
