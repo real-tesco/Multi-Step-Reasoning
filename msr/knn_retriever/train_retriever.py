@@ -186,7 +186,7 @@ if __name__ == '__main__':
     parser.add_argument('-pid_folder', type=str, default='msmarco_passage_encodings/', help='name of pids file')
     parser.add_argument('-passage_folder', type=str, default='msmarco_passage_encodings/', help='name of folder with msmarco passage embeddings')
     parser.add_argument('-triples_file', type=str, default='train.triples_msmarco.npy', help='name of triples file with training data')
-    parser.add_argument('-triple_ids', type=str, default='train.triples.idx_msmarco.npy')
+    parser.add_argument('-triple_ids_file', type=str, default='train.triples.idx_msmarco.npy')
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     args.passage_folder = os.path.join(args.base_dir, args.passage_folder)
     args.pid_folder = os.path.join(args.base_dir, args.pid_folder)
     args.triples_file = os.path.join(args.base_dir, args.triples_file)
-    args.triple_ids = os.path.join(args.base_dir, args.triple_ids)
+    args.triple_ids_file = os.path.join(args.base_dir, args.triple_ids_file)
 
     args.state_dict = None
 
