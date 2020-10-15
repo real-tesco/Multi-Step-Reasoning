@@ -194,6 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('-model_name', type=str, default='', help='Model name to load from as checkpoint')
     parser.add_argument('-cuda', type=bool, default=torch.cuda.is_available(), help='use cuda and gpu')
     parser.add_argument('-batch_size', type=int, default=64, help='batch size to use')
+    parser.add_argument('-data_workers', type=int, default=5, help='number of data workers to use')
 
     args = parser.parse_args()
 
