@@ -198,7 +198,7 @@ if __name__ == '__main__':
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
     args.qid_file = os.path.join(args.base_dir, args.qid_file)
     args.passage_folder = os.path.join(args.base_dir, args.passage_folder)
-    args.pid_file = os.path.join(args.base_dir, args.pid_file)
+    args.pid_folder = os.path.join(args.base_dir, args.pid_folder)
     args.triples_file = os.path.join(args.base_dir, args.triples_file)
 
     args.state_dict = None
