@@ -106,6 +106,10 @@ class KnnIndex:
         scores_negative = queries * negatives.transpose()
         return queries, scores_positive, scores_negative
 
+    #check if works, else pid needs to be N dim np array
+    def get_passage(self, pid):
+        return self.index.get_items(pid)
+
     '''@staticmethod
     def load_checkpoint(filename, new_args, normalize=True):
         logger.info('Loading model %s' % filename)

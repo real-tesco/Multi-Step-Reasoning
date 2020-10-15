@@ -115,21 +115,20 @@ def main(args):
     #load data from files
     logger.info('loading files...')
     logger.info(f'using cuda: {args.cuda}')
-    if args.cuda:
-        passages = torch.cuda.FloatTensor(np.load(args.passage_file))
-    else:
-        passages = np.load(args.passage_file)
+    #if args.cuda:
+    #    passages = torch.cuda.FloatTensor(np.load(args.passage_file))
+    #else:
+    #    passages = np.load(args.passage_file)
+
+    triples = np.load(args.triples_file)
     pids = np.load(args.pid_file)
     queries = np.load(args.query_file)
     qids = np.load(args.qid_file)
     qrels = load_qrels(args.qrels_file)
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
-    with open(args.triples_file, 'r') as f:
-        #key qid -> (key 'pos' -> list of positive , key 'neg' -> list of negatives)
-        triples = json.load(f)
 
-    training_loader = make_dataloader(passages, pids, queries, qids, pid2docid, qrels, triples, train_time=True)
+    training_loader = make_dataloader(None, pids, queries, qids, pid2docid, qrels, triples, train_time=True)
 
     # initialize Model
     if args.checkpoint:
@@ -182,8 +181,8 @@ if __name__ == '__main__':
     parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy', help='name of qid file')
     parser.add_argument('-qrels_file', type=str, default='qrels.train.tsv', help='name of qrels file')
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json', help='name of passage to doc file')
-    parser.add_argument('-pid_file', type=str, default='msmarco_indices.npy', help='name of pids file')
-    parser.add_argument('-passage_file', type=str, default='msmarco_passages_normed.npy', help='name of qrels file')
+    parser.add_argument('-pid_folder', type=str, default='msmarco_passage_encodings/', help='name of pids file')
+    parser.add_argument('-passage_folder', type=str, default='msmarco_passage_encodings/', help='name of folder with msmarco passage embeddings')
     parser.add_argument('-triples_file', type=str, default='triples.json', help='name of triples file with training data')
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
@@ -198,7 +197,7 @@ if __name__ == '__main__':
     args.pid2docid = os.path.join(args.base_dir, args.pid2docid)
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
     args.qid_file = os.path.join(args.base_dir, args.qid_file)
-    args.passage_file = os.path.join(args.base_dir, args.passage_file)
+    args.passage_folder = os.path.join(args.base_dir, args.passage_folder)
     args.pid_file = os.path.join(args.base_dir, args.pid_file)
     args.triples_file = os.path.join(args.base_dir, args.triples_file)
 
