@@ -2,11 +2,11 @@ import torch
 import time
 
 
-def batchify(args, para_mode, train_time):
-    return lambda x: batchify_(args, x, para_mode, train_time)
+def batchify(args, train_time):
+    return lambda x: batchify_(args, x, train_time)
 
 
-def batchify_(args, batch, para_mode, train_time):
+def batchify_(args, batch, train_time):
     """Gather a batch of individual examples into one batch."""
 
     new_batch = []
