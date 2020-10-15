@@ -119,16 +119,16 @@ def main(args):
     #    passages = torch.cuda.FloatTensor(np.load(args.passage_file))
     #else:
     #    passages = np.load(args.passage_file)
+    # pids = np.load(args.pid_file)
 
     triples = np.load(args.triples_file)
-    pids = np.load(args.pid_file)
     queries = np.load(args.query_file)
     qids = np.load(args.qid_file)
-    qrels = load_qrels(args.qrels_file)
+    #qrels = load_qrels(args.qrels_file)
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
 
-    training_loader = make_dataloader(None, pids, queries, qids, pid2docid, qrels, triples, train_time=True)
+    training_loader = make_dataloader(None, None, queries, qids, pid2docid, qrels, triples, train_time=True)
 
     # initialize Model
     if args.checkpoint:
