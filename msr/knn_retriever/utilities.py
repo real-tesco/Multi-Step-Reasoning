@@ -1,6 +1,8 @@
 import torch
 import time
+import logging
 
+logger = logging.getLogger()
 
 def batchify(args, train_time):
     return lambda x: batchify_(args, x, train_time)
@@ -25,6 +27,8 @@ def batchify_(args, batch, train_time):
     queries = [ex[3] for ex in batch]
     positives = [ex[4] for ex in batch]
     negatives = [ex[5] for ex in batch]
+
+    logger.info(f"DEBUG: {queries}")
 
     queries = torch.LongTensor(queries)
     positives = torch.LongTensor(positives)
