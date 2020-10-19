@@ -29,7 +29,7 @@ def batchify_(args, batch, train_time):
     negatives = [ex[5] for ex in batch]
 
     logger.info(f"DEBUG: {qids[:5]}")
-    logger.info(f"types: {queries[:5]}")
+    logger.info(f"types: {len(queries)}")
     logger.info(f"types: {type(queries)}")
     logger.info(f"types: {type(queries[0])}")
     logger.info(f"types: {type(queries[0][0])}")
