@@ -92,8 +92,8 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
             continue
 
         logger.info(f"current example: {len(ex)}")
-        logger.info(f"type of example 0: {type(ex[0])}")
-        logger.info(f"type of example 3: {type(ex[3])}")
+        logger.info(f"_____type of example 0: {ex[0]}")
+        logger.info(f"type of example 3: {ex[3]}")
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:3]]
         ret_input = [*inputs[:]]
