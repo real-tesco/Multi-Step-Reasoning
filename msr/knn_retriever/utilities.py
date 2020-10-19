@@ -34,7 +34,7 @@ def batchify_(args, batch, train_time):
     #positives = torch.LongTensor(positives)
     #negatives = torch.LongTensor(negatives)
 
-    return qids, pids, nids, queries, positives, negatives
+    return queries, positives, negatives, qids, pids, nids
 
 
 class Timer(object):
