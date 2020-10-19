@@ -6,7 +6,7 @@ import numpy as np
 #TODO: look here
 
 class MSMARCO(Dataset):
-    def __init__(self, queries, qids, pid2docid, qrels, triples, triple_ids, train_time=True):
+    def __init__(self, queries, qids, pid2docid, triples, triple_ids, train_time=True):
         self.train = train_time
         self.number_of_queries = len(queries)
         self.qrels = {}
@@ -16,7 +16,6 @@ class MSMARCO(Dataset):
         self.triples = triples
         self.triple_ids = triple_ids
         self.number_of_examples = len(triples)
-        self.qrels = qrels
 
         i = 0
         for query in queries:

@@ -23,8 +23,15 @@ global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 
-def make_dataloader(queries, qids, pid2docid, qrels, triples, triple_ids, train_time=False):
-    dataset = MSMARCO(queries, qids, pid2docid, qrels, triples, triple_ids, train_time=train_time)
+def triple_loss(a, p, n, margin=0.2) :
+    d = torch.nn.PairwiseDistance(p=2)
+    distance = d(a, p) - d(a, n) + margin
+    loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
+    return loss
+
+
+def make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=False):
+    dataset = MSMARCO(queries, qids, pid2docid, triples, triple_ids, train_time=train_time)
     sampler = SequentialSampler(dataset) if not train_time else RandomSampler(dataset)
     loader = torch.utils.data.DataLoader(
         dataset,
@@ -83,6 +90,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         if ex is None:
             continue
 
+        logger.info(f"current example: {ex}")
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:]]
         ret_input = [*inputs[:4]]
@@ -122,15 +130,15 @@ def main(args):
     #    passages = np.load(args.passage_file)
     # pids = np.load(args.pid_file)
 
-    triples = np.load(args.triples_file)
-    triple_ids = np.load(args.triple_ids_file)
+    #triples = np.load(args.triples_file)
+    #triple_ids = np.load(args.triple_ids_file)
     queries = np.load(args.query_file)
     qids = np.load(args.qid_file)
     #qrels = load_qrels(args.qrels_file)
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
 
-    training_loader = make_dataloader(queries, qids, pid2docid, None, triples, triple_ids, train_time=True)
+    #training_loader = make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=True)
 
     # initialize Model
     if args.checkpoint:
@@ -144,8 +152,18 @@ def main(args):
         #train for 1 epoch
         #evaluation for this epoch
         #propagate loss back though network
+
         stats['epoch'] = epoch
-        train_binary_classification(args, retriever_model, optimizer, training_loader, verified_dev_loader=None)
+
+        #need to load the training data in chunks since its too big
+        for i in range(0, args.num_training_files):
+            triples = np.load(os.path.join(args.train_folder, "train.triples_msmarco" + str(i) + ".npy"))
+            triple_ids = np.load(os.path.join(args.train_folder, "msmarco_indices_" + str(i) + ".npy"))
+
+            training_loader = make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=True)
+
+            train_binary_classification(args, retriever_model, optimizer, training_loader, verified_dev_loader=None)
+
 
         #TODO:checkpointing
         """logger.info('checkpointing  model at {}'.format(args.model_file))
@@ -195,6 +213,9 @@ if __name__ == '__main__':
     parser.add_argument('-cuda', type=bool, default=torch.cuda.is_available(), help='use cuda and gpu')
     parser.add_argument('-batch_size', type=int, default=64, help='batch size to use')
     parser.add_argument('-data_workers', type=int, default=5, help='number of data workers to use')
+    parser.add_argument('-training_folder', type=str, default='train/', help='folder with chunks of training triples')
+    parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
+
 
     args = parser.parse_args()
 
@@ -207,6 +228,7 @@ if __name__ == '__main__':
     args.pid_folder = os.path.join(args.base_dir, args.pid_folder)
     args.triples_file = os.path.join(args.base_dir, args.triples_file)
     args.triple_ids_file = os.path.join(args.base_dir, args.triple_ids_file)
+    args.training_folder = os.path.join(args.base_dir, args.training_folder)
 
     args.state_dict = None
 
