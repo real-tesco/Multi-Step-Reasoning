@@ -34,11 +34,26 @@ def batchify_(args, batch, train_time):
     logger.info(f"types: {type(queries[0])}")
     logger.info(f"types: {type(queries[0][0])}")
 
-    queries = torch.as_tensor(queries)
-    positives = torch.as_tensor(positives)
-    negatives = torch.as_tensor(negatives)
+    q = torch.FloatTensor(len(queries), len(queries[0]))
+    for idx, query in enumerate(queries):
+        q[idx].copy_(query)
 
-    return queries, positives, negatives, qids, pids, nids
+    p = torch.FloatTensor(len(positives), len(positives[0]))
+    for idx, positive in enumerate(positives):
+        p[idx].copy_(positive)
+
+    n = torch.FloatTensor(len(negatives), len(negatives[0]))
+    for idx, negative in enumerate(queries):
+        n[idx].copy_(negative)
+
+    #p = torch.FloatTensor()
+    #n = torch.FloatTensor()
+
+    #queries = torch.as_tensor(queries)
+    #positives = torch.as_tensor(positives)
+    #negatives = torch.as_tensor(negatives)
+
+    return q, p, n, qids, pids, nids
 
 
 class Timer(object):
