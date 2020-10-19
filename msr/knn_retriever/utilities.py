@@ -24,7 +24,7 @@ def batchify_(args, batch, train_time):
     nids = [ex[2] for ex in batch]
     queries = [ex[3] for ex in batch]
     positives = [ex[4] for ex in batch]
-    negatives = [ex[6] for ex in batch]
+    negatives = [ex[5] for ex in batch]
 
     queries = torch.LongTensor(queries)
     positives = torch.LongTensor(positives)
