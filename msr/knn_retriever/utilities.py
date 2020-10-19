@@ -30,9 +30,9 @@ def batchify_(args, batch, train_time):
 
     #logger.info(f"DEBUG: {qids}")
 
-    queries = torch.tensor(queries)
-    positives = torch.tensor(positives)
-    negatives = torch.tensor(negatives)
+    queries = torch.as_tensor(queries)
+    positives = torch.as_tensor(positives)
+    negatives = torch.as_tensor(negatives)
 
     return queries, positives, negatives, qids, pids, nids
 
