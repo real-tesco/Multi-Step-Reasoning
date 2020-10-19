@@ -85,7 +85,8 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
 
     args.train_time = True
     para_loss = utils.AverageMeter()
-    ret_model.query_transformer.train()
+    #ret_model.query_transformer.train()
+    #ret_model.document_transformer.train()
     for idx, ex in enumerate(train_loader):
         if ex is None:
             continue
@@ -94,6 +95,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:]]
         ret_input = [*inputs[:4]]
+        logger.info(f"reformulated inpute: {ret_input}")
         scores, _, _ = ret_model.score_documents(*ret_input) #todo: look here
         y_num_occurrences = Variable(ex[-2])
         labels = (y_num_occurrences > 0).float()
@@ -145,7 +147,8 @@ def main(args):
         pass
     else:
         logger.info('Initializing model from scratch...')
-        retriever_model, optimizer = init_from_scratch(args)
+        #retriever_model, optimizer = init_from_scratch(args)
+        retriever_model, optimizer = None, None
 
     logger.info("Starting training...")
     for epoch in range(0, args.epochs):
@@ -157,8 +160,8 @@ def main(args):
 
         #need to load the training data in chunks since its too big
         for i in range(0, args.num_training_files):
-            triples = np.load(os.path.join(args.train_folder, "train.triples_msmarco" + str(i) + ".npy"))
-            triple_ids = np.load(os.path.join(args.train_folder, "msmarco_indices_" + str(i) + ".npy"))
+            triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
+            triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
 
             training_loader = make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=True)
 

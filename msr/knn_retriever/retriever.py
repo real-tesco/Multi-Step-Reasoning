@@ -7,12 +7,12 @@ import copy
 
 logger = logging.getLogger()
 
-class KnnIndex:
 
+class KnnIndex:
     def __init__(self, args):
         self.args = args
         self.index = hnswlib.Index(space=args.similarity, dim=args.dim)
-        logger.info('Loadingg KNN index...')
+        logger.info('Loading KNN index...')
         self.index.load_index(args.index)
         self.query_transformer = QueryTransformer(args)
         self.document_transformer = DocumentTransformer(args)
