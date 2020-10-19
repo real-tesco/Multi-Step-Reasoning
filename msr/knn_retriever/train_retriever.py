@@ -91,11 +91,12 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         if ex is None:
             continue
 
-        logger.info(f"current example: {ex}")
+        logger.info(f"current example: {len(ex)}")
+        logger.info(f"type of example: {type(ex)}")
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:]]
         ret_input = [*inputs[:4]]
-        logger.info(f"reformulated inpute: {ret_input}")
+        logger.info(f"reformulated inpute: {len(ret_input)}")
         scores, _, _ = ret_model.score_documents(*ret_input) #todo: look here
         y_num_occurrences = Variable(ex[-2])
         labels = (y_num_occurrences > 0).float()

@@ -28,7 +28,7 @@ def batchify_(args, batch, train_time):
     positives = [ex[4] for ex in batch]
     negatives = [ex[5] for ex in batch]
 
-    logger.info(f"DEBUG: {qids}")
+    #logger.info(f"DEBUG: {qids}")
 
     #queries = torch.LongTensor(queries)
     #positives = torch.LongTensor(positives)
