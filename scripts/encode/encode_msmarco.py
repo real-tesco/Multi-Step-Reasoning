@@ -219,7 +219,7 @@ if __name__ == '__main__':
                         help='number of chunks after which they get compressed into .tar.gz use 0 to not zip')
     parser.add_argument('-num_worker', type=int, default=1,
                         help='number of workers used for bert server, should be less or equal to count of gpus')
-    parser.add_argument('-type', type=str, default='train', help='name of data to load (dev, train, test)')
+    parser.add_argument('-name', type=str, default='train', help='name of data to load (dev, train, test)')
 
     # Set logging
     logger.setLevel(logging.INFO)
