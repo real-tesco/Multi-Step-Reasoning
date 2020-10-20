@@ -111,12 +111,12 @@ class KnnIndex:
         scores_positive = torch.matmul(queries, positives.t())
         p = torch.FloatTensor(queries.shape[0])
         for idx, _ in enumerate(scores_positive.split(64, 0)):
-            p[idx].copy_(scores_positive[idx])
+            p[idx].copy_(scores_positive[idx][idx])
 
         scores_negative = torch.matmul(queries, negatives.t())
         n = torch.FloatTensor(queries.shape[0])
         for idx, _ in enumerate(scores_negative.split(64, 0)):
-            n[idx].copy_(scores_negative[idx])
+            n[idx].copy_(scores_negative[idx][idx])
 
         return p, n
 
