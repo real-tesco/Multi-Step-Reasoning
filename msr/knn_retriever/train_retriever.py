@@ -96,11 +96,11 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:3]]
         ret_input = [*inputs[:]]
-        logger.info(f"reformulated input: {ret_input}")
+        #logger.info(f"reformulated input: {ret_input}")
         scores_positive, scores_negative = ret_model.score_documents(*ret_input) #todo: look here
 
-        logger.info(f"positive score: {scores_positive.shape}")
-        logger.info(f"positive score: {scores_positive}")
+        #logger.info(f"positive score: {scores_positive.shape}")
+        #logger.info(f"positive score: {scores_positive}")
 
         # Triplet logits loss
         batch_loss = triplet_loss(scores_positive, scores_negative)
