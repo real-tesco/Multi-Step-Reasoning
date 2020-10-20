@@ -107,7 +107,7 @@ class KnnIndex:
         queries = self.query_transformer.forward(queries)
         positives = self.document_transformer.forward(positives)
         negatives = self.document_transformer.forward(negatives)
-        scores_positive = torch.matmul(queries, positives)
+        scores_positive = torch.matmul(queries, positives.t())
         scores_negative = torch.matmul(queries, negatives.t())
         return scores_positive, scores_negative
 
