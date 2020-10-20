@@ -136,7 +136,7 @@ def encode_queries(args):
         print(f'encoding {len(qids)} queries...')
         encoded_queries = bert_client.encode(queries)
         print(f'encoding of {len(qids)} queries done with bert')
-        for i in range(0, len(encoded_queries)):
+        for i in tqdm(range(0, len(encoded_queries))):
             norm = np.linalg.norm(encoded_queries[i])
             if norm != 0:
                 encoded_queries[i] = encoded_queries[i] / norm
@@ -144,9 +144,11 @@ def encode_queries(args):
         print.info('encoding done!')
         if args.output_numpy:
             logger.info('save qids and queries as .npy')
+            print('save qids and queries as .npy')
             qids = np.asarray(qids)
             np.save(os.path.join(args.base_dir, args.out_dir, args.name + '.msmarco_queries_normed.npy'), encoded_queries)
             np.save(os.path.join(args.base_dir, args.out_dir, args.name + '.msmarco_qids.npy'), qids)
+            print('save qids and queries as .npy DONE')
         else:
             logger.info('save qids and queries as python dict in json')
             encoded_queries = encoded_queries.tolist()
@@ -158,6 +160,7 @@ def encode_queries(args):
             with open(os.path.join(args.base_dir, 'msmarco_queries.json'), 'w') as fp:
                 json.dump(encoded_query_dict, fp)
         logger.info('queries encoded and saved!')
+        print('queries encoded and saved!')
 
 
 def convert_to_numpy(args):
