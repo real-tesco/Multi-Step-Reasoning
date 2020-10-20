@@ -146,8 +146,8 @@ def encode_queries(args):
             logger.info('save qids and queries as .npy')
             print('save qids and queries as .npy')
             qids = np.asarray(qids)
-            np.save(os.path.join(args.base_dir, args.out_dir, args.name + '.msmarco_queries_normed.npy'), encoded_queries)
-            np.save(os.path.join(args.base_dir, args.out_dir, args.name + '.msmarco_qids.npy'), qids)
+            np.save(os.path.join(args.base_dir, args.name + '.msmarco_queries_normed.npy'), encoded_queries)
+            np.save(os.path.join(args.base_dir, args.name + '.msmarco_qids.npy'), qids)
             print('save qids and queries as .npy DONE')
         else:
             logger.info('save qids and queries as python dict in json')
