@@ -17,6 +17,10 @@ class KnnIndex:
             self.index.load_index(args.index)
         self.query_transformer = QueryTransformer(args)
         self.document_transformer = DocumentTransformer(args)
+        if args.cuda:
+            self.query_transformer.cuda()
+            self.document_transformer.cuda()
+
         if args.state_dict is not None:
             if 'q_transformer' in args.state_dict:
                 self.query_transformer.load_state_dict(args.state_dict['q_transformer'])

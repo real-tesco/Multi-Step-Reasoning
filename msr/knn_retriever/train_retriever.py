@@ -147,8 +147,6 @@ def main(args):
     else:
         logger.info('Initializing model from scratch...')
         retriever_model, optimizer = init_from_scratch(args)
-        if args.cuda:
-            retriever_model.cuda()
 
     logger.info("Starting training...")
     for epoch in range(0, args.epochs):
