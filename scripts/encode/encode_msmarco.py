@@ -134,12 +134,16 @@ def encode_queries(args):
             queries.append(split[1])
         logger.info(f'encoding {len(qids)} queries...')
         encoded_queries = bert_client.encode(queries)
+        for i in range(0, len(encoded_queries)):
+            norm = np.linalg.norm(encoded_queries[i])
+            if norm != 0:
+                encoded_queries[i] = encoded_queries[i] / norm
         logger.info('encoding done!')
         if args.output_numpy:
             logger.info('save qids and queries as .npy')
             qids = np.asarray(qids)
-            np.save(os.path.join(args.base_dir, 'msmarco_queries.npy'), encoded_queries)
-            np.save(os.path.join(args.base_dir, 'msmarco_qids.npy'), qids)
+            np.save(os.path.join(args.base_dir, args.out_dir, args.type + '.msmarco_queries_normed.npy'), encoded_queries)
+            np.save(os.path.join(args.base_dir, args.out_dir, args.type + '.msmarco_qids.npy'), qids)
         else:
             logger.info('save qids and queries as python dict in json')
             encoded_queries = encoded_queries.tolist()
@@ -196,7 +200,7 @@ if __name__ == '__main__':
                         help='convert already encoded chunks to numpy format')
     parser.add_argument('-base_dir', type=str, default=None,
                         help='base directory of the chunked dataset')
-    parser.add_argument('-out_dir', type=str, default=None,
+    parser.add_argument('-out_dir', type=str, default='',
                         help='output directory, where to store the embeddings')
     parser.add_argument('-model_dir', type=str, default=None,
                         help='model directory of bert model for bert-as-service')
@@ -215,6 +219,7 @@ if __name__ == '__main__':
                         help='number of chunks after which they get compressed into .tar.gz use 0 to not zip')
     parser.add_argument('-num_worker', type=int, default=1,
                         help='number of workers used for bert server, should be less or equal to count of gpus')
+    parser.add_argument('-type', type=str, default='train', help='name of data to load (dev, train, test)')
 
     # Set logging
     logger.setLevel(logging.INFO)
