@@ -107,8 +107,8 @@ class KnnIndex:
         queries = self.query_transformer.forward(queries)
         positives = self.document_transformer.forward(positives)
         negatives = self.document_transformer.forward(negatives)
-        scores_positive = queries * positives.transpose()
-        scores_negative = queries * negatives.transpose()
+        scores_positive = queries * torch.transpose(positives, 0, 1)
+        scores_negative = queries * torch.transpose(negatives, 0, 1)
         return scores_positive, scores_negative
 
     #check if works, else pid needs to be N dim np array
