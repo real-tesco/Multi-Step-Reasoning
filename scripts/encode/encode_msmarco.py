@@ -135,6 +135,7 @@ def encode_queries(args):
         logger.info(f'encoding {len(qids)} queries...')
         print(f'encoding {len(qids)} queries...')
         encoded_queries = bert_client.encode(queries)
+        print(f'encoding of {len(qids)} queries done with bert')
         for i in range(0, len(encoded_queries)):
             norm = np.linalg.norm(encoded_queries[i])
             if norm != 0:
