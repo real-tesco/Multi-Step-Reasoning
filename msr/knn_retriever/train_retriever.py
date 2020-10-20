@@ -100,8 +100,11 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         logger.info(f"p input: {ret_input[1].shape}")
         logger.info(f"n input: {ret_input[2].shape}")
         scores_positive, scores_negative = ret_model.score_documents(*ret_input) #todo: look here
+
         logger.info(f"positive score: {scores_positive.shape}")
+        logger.info(f"positive score: {scores_positive}")
         logger.info(f"negative score: {scores_negative.shape}")
+        logger.info(f"negative score: {scores_negative}")
 
         # Triplet logits loss
         batch_loss = triplet_loss(scores_positive, scores_negative)
