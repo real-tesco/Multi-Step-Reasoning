@@ -151,7 +151,9 @@ class DocumentTransformer(nn.Module):
 
     def forward(self, document):
         doc = self.linear_layer(document)
-        doc = nn.functional.normalize(doc)
+        logger.info(f"doc before norm: {doc}")
+        doc = nn.functional.normalize(doc, p=2, dim=1)
+        logger.info(f"doc after norm: {doc}")
         return doc
 
 
@@ -162,5 +164,5 @@ class QueryTransformer(nn.Module):
 
     def forward(self, query):
         query = self.linear_layer(query)
-        query = nn.functional.normalize(query)
+        query = nn.functional.normalize(query, p=2, dim=1)
         return query
