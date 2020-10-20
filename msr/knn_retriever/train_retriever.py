@@ -13,6 +13,7 @@ import json
 from torch.autograd import Variable
 import math
 
+
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
@@ -23,9 +24,9 @@ global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 
-def triple_loss(a, p, n, margin=0.2) :
-    d = torch.nn.PairwiseDistance(p=2)
-    distance = d(a, p) - d(a, n) + margin
+def triplet_loss(dist_positive, dist_negative, margin=0.3):
+    #d = torch.nn.PairwiseDistance(p=2)
+    distance = dist_positive - dist_negative + margin
     loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
     return loss
 
@@ -83,35 +84,30 @@ def load_qrels(path_to_qrels):
 #TODO: look here
 def train_binary_classification(args, ret_model, optimizer, train_loader, verified_dev_loader=None):
 
-    args.train_time = True
+    #args.train_time = True
     para_loss = utils.AverageMeter()
-    #ret_model.query_transformer.train()
-    #ret_model.document_transformer.train()
+    ret_model.query_transformer.train()
+    ret_model.document_transformer.train()
     for idx, ex in enumerate(train_loader):
         if ex is None:
             continue
 
-        logger.info(f"current example: {len(ex)}")
-        logger.info(f"_____type of example 0: {ex[0]}")
-        logger.info(f"type of example 3: {ex[3]}")
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:3]]
         ret_input = [*inputs[:]]
-        logger.info(f"reformulated inpute: {len(ret_input)}")
-        logger.info(f"reformulated inpute: {ret_input}")
-        scores, _, _ = ret_model.score_documents(*ret_input) #todo: look here
-        y_num_occurrences = Variable(ex[-2])
-        labels = (y_num_occurrences > 0).float()
-        labels = labels.cuda()
-        # BCE logits loss
-        batch_para_loss = F.binary_cross_entropy_with_logits(scores.squeeze(1), labels)
+        #logger.info(f"reformulated inpute: {len(ret_input)}")
+        #logger.info(f"reformulated inpute: {ret_input}")
+        scores_positive, scores_negative = ret_model.score_documents(*ret_input) #todo: look here
+
+        # Triplet logits loss
+        batch_loss = triplet_loss(scores_positive, scores_negative)
         optimizer.zero_grad()
-        batch_para_loss.backward()
+        batch_loss.backward()
 
         torch.nn.utils.clip_grad_norm(ret_model.get_trainable_params(),
                                       2.0)
         optimizer.step()
-        para_loss.update(batch_para_loss.data.item())
+        para_loss.update(batch_loss.data.item())
         if math.isnan(para_loss.avg):
             import pdb
             pdb.set_trace()
@@ -150,8 +146,8 @@ def main(args):
         pass
     else:
         logger.info('Initializing model from scratch...')
-        #retriever_model, optimizer = init_from_scratch(args)
-        retriever_model, optimizer = None, None
+        retriever_model, optimizer = init_from_scratch(args)
+        #retriever_model, optimizer = None, None
 
     logger.info("Starting training...")
     for epoch in range(0, args.epochs):
@@ -169,6 +165,7 @@ def main(args):
             training_loader = make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=True)
 
             train_binary_classification(args, retriever_model, optimizer, training_loader, verified_dev_loader=None)
+
 
 
         #TODO:checkpointing
@@ -237,6 +234,7 @@ if __name__ == '__main__':
     args.training_folder = os.path.join(args.base_dir, args.training_folder)
 
     args.state_dict = None
+    args.train = True
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',

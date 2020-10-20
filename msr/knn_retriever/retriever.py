@@ -13,7 +13,8 @@ class KnnIndex:
         self.args = args
         self.index = hnswlib.Index(space=args.similarity, dim=args.dim)
         logger.info('Loading KNN index...')
-        self.index.load_index(args.index)
+        if not args.train:
+            self.index.load_index(args.index)
         self.query_transformer = QueryTransformer(args)
         self.document_transformer = DocumentTransformer(args)
         if args.state_dict is not None:
@@ -22,7 +23,7 @@ class KnnIndex:
             if 'd_transformer' in args.state_dict:
                 self.document_transformer.load_state_dict(args.state_dict['d_transformer'])
             #self.query_transformer.eval()
-        self.init_optimizer()
+        #self.init_optimizer()
 
     def knn_query(self, query, k=1):
         query = self.query_transformer.forward(query)
@@ -104,7 +105,7 @@ class KnnIndex:
         negatives = self.document_transformer.forward(negatives)
         scores_positive = queries * positives.transpose()
         scores_negative = queries * negatives.transpose()
-        return queries, scores_positive, scores_negative
+        return scores_positive, scores_negative
 
     #check if works, else pid needs to be N dim np array
     def get_passage(self, pid):
@@ -137,6 +138,7 @@ class DocumentTransformer(nn.Module):
 
     def forward(self, document):
         doc = self.linear_layer(document)
+        doc = nn.functional.normalize(doc)
         return doc
 
 
@@ -147,4 +149,5 @@ class QueryTransformer(nn.Module):
 
     def forward(self, query):
         query = self.linear_layer(query)
+        query = nn.functional.normalize(query)
         return query
