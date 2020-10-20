@@ -26,6 +26,7 @@ stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 def triplet_loss(dist_positive, dist_negative, margin=0.3):
     #d = torch.nn.PairwiseDistance(p=2)
+
     distance = dist_positive - dist_negative + margin
     loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
     return loss
@@ -95,16 +96,11 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:3]]
         ret_input = [*inputs[:]]
-        logger.info(f"reformulated input: {len(ret_input)}")
-        logger.info(f"q input: {ret_input[0].shape}")
-        logger.info(f"p input: {ret_input[1].shape}")
-        logger.info(f"n input: {ret_input[2].shape}")
+        logger.info(f"reformulated input: {ret_input}")
         scores_positive, scores_negative = ret_model.score_documents(*ret_input) #todo: look here
 
         logger.info(f"positive score: {scores_positive.shape}")
         logger.info(f"positive score: {scores_positive}")
-        logger.info(f"negative score: {scores_negative.shape}")
-        logger.info(f"negative score: {scores_negative}")
 
         # Triplet logits loss
         batch_loss = triplet_loss(scores_positive, scores_negative)
