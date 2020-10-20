@@ -108,11 +108,21 @@ class KnnIndex:
         positives = self.document_transformer.forward(positives)
         negatives = self.document_transformer.forward(negatives)
         scores_positive = torch.matmul(queries, positives.t())
-        scores_negative = torch.matmul(queries, negatives.t())
-        return scores_positive, scores_negative
 
-    #check if works, else pid needs to be N dim np array
+        p = torch.FloatTensor(queries.shape[0], 1)
+        for idx, _ in enumerate(scores_positive):
+            p[idx].copy_(scores_positive[idx])
+
+        scores_negative = torch.matmul(queries, negatives.t())
+
+        n = torch.FloatTensor(queries.shape[0], 1)
+        for idx, _ in enumerate(scores_negative):
+            n[idx].copy_(scores_negative[idx])
+
+        return p, n
+
     def get_passage(self, pid):
+        # check if works, else pid needs to be N dim np array
         return self.index.get_items(pid)
 
     '''@staticmethod
