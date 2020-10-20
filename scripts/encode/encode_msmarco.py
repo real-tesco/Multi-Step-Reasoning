@@ -133,12 +133,14 @@ def encode_queries(args):
             qids.append(split[0])
             queries.append(split[1])
         logger.info(f'encoding {len(qids)} queries...')
+        print(f'encoding {len(qids)} queries...')
         encoded_queries = bert_client.encode(queries)
         for i in range(0, len(encoded_queries)):
             norm = np.linalg.norm(encoded_queries[i])
             if norm != 0:
                 encoded_queries[i] = encoded_queries[i] / norm
         logger.info('encoding done!')
+        print.info('encoding done!')
         if args.output_numpy:
             logger.info('save qids and queries as .npy')
             qids = np.asarray(qids)
