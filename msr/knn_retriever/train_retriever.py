@@ -298,6 +298,8 @@ if __name__ == '__main__':
     parser.add_argument('-data_workers', type=int, default=5, help='number of data workers to use')
     parser.add_argument('-training_folder', type=str, default='train/', help='folder with chunks of training triples')
     parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
+    parser.add_argument('-model_file', type=str, default='knn_index', help='Model file to store checkpoint')
+    parser.add_argument('-out_dir', type=str, default='', help='Model file to store checkpoint')
 
 
     args = parser.parse_args()
@@ -312,6 +314,7 @@ if __name__ == '__main__':
     args.triples_file = os.path.join(args.base_dir, args.triples_file)
     args.triple_ids_file = os.path.join(args.base_dir, args.triple_ids_file)
     args.training_folder = os.path.join(args.base_dir, args.training_folder)
+    args.model_file = os.path.join(args.out_dir, args.model_file)
 
     args.state_dict = None
     args.train = True
