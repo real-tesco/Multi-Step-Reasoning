@@ -32,8 +32,8 @@ def triplet_loss(dist_positive, dist_negative, margin=0.3):
     return loss
 
 
-def make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=False):
-    dataset = MSMARCO(queries, qids, pid2docid, triples, triple_ids, train_time=train_time)
+def make_dataloader(pid2docid, triples, triple_ids, train_time=False):
+    dataset = MSMARCO(pid2docid, triples, triple_ids, train_time=train_time)
     sampler = SequentialSampler(dataset) if not train_time else RandomSampler(dataset)
     loader = torch.utils.data.DataLoader(
         dataset,
@@ -203,23 +203,11 @@ def eval_binary_classification(args, ret_model, corpus, dev_loader, verified_dev
 def main(args):
 
     #load data from files
-    logger.info('loading files and initializing dataloader...')
+    logger.info('Starting...')
     logger.info(f'using cuda: {args.cuda}')
-    #if args.cuda:
-    #    passages = torch.cuda.FloatTensor(np.load(args.passage_file))
-    #else:
-    #    passages = np.load(args.passage_file)
-    # pids = np.load(args.pid_file)
 
-    #triples = np.load(args.triples_file)
-    #triple_ids = np.load(args.triple_ids_file)
-    queries = np.load(args.query_file)
-    qids = np.load(args.qid_file)
-    #qrels = load_qrels(args.qrels_file)
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
-
-    #training_loader = make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=True)
 
     # initialize Model
     if args.checkpoint:
@@ -227,23 +215,17 @@ def main(args):
     else:
         logger.info('Initializing model from scratch...')
         retriever_model, optimizer = init_from_scratch(args)
-        #args.optimizer = optimizer
 
     logger.info("Starting training...")
     for epoch in range(0, args.epochs):
-        #train for 1 epoch
-        #evaluation for this epoch
-        #propagate loss back though network
-
         stats['epoch'] = epoch
-
         #need to load the training data in chunks since its too big
         for i in range(0, args.num_training_files):
             triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
             triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
 
             stats['chunk'] = i
-            training_loader = make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=True)
+            training_loader = make_dataloader(pid2docid, triples, triple_ids, train_time=True)
 
             train_binary_classification(args, retriever_model, optimizer, training_loader, verified_dev_loader=None)
 
