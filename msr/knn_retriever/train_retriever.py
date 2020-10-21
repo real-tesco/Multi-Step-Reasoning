@@ -211,7 +211,8 @@ def main(args):
 
     # initialize Model
     if args.checkpoint:
-        pass
+        logger.info('Initializing model from checkpoint...')
+        retriever_model, optimizer = init_from_checkpoint(args)
     else:
         logger.info('Initializing model from scratch...')
         retriever_model, optimizer = init_from_scratch(args)
@@ -220,7 +221,8 @@ def main(args):
     for epoch in range(0, args.epochs):
         stats['epoch'] = epoch
         #need to load the training data in chunks since its too big
-        for i in range(0, args.num_training_files):
+        for i in range(0, 2):#args.num_training_files):
+            logger
             triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
             triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
 
@@ -237,12 +239,11 @@ def main(args):
         save(args, retriever_model, optimizer, args.model_file + ".ckpt", epoch=stats['epoch'])
         #TODO:eval
         """logger.info("Evaluating on the full dev set....")
-        top1 = eval_binary_classification(args, ret_model, all_dev_exs, dev_loader, verified_dev_loader=None)
+        top1 = eval_binary_classification(args, retriever_model, all_dev_exs, dev_loader, verified_dev_loader=None)
         if stats['best_acc'] < top1:
             stats['best_acc'] = top1
             logger.info('Best accuracy {}'.format(stats['best_acc']))
             logger.info('Saving model at {}'.format(args.model_file))
-            logger.info("Logs saved at {}".format(args.log_file))
             save(args, ret_model.model, optimizer, args.model_file, epoch=stats['epoch'])
         """
 
@@ -282,6 +283,7 @@ if __name__ == '__main__':
     parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
     parser.add_argument('-model_file', type=str, default='knn_index', help='Model file to store checkpoint')
     parser.add_argument('-out_dir', type=str, default='', help='Model file to store checkpoint')
+    parser.add_argument('-pretrained', type=str, default='', help='checkpoint file to load checkpoint')
 
 
     args = parser.parse_args()
