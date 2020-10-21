@@ -44,6 +44,7 @@ class KnnIndex:
                 params.append(p)
         return params
 
+    #dont use optimizer in model, stick to external optimizer
     def init_optimizer(self):
         """Initialize an optimizer for the free parameters of the Query transformer.
         """

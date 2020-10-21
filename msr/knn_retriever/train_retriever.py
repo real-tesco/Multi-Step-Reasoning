@@ -46,6 +46,46 @@ def make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=Fa
     return loader
 
 
+def save(args, model, optimizer, filename, epoch=None):
+
+    params = {'state_dict': {
+        'd_transformer': model.document_transformer.state_dict(),
+        'q_transformer': model.query_transformer.state_dict(),
+        'optimizer': optimizer.state_dict()
+    }, 'config': vars(args)}
+    if epoch:
+        params['epoch'] = epoch
+    try:
+        torch.save(params, filename)
+    except BaseException:
+        logger.warn('[ WARN: Saving failed... continuing anyway. ]')
+
+
+def init_from_checkpoint(args):
+
+    logger.info('Loading model from saved checkpoint {}'.format(args.pretrained))
+    checkpoint = torch.load(args.pretrained)
+    #args = checkpoint['args']
+    args.state_dict = checkpoint['state_dict']
+    ret = KnnIndex(args)
+
+    optimizer = None
+    parameters = ret.get_trainable_parameters()
+    if args.optimizer == 'sgd':
+        optimizer = optim.SGD(parameters, args.learning_rate,
+                              momentum=args.momentum,
+                              weight_decay=args.weight_decay)
+    elif args.optimizer == 'adamax':
+        optimizer = optim.Adamax(parameters,
+                                 weight_decay=args.weight_decay)
+    else:
+        raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
+    optimizer.load_state_dict(checkpoint['state_dict']['optimizer'])
+    logger.info('Model loaded...')
+
+    return ret, optimizer
+
+
 def init_from_scratch(args):
     retriever_model = KnnIndex(args)
     parameters = retriever_model.get_trainable_parameters()
@@ -102,7 +142,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         #logger.info(f"positive score: {scores_positive.shape}")
         #logger.info(f"positive score: {scores_positive}")
 
-        # Triplet logits loss
+        # Triplet loss
         batch_loss = triplet_loss(scores_positive, scores_negative)
         optimizer.zero_grad()
         batch_loss.backward()
@@ -118,11 +158,12 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         if idx % 25 == 0 and idx > 0:
             logger.info('Epoch = {} | iter={}/{} | para loss = {:2.4f}'.format(
                 stats['epoch'],
-                idx, len(train_loader),
+                idx + stats['chunk']*len(train_loader), len(train_loader)*args.num_training_files,
                 para_loss.avg))
             para_loss.reset()
 
 
+#TODO: implement eval, dev data already on server
 def eval_binary_classification(args, ret_model, corpus, dev_loader, verified_dev_loader=None, save_scores = True):
     total_exs = 0
     args.train_time = False
@@ -186,6 +227,7 @@ def main(args):
     else:
         logger.info('Initializing model from scratch...')
         retriever_model, optimizer = init_from_scratch(args)
+        #args.optimizer = optimizer
 
     logger.info("Starting training...")
     for epoch in range(0, args.epochs):
@@ -200,6 +242,7 @@ def main(args):
             triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
             triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
 
+            stats['chunk'] = i
             training_loader = make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=True)
 
             train_binary_classification(args, retriever_model, optimizer, training_loader, verified_dev_loader=None)
@@ -207,10 +250,9 @@ def main(args):
 
 
         #TODO:checkpointing
-        """logger.info('checkpointing  model at {}'.format(args.model_file))
-        ## check pointing##
-        save(args, ret_model.model, optimizer, args.model_file + ".ckpt", epoch=stats['epoch'])
-        """
+        logger.info('checkpointing  model at {}'.format(args.model_file))
+        ## check pointing ##
+        save(args, retriever_model, optimizer, args.model_file + ".ckpt", epoch=stats['epoch'])
         #TODO:eval
         """logger.info("Evaluating on the full dev set....")
         top1 = eval_binary_classification(args, ret_model, all_dev_exs, dev_loader, verified_dev_loader=None)
@@ -250,7 +292,7 @@ if __name__ == '__main__':
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
     parser.add_argument('-checkpoint', type=bool, default=False, help='Wether to use a checkpoint or not')
-    parser.add_argument('-model_name', type=str, default='', help='Model name to load from as checkpoint')
+    parser.add_argument('-model_name', type=str, default='knn_index', help='Model name to load from as checkpoint')
     parser.add_argument('-cuda', type=bool, default=torch.cuda.is_available(), help='use cuda and gpu')
     parser.add_argument('-batch_size', type=int, default=64, help='batch size to use')
     parser.add_argument('-data_workers', type=int, default=5, help='number of data workers to use')
