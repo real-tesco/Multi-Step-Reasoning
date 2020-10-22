@@ -24,14 +24,13 @@ global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 
-def triplet_loss(dist_positive, dist_negative, margin=0.3):
+def triplet_loss(dist_positive, dist_negative, margin=0.4):
     # d = torch.nn.PairwiseDistance(p=2)
 
     distance = dist_positive - dist_negative + margin
     # logger.info(f"distance in triplet: {distance.shape}")
     # logger.info(f"distance in triplet: {distance}")
     loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
-    logger.info(f"final loss per batch: {loss}")
     return loss
 
 
@@ -146,8 +145,8 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         batch_loss = triplet_loss(scores_positive, scores_negative)
         optimizer.zero_grad()
         batch_loss.backward()
-        logger.info(f"after backward: {batch_loss}")
-        logger.info(f"after backward data item: {batch_loss.data.item()}")
+        #logger.info(f"after backward: {batch_loss}")
+        #logger.info(f"after backward data item: {batch_loss.data.item()}")
 
         torch.nn.utils.clip_grad_norm(ret_model.get_trainable_parameters(),
                                       2.0)
@@ -159,8 +158,8 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
 
         if idx % 25 == 0 and idx > 0:
             # | para loss = {:2.4f}
-            logger.info('__________________________________________________________ \n'
-                        'Epoch = {} | iter={}/{} | loss for current batch = {:2.4f}\n'
+            logger.info('Epoch = {} | iter={}/{} | loss for current batch = {:2.4f}\n'
+                        '__________________________________________________________ \n'
                         'Positive Scores = {} \n'
                         'Negative Scores = {} \n'
                         '__________________________________________________________'.format(
