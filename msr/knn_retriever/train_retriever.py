@@ -159,10 +159,11 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
             pdb.set_trace()
 
         if idx % 25 == 0 and idx > 0:
-            logger.info('Epoch = {} | iter={}/{} | para loss = {:2.4f} | loss for current batch = {:2.4f}'.format(
+            #| para loss = {:2.4f}
+            logger.info('Epoch = {} | iter={}/{} | loss for current batch = {:2.4f}'.format(
                 stats['epoch'],
                 idx + stats['chunk']*len(train_loader), len(train_loader)*args.num_training_files,
-                para_loss.avg,
+                #para_loss.avg,
                 batch_loss))
             para_loss.reset()
 
@@ -188,7 +189,7 @@ def main(args):
     for epoch in range(0, args.epochs):
         stats['epoch'] = epoch
         #need to load the training data in chunks since its too big
-        for i in range(0, 2):#args.num_training_files):
+        for i in range(0, args.num_training_files):
             logger.info("Load current chunk of training data...")
             triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
             triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
@@ -201,6 +202,7 @@ def main(args):
         logger.info('checkpointing  model at {}'.format(args.model_file))
         save(args, retriever_model, optimizer, args.model_file + ".ckpt", epoch=stats['epoch'])
     save(args, retriever_model, optimizer, args.model_file + ".max", epoch=stats['epoch'])
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
