@@ -105,21 +105,20 @@ class KnnIndex:
         return KnnIndex(args)
 
     def score_documents(self, queries, positives, negatives=None):
-        queries = self.query_transformer.forward(queries)
+        transformed_queries = self.query_transformer.forward(queries)
         positives = self.document_transformer.forward(positives)
 
-        scores_positive = torch.matmul(queries, positives.t())
-        p = torch.FloatTensor(queries.shape[0])
-        for idx, _ in enumerate(scores_positive.split(queries.shape[0], 0)):
+        scores_positive = torch.matmul(transformed_queries, positives.t())
+        p = torch.FloatTensor(transformed_queries.shape[0])
+        for idx, _ in enumerate(scores_positive.split(transformed_queries.shape[0], 0)):
             p[idx].copy_(scores_positive[idx][idx])
 
         negatives = self.document_transformer.forward(negatives)
-        scores_negative = torch.matmul(queries, negatives.t())
-        n = torch.FloatTensor(queries.shape[0])
-        for idx, _ in enumerate(scores_negative.split(queries.shape[0], 0)):
+        scores_negative = torch.matmul(transformed_queries, negatives.t())
+        n = torch.FloatTensor(transformed_queries.shape[0])
+        for idx, _ in enumerate(scores_negative.split(transformed_queries.shape[0], 0)):
             n[idx].copy_(scores_negative[idx][idx])
         return p, n
-
 
     def get_passage(self, pid):
         # check if works, else pid needs to be N dim np array
@@ -153,7 +152,7 @@ class DocumentTransformer(nn.Module):
     def forward(self, document):
         doc = self.linear_layer(document)
         logger.info(f"doc before norm: {doc}")
-        doc = nn.functional.normalize(doc, p=2, dim=0)
+        doc = nn.functional.normalize(doc, p=2, dim=1)
         logger.info(f"doc after norm: {doc}")
         return doc
 
@@ -165,5 +164,5 @@ class QueryTransformer(nn.Module):
 
     def forward(self, query):
         query = self.linear_layer(query)
-        query = nn.functional.normalize(query, p=2, dim=0)
+        query = nn.functional.normalize(query, p=2, dim=1)
         return query

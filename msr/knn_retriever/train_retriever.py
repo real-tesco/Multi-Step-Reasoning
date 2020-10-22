@@ -28,6 +28,8 @@ def triplet_loss(dist_positive, dist_negative, margin=0.3):
     #d = torch.nn.PairwiseDistance(p=2)
 
     distance = dist_positive - dist_negative + margin
+    logger.info(f"distance in triplet: {distance.shape}")
+    logger.info(f"distance in triplet: {distance}")
     loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
     return loss
 
@@ -146,6 +148,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         batch_loss = triplet_loss(scores_positive, scores_negative)
         optimizer.zero_grad()
         batch_loss.backward()
+        logger.info(f"batchloss: {batch_loss}")
 
         torch.nn.utils.clip_grad_norm(ret_model.get_trainable_parameters(),
                                       2.0)
