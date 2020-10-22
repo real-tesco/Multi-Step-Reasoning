@@ -28,9 +28,10 @@ def triplet_loss(dist_positive, dist_negative, margin=0.3):
     #d = torch.nn.PairwiseDistance(p=2)
 
     distance = dist_positive - dist_negative + margin
-    logger.info(f"distance in triplet: {distance.shape}")
-    logger.info(f"distance in triplet: {distance}")
+    #logger.info(f"distance in triplet: {distance.shape}")
+    #logger.info(f"distance in triplet: {distance}")
     loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
+    #logger.info(f"final loss per batch: {loss}")
     return loss
 
 
@@ -141,14 +142,13 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         #logger.info(f"reformulated input: {ret_input}")
         scores_positive, scores_negative = ret_model.score_documents(*ret_input) #todo: look here
 
-        logger.info(f"positive score: {scores_positive.shape}")
-        logger.info(f"positive score: {scores_positive}")
+        #logger.info(f"positive score: {scores_positive.shape}")
+        #logger.info(f"positive score: {scores_positive}")
 
         # Triplet loss
         batch_loss = triplet_loss(scores_positive, scores_negative)
         optimizer.zero_grad()
         batch_loss.backward()
-        logger.info(f"batchloss: {batch_loss}")
 
         torch.nn.utils.clip_grad_norm(ret_model.get_trainable_parameters(),
                                       2.0)
@@ -159,10 +159,11 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
             pdb.set_trace()
 
         if idx % 25 == 0 and idx > 0:
-            logger.info('Epoch = {} | iter={}/{} | para loss = {:2.4f}'.format(
+            logger.info('Epoch = {} | iter={}/{} | para loss = {:2.4f} | loss for current batch = {:2.4f}'.format(
                 stats['epoch'],
                 idx + stats['chunk']*len(train_loader), len(train_loader)*args.num_training_files,
-                para_loss.avg))
+                para_loss.avg,
+                batch_loss))
             para_loss.reset()
 
 

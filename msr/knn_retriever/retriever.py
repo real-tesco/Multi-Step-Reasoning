@@ -151,9 +151,9 @@ class DocumentTransformer(nn.Module):
 
     def forward(self, document):
         doc = self.linear_layer(document)
-        logger.info(f"doc before norm: {doc}")
+        #logger.info(f"doc before norm: {doc}")
         doc = nn.functional.normalize(doc, p=2, dim=1)
-        logger.info(f"doc after norm: {doc}")
+        #logger.info(f"doc after norm: {doc}")
         return doc
 
 
