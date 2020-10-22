@@ -25,11 +25,11 @@ stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 
 def triplet_loss(dist_positive, dist_negative, margin=0.3):
-    #d = torch.nn.PairwiseDistance(p=2)
+    # d = torch.nn.PairwiseDistance(p=2)
 
     distance = dist_positive - dist_negative + margin
-    #logger.info(f"distance in triplet: {distance.shape}")
-    #logger.info(f"distance in triplet: {distance}")
+    # logger.info(f"distance in triplet: {distance.shape}")
+    # logger.info(f"distance in triplet: {distance}")
     loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
     logger.info(f"final loss per batch: {loss}")
     return loss
@@ -43,14 +43,13 @@ def make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=Fa
         batch_size=args.batch_size,
         sampler=sampler,
         num_workers=args.data_workers,
-        collate_fn=utils.batchify(args, train_time=train_time), #TODO: write batch function for dataloader
+        collate_fn=utils.batchify(args, train_time=train_time),  # TODO: write batch function for dataloader
         pin_memory=True
     )
     return loader
 
 
 def save(args, model, optimizer, filename, epoch=None):
-
     params = {'state_dict': {
         'd_transformer': model.document_transformer.state_dict(),
         'q_transformer': model.query_transformer.state_dict(),
@@ -65,10 +64,9 @@ def save(args, model, optimizer, filename, epoch=None):
 
 
 def init_from_checkpoint(args):
-
     logger.info('Loading model from saved checkpoint {}'.format(args.pretrained))
     checkpoint = torch.load(args.pretrained)
-    #args = checkpoint['args']
+    # args = checkpoint['args']
     args.state_dict = checkpoint['state_dict']
     ret = KnnIndex(args)
 
@@ -125,10 +123,9 @@ def load_qrels(path_to_qrels):
     return qrel
 
 
-#TODO: look here
+# TODO: look here
 def train_binary_classification(args, ret_model, optimizer, train_loader):
-
-    #args.train_time = True
+    # args.train_time = True
     para_loss = utils.AverageMeter()
     ret_model.query_transformer.train()
     ret_model.document_transformer.train()
@@ -139,11 +136,11 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:3]]
         ret_input = [*inputs[:]]
-        #logger.info(f"reformulated input: {ret_input}")
-        scores_positive, scores_negative = ret_model.score_documents(*ret_input) #todo: look here
+        # logger.info(f"reformulated input: {ret_input}")
+        scores_positive, scores_negative = ret_model.score_documents(*ret_input)  # todo: look here
 
-        #logger.info(f"positive score: {scores_positive.shape}")
-        #logger.info(f"positive score: {scores_positive}")
+        # logger.info(f"positive score: {scores_positive.shape}")
+        # logger.info(f"positive score: {scores_positive}")
 
         # Triplet loss
         batch_loss = triplet_loss(scores_positive, scores_negative)
@@ -161,18 +158,23 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
             pdb.set_trace()
 
         if idx % 25 == 0 and idx > 0:
-            #| para loss = {:2.4f}
-            logger.info('Epoch = {} | iter={}/{} | loss for current batch = {:2.4f}'.format(
+            # | para loss = {:2.4f}
+            logger.info('__________________________________________________________ \n'
+                        'Epoch = {} | iter={}/{} | loss for current batch = {:2.4f}\n'
+                        'Positive Scores = {} \n'
+                        'Negative Scores = {} \n'
+                        '__________________________________________________________'.format(
                 stats['epoch'],
-                idx + stats['chunk']*len(train_loader), len(train_loader)*args.num_training_files,
-                #para_loss.avg,
+                idx + stats['chunk'] * len(train_loader), len(train_loader) * args.num_training_files,
+                # para_loss.avg,
+                torch.sum(scores_positive),
+                torch.sum(scores_negative),
                 batch_loss))
             para_loss.reset()
 
 
 def main(args):
-
-    #load data from files
+    # load data from files
     logger.info('Starting load data...')
     logger.info(f'using cuda: {args.cuda}')
 
@@ -190,7 +192,7 @@ def main(args):
     logger.info("Starting training...")
     for epoch in range(0, args.epochs):
         stats['epoch'] = epoch
-        #need to load the training data in chunks since its too big
+        # need to load the training data in chunks since its too big
         for i in range(0, args.num_training_files):
             logger.info("Load current chunk of training data...")
             triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
@@ -224,10 +226,13 @@ if __name__ == '__main__':
     parser.add_argument('-query_file', type=str, default='train.msmarco_queries_normed.npy', help='name of query file')
     parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy', help='name of qid file')
     parser.add_argument('-qrels_file', type=str, default='qrels.train.tsv', help='name of qrels file')
-    parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json', help='name of passage to doc file')
+    parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json',
+                        help='name of passage to doc file')
     parser.add_argument('-pid_folder', type=str, default='msmarco_passage_encodings/', help='name of pids file')
-    parser.add_argument('-passage_folder', type=str, default='msmarco_passage_encodings/', help='name of folder with msmarco passage embeddings')
-    parser.add_argument('-triples_file', type=str, default='train.triples_msmarco.npy', help='name of triples file with training data')
+    parser.add_argument('-passage_folder', type=str, default='msmarco_passage_encodings/',
+                        help='name of folder with msmarco passage embeddings')
+    parser.add_argument('-triples_file', type=str, default='train.triples_msmarco.npy',
+                        help='name of triples file with training data')
     parser.add_argument('-triple_ids_file', type=str, default='train.triples.idx_msmarco.npy')
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
