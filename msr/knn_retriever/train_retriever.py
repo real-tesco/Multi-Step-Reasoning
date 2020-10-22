@@ -163,43 +163,6 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
             para_loss.reset()
 
 
-#TODO: implement eval, dev data already on server
-def eval_binary_classification(args, ret_model, corpus, dev_loader):
-    total_exs = 0
-    args.train_time = False
-    ret_model.document_transformer.eval()
-    ret_model.query_transformer.eval()
-    accuracy = 0.0
-    for idx, ex in enumerate(dev_loader):
-        if ex is None:
-            raise BrokenPipeError
-
-        inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
-                  for e in ex[:]]
-        ret_input = [*inputs[:2]]
-        total_exs += ex[0].size(0)
-
-        scores, _, _ = ret_model.score_documents(*ret_input)    #how to eval???
-
-        scores = F.sigmoid(scores)
-        y_num_occurrences = Variable(ex[-2])
-        labels = (y_num_occurrences > 0).float()
-        labels = labels.data.numpy()
-        scores = scores.cpu().data.numpy()
-        scores = scores.reshape((-1))
-        if save_scores:
-            for i, pid in enumerate(ex[-1]):
-                corpus.paragraphs[pid].model_score = scores[i]
-
-        scores = scores > 0.5
-        a = scores == labels
-        accuracy += a.sum()
-
-    logger.info('Eval accuracy = {} '.format(accuracy/total_exs))
-    top1 = get_topk(corpus)
-    return top1
-
-
 def main(args):
 
     #load data from files
@@ -227,7 +190,7 @@ def main(args):
             triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
 
             stats['chunk'] = i
-            training_loader = make_dataloader(pid2docid, triples, triple_ids, train_time=True)
+            training_loader = make_dataloader(None, None, pid2docid, triples, triple_ids, train_time=True)
 
             train_binary_classification(args, retriever_model, optimizer, training_loader)
 
