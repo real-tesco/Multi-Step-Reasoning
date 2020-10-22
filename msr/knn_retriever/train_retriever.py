@@ -31,7 +31,7 @@ def triplet_loss(dist_positive, dist_negative, margin=0.3):
     #logger.info(f"distance in triplet: {distance.shape}")
     #logger.info(f"distance in triplet: {distance}")
     loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
-    #logger.info(f"final loss per batch: {loss}")
+    logger.info(f"final loss per batch: {loss}")
     return loss
 
 
