@@ -149,6 +149,8 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         batch_loss = triplet_loss(scores_positive, scores_negative)
         optimizer.zero_grad()
         batch_loss.backward()
+        logger.info(f"after backward: {batch_loss}")
+        logger.info(f"after backward data item: {batch_loss.data.item()}")
 
         torch.nn.utils.clip_grad_norm(ret_model.get_trainable_parameters(),
                                       2.0)
