@@ -32,8 +32,8 @@ def triplet_loss(dist_positive, dist_negative, margin=0.3):
     return loss
 
 
-def make_dataloader(pid2docid, triples, triple_ids, train_time=False):
-    dataset = MSMARCO(pid2docid, triples, triple_ids, train_time=train_time)
+def make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=False, dev_time=False):
+    dataset = MSMARCO(queries, qids, pid2docid, triples, triple_ids, train_time=train_time, dev_time=dev_time)
     sampler = SequentialSampler(dataset) if not train_time else RandomSampler(dataset)
     loader = torch.utils.data.DataLoader(
         dataset,
@@ -123,7 +123,7 @@ def load_qrels(path_to_qrels):
 
 
 #TODO: look here
-def train_binary_classification(args, ret_model, optimizer, train_loader, verified_dev_loader=None):
+def train_binary_classification(args, ret_model, optimizer, train_loader):
 
     #args.train_time = True
     para_loss = utils.AverageMeter()
@@ -139,8 +139,8 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
         #logger.info(f"reformulated input: {ret_input}")
         scores_positive, scores_negative = ret_model.score_documents(*ret_input) #todo: look here
 
-        #logger.info(f"positive score: {scores_positive.shape}")
-        #logger.info(f"positive score: {scores_positive}")
+        logger.info(f"positive score: {scores_positive.shape}")
+        logger.info(f"positive score: {scores_positive}")
 
         # Triplet loss
         batch_loss = triplet_loss(scores_positive, scores_negative)
@@ -164,7 +164,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader, verifi
 
 
 #TODO: implement eval, dev data already on server
-def eval_binary_classification(args, ret_model, corpus, dev_loader, verified_dev_loader=None, save_scores = True):
+def eval_binary_classification(args, ret_model, corpus, dev_loader):
     total_exs = 0
     args.train_time = False
     ret_model.document_transformer.eval()
@@ -179,7 +179,7 @@ def eval_binary_classification(args, ret_model, corpus, dev_loader, verified_dev
         ret_input = [*inputs[:2]]
         total_exs += ex[0].size(0)
 
-        scores, _, _ = ret_model.score_documents(*ret_input)
+        scores, _, _ = ret_model.score_documents(*ret_input)    #how to eval???
 
         scores = F.sigmoid(scores)
         y_num_occurrences = Variable(ex[-2])
@@ -203,7 +203,7 @@ def eval_binary_classification(args, ret_model, corpus, dev_loader, verified_dev
 def main(args):
 
     #load data from files
-    logger.info('Starting...')
+    logger.info('Starting load data...')
     logger.info(f'using cuda: {args.cuda}')
 
     with open(args.pid2docid, 'r') as f:
@@ -222,31 +222,18 @@ def main(args):
         stats['epoch'] = epoch
         #need to load the training data in chunks since its too big
         for i in range(0, 2):#args.num_training_files):
-            logger
+            logger.info("Load current chunk of training data...")
             triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
             triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
 
             stats['chunk'] = i
             training_loader = make_dataloader(pid2docid, triples, triple_ids, train_time=True)
 
-            train_binary_classification(args, retriever_model, optimizer, training_loader, verified_dev_loader=None)
+            train_binary_classification(args, retriever_model, optimizer, training_loader)
 
-
-
-        #TODO:checkpointing
         logger.info('checkpointing  model at {}'.format(args.model_file))
-        ## check pointing ##
         save(args, retriever_model, optimizer, args.model_file + ".ckpt", epoch=stats['epoch'])
-        #TODO:eval
-        """logger.info("Evaluating on the full dev set....")
-        top1 = eval_binary_classification(args, retriever_model, all_dev_exs, dev_loader, verified_dev_loader=None)
-        if stats['best_acc'] < top1:
-            stats['best_acc'] = top1
-            logger.info('Best accuracy {}'.format(stats['best_acc']))
-            logger.info('Saving model at {}'.format(args.model_file))
-            save(args, ret_model.model, optimizer, args.model_file, epoch=stats['epoch'])
-        """
-
+    save(args, retriever_model, optimizer, args.model_file + ".max", epoch=stats['epoch'])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -284,7 +271,6 @@ if __name__ == '__main__':
     parser.add_argument('-model_file', type=str, default='knn_index', help='Model file to store checkpoint')
     parser.add_argument('-out_dir', type=str, default='', help='Model file to store checkpoint')
     parser.add_argument('-pretrained', type=str, default='', help='checkpoint file to load checkpoint')
-
 
     args = parser.parse_args()
 
