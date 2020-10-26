@@ -69,7 +69,7 @@ def init_from_checkpoint(args):
     # args = checkpoint['args']
     args.state_dict = checkpoint['state_dict']
     ret = KnnIndex(args)
-
+    logger.info(f"ARGS.TRAIN: {args.train}")
     optimizer = None
     parameters = ret.get_trainable_parameters()
     if args.optimizer == 'sgd':

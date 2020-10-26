@@ -21,8 +21,10 @@ class KnnIndex:
         if args.state_dict is not None:
             if 'q_transformer' in args.state_dict:
                 self.query_transformer.load_state_dict(args.state_dict['q_transformer'])
+                logger.info("Loaded Query Transformer state dict..")
             if 'd_transformer' in args.state_dict:
                 self.document_transformer.load_state_dict(args.state_dict['d_transformer'])
+                logger.info("Loaded Document Transformer state dict..")
             #self.query_transformer.eval()
         #self.init_optimizer()
 
