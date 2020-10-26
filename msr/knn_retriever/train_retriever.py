@@ -202,7 +202,7 @@ def build_index(args):
     logger.info('Initializing index with parameters:\n'
                 'Max_elements={}\n'
                 'ef_construction={}'
-                'M={}'.format(args.max_elems, args.egc, args.M))
+                'M={}'.format(args.max_elems, args.efc, args.M))
 
     for i in range(0, args.num_passage_files):
         current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_" + str(i) + ".npy")
@@ -305,7 +305,7 @@ if __name__ == '__main__':
     parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
     parser.add_argument('-model_file', type=str, default='knn_index', help='Model file to store checkpoint')
     parser.add_argument('-out_dir', type=str, default='', help='Model file to store checkpoint')
-    parser.add_argument('-pretrained', type=str, default='', help='checkpoint file to load checkpoint')
+    parser.add_argument('-pretrained', type=str, default='knn_index.max', help='checkpoint file to load checkpoint')
     parser.add_argument('-index', type=bool, default=True, help='create knn index with transformed passages')
     parser.add_argument('-hnsw_index', type=str, default='msmarco_knn_M_96_efc_300.bin',
                         help='create knn index with transformed passages')
