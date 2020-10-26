@@ -24,8 +24,11 @@ logger = logging.getLogger()
 global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
-def make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=False, dev_time=False):
-    dataset = MSMARCO(queries, qids, pid2docid, triples, triple_ids, train_time=train_time, dev_time=dev_time)
+
+def make_dataloader(queries, qids, pid2docid, triples, triple_ids, passages, pids, train_time=False, dev_time=False,
+                    index_time=False):
+    dataset = MSMARCO(queries, qids, pid2docid, triples, triple_ids, passages, pids, train_time=train_time,
+                      dev_time=dev_time, index_time=index_time)
     sampler = SequentialSampler(dataset) if not train_time else RandomSampler(dataset)
     loader = torch.utils.data.DataLoader(
         dataset,
@@ -201,15 +204,20 @@ def build_index(args):
         current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_" + str(i) + ".npy")
         current_index_file = os.path.join(args.passage_folder, "msmarco_indices_" + str(i) + ".npy")
         with open(current_passage_file, "rb") as f:
-            chunk = torch.from_numpy(np.load(f)).cuda()
-            logger.info("type of chunk: {}".format(chunk))
-            #if args.cuda:
-            #    chunk.cuda()
-            #    logger.info("type of chunk after cuda: {}".format(chunk))
+            chunk = np.load(f)
         with open(current_index_file, "rb") as f:
             indices = np.load(f)
-        passages = model.document_transformer.forward(chunk)
-        index.add_items(passages.cpu().detach().numpy(), indices)
+        index_loader = make_dataloader(None, None, None, None, None, chunk, indices, index_time=True)
+
+        for idx, ex in enumerate(index_loader):
+            if ex is None:
+                continue
+
+            inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
+                      for e in ex[:2]]
+            passages = model.document_transformer.forward(inputs[1])
+
+            index.add_items(passages.cpu().detach().numpy(), inputs[0])
         logger.info("Added {}/{} chunks...".format(i+1, args.num_passage_files))
     index_name = "msmarco_knn_M_{}_efc_{}.bin".format(args.M, args.efc)
     index.save_index(os.path.join(args.out_dir, index_name))
@@ -246,7 +254,8 @@ def main(args):
                 triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
 
                 stats['chunk'] = i
-                training_loader = make_dataloader(None, None, pid2docid, triples, triple_ids, train_time=True)
+                training_loader = make_dataloader(None, None, pid2docid, triples, triple_ids, None, None,
+                                                  train_time=True)
 
                 train_binary_classification(args, retriever_model, optimizer, training_loader)
 

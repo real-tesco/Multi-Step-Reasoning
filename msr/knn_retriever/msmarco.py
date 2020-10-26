@@ -6,13 +6,20 @@ import numpy as np
 #TODO: look here
 
 class MSMARCO(Dataset):
-    def __init__(self, queries, query_ids, pid2docid, triples, triple_ids, train_time=True, dev_time=False):
+    def __init__(self, queries, query_ids, pid2docid, triples, triple_ids, passages, pids, train_time=True,
+                 dev_time=False, index_time=False):
         self.train = train_time
         self.dev = dev_time
+        self.index = index_time
         self.pid2docid = pid2docid
         self.triples = triples
         self.triple_ids = triple_ids
         self.number_of_examples = len(triples)
+
+        if passages is not None:
+            self.passages = passages
+            self.pids = pids
+            self.number_of_passages = len(pids)
 
         if queries is not None:
             self.queries = queries
@@ -24,6 +31,8 @@ class MSMARCO(Dataset):
             return self.number_of_examples
         elif self.dev:
             return self.number_of_queries
+        elif self.index:
+            return self.number_of_passages
         else:
             return 0
 
@@ -32,8 +41,14 @@ class MSMARCO(Dataset):
             return self.vectorize_(self.triples[idx], self.triple_ids[idx])
         elif self.dev:
             return self.vectorize_query_(self.queries[idx], self.query_ids[idx])
+        elif self.index:
+            return self.vectorize_passage_(self.passages[idx], self.passage_ids[idx])
         else:
             return None
+
+    def vectorize_passage_(self, passage, pid):
+        passage = torch.FloatTensor(passage)
+        return pid, passage
 
     def vectorize_(self, curr_triple, triple_ids):
         assert len(curr_triple) == len(triple_ids) == 3
