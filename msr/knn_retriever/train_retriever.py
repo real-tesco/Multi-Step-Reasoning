@@ -170,10 +170,9 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
                         '__________________________________________________________'.format(
                 stats['epoch'],
                 idx + stats['chunk'] * len(train_loader), len(train_loader) * args.num_training_files,
-                # para_loss.avg,
+                batch_loss,
                 torch.sum(scores_positive),
-                torch.sum(scores_negative),
-                batch_loss))
+                torch.sum(scores_negative)))
             para_loss.reset()
 
 
