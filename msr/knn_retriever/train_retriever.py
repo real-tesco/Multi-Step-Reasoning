@@ -35,7 +35,7 @@ def make_dataloader(queries, qids, pid2docid, triples, triple_ids, passages, pid
         batch_size=args.batch_size,
         sampler=sampler,
         num_workers=args.data_workers,
-        collate_fn=utils.batchify(args, train_time=train_time),  # TODO: write batch function for dataloader
+        collate_fn=utils.batchify(args, train_time=train_time, index_time=index_time),  # TODO: write batch function for dataloader
         pin_memory=True
     )
     return loader
