@@ -43,7 +43,7 @@ class MSMARCO(Dataset):
         elif self.dev:
             return self.vectorize_query_(self.queries[idx], self.query_ids[idx])
         elif self.index:
-            return self.vectorize_passage_(self.passages[idx], self.passage_ids[idx])
+            return self.vectorize_passage_(self.passages[idx], self.pids[idx])
         else:
             return None
 
