@@ -143,16 +143,16 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
 
         # Triplet loss
         #batch_loss = triplet_loss(scores_positive, scores_negative))
-        loss = torch.nn.MarginRankingLoss(reduction='sum')
+        loss = torch.nn.MarginRankingLoss(margin=0.4, reduction='sum')
         target = torch.ones_like(scores_positive)
 
         batch_loss = loss(scores_positive, scores_negative, target)
-        logger.info(f"Loss before backward = {batch_loss.data.item()}")
-        logger.info(f"Loss before backward without item = {batch_loss}")
+        #logger.info(f"Loss before backward = {batch_loss.data.item()}")
+        #logger.info(f"Loss before backward without item = {batch_loss}")
         optimizer.zero_grad()
         batch_loss.backward()
-        logger.info(f"Loss after backward = {batch_loss.data.item()}")
-        logger.info(f"Loss after backward without item = {batch_loss}")
+        #logger.info(f"Loss after backward = {batch_loss.data.item()}")
+        #logger.info(f"Loss after backward without item = {batch_loss}")
         #logger.info(f"after backward: {batch_loss}")
         #logger.info(f"after backward data item: {batch_loss.data.item()}")
 
@@ -166,13 +166,14 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
 
         if idx % 25 == 0 and idx > 0:
             # | para loss = {:2.4f}
-            logger.info('Epoch = {} | iter={}/{} | loss for current batch = {:2.4f}\n'
+            logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f} | loss for current batch = {:2.4f}\n'
                         '__________________________________________________________ \n'
                         'Positive Scores = {} \n'
                         'Negative Scores = {} \n'
                         '__________________________________________________________'.format(
                 stats['epoch'],
                 idx + stats['chunk'] * len(train_loader), len(train_loader) * args.num_training_files,
+                para_loss.avg,
                 batch_loss,
                 torch.sum(scores_positive),
                 torch.sum(scores_negative)))

@@ -105,7 +105,7 @@ class KnnIndex:
         return KnnIndex(args)
 
     def score_documents(self, queries, positives, negatives):
-        #queries = self.query_transformer.forward(queries)
+        queries = self.query_transformer.forward(queries)
         positives = self.document_transformer.forward(positives)
         negatives = self.document_transformer.forward(negatives)
 
