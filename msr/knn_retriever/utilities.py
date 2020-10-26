@@ -47,7 +47,7 @@ def batchify_(args, batch, train_time, index_time):
         p = torch.FloatTensor(len(passages), len(passages[0]))
         for idx, passage in enumerate(passages):
             p[idx].copy_(passage)
-        return pids, p
+        return p, pids
 
 class Timer(object):
     """Computes elapsed time."""

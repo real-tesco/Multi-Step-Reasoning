@@ -214,10 +214,10 @@ def build_index(args):
                 continue
 
             inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
-                      for e in ex[:2]]
-            passages = model.document_transformer.forward(inputs[1])
+                      for e in ex[:1]]
+            passages = model.document_transformer.forward(inputs[0])
 
-            index.add_items(passages.cpu().detach().numpy(), inputs[0])
+            index.add_items(passages.cpu().detach().numpy(), ex[1])
         logger.info("Added {}/{} chunks...".format(i+1, args.num_passage_files))
     index_name = "msmarco_knn_M_{}_efc_{}.bin".format(args.M, args.efc)
     index.save_index(os.path.join(args.out_dir, index_name))
