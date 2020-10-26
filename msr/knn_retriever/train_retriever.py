@@ -253,7 +253,7 @@ def main(args):
         save(args, retriever_model, optimizer, args.model_file + ".max", epoch=stats['epoch'])
 
     retriever_model.document_transformer.eval()
-    #retriever_model.query_transformer.eval()
+    retriever_model.query_transformer.eval()
     args.model = retriever_model
     args.train = False
 
