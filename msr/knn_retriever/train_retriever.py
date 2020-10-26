@@ -24,17 +24,6 @@ logger = logging.getLogger()
 global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
-
-def triplet_loss(dist_positive, dist_negative, margin=0.4):
-    # d = torch.nn.PairwiseDistance(p=2)
-
-    distance = dist_positive - dist_negative + margin
-    # logger.info(f"distance in triplet: {distance.shape}")
-    # logger.info(f"distance in triplet: {distance}")
-    loss = torch.mean(torch.max(distance, torch.zeros_like(distance)))
-    return loss
-
-
 def make_dataloader(queries, qids, pid2docid, triples, triple_ids, train_time=False, dev_time=False):
     dataset = MSMARCO(queries, qids, pid2docid, triples, triple_ids, train_time=train_time, dev_time=dev_time)
     sampler = SequentialSampler(dataset) if not train_time else RandomSampler(dataset)
@@ -125,9 +114,8 @@ def load_qrels(path_to_qrels):
 
 # TODO: look here
 def train_binary_classification(args, ret_model, optimizer, train_loader):
-    # args.train_time = True
     para_loss = utils.AverageMeter()
-    #ret_model.query_transformer.train()
+    ret_model.query_transformer.train()
     ret_model.document_transformer.train()
     for idx, ex in enumerate(train_loader):
         if ex is None:
@@ -155,7 +143,6 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
             pdb.set_trace()
 
         if idx % 25 == 0 and idx > 0:
-            # | para loss = {:2.4f}
             logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f}\n'
                         '__________________________________________________________ \n'
                         'Positive Scores = {} \n'
@@ -172,21 +159,27 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
 def test_index(args):
     logger.info('Evaluate self-recall on first chunk...')
     index = args.hnsw_index
+    model = args.model
     current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_0.npy")
     current_index_file = os.path.join(args.passage_folder, "msmarco_indices_0.npy")
     with open(current_passage_file, "r") as f:
-        chunk = np.load(f)
+        chunk = torch.from_numpy(np.load(f))
+        if args.cuda:
+            chunk.cuda()
     with open(current_index_file, "r") as f:
         indices = np.load(f)
-    labels, distances = index.knn_query(chunk, k=1)
+    chunk = model.query_transformer.forward(chunk)
+    labels, distances = index.knn_query(chunk.cpu().detach().numpy(), k=1)
     logger.info("Recall for dataset: ", np.mean(labels.reshape(labels.shape[0]) == indices))
-
     logger.info("Evaluating recall for dev set...")
-    with open(args.dev_queries, "r") as f:
-        dev_queries = np.load(f)
-    with open(args.dev_qids, "r") as f:
+    with open(args.dev_queries, "rb") as f:
+        dev_queries = torch.from_numpy(np.load(f))
+        if args.cuda:
+            dev_queries.cuda()
+    with open(args.dev_qids, "rb") as f:
         dev_qids = np.load(f)
-    labels, distances = index.knn_query(dev_queries, k=100)
+    dev_queries = model.query_transformer.forward(dev_queries)
+    labels, distances = index.knn_query(dev_queries.cpu().detach().numpy(), k=100)
     with open(args.outfile, "w") as f:
         for qid in dev_qids:
             for idx, (label, distance) in enumerate(zip(labels, distances)):
