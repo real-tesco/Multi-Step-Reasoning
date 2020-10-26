@@ -109,14 +109,17 @@ class KnnIndex:
         positives = self.document_transformer.forward(positives)
         negatives = self.document_transformer.forward(negatives)
 
-        logger.info((queries[0] ** 2).sum())
-        logger.info((positives[0] ** 2).sum())
+        #logger.info((queries[0] ** 2).sum())
+        #logger.info((positives[0] ** 2).sum())
 
         scores_positive = queries * positives
         logger.info(scores_positive.shape)
         scores_positive = scores_positive.sum(dim=1)
         logger.info(scores_positive.shape)
         logger.info(scores_positive)
+        scores_positive1 = torch.matmul(queries, positives.t())
+        logger.info(scores_positive1.shape)
+        logger.info(scores_positive1)
 
         scores_negative = queries * negatives
         scores_negative = scores_negative.sum(dim=1)
