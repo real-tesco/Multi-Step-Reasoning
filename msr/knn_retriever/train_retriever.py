@@ -173,9 +173,9 @@ def test_index(args):
     logger.info("Recall for dataset: ", np.mean(labels.reshape(labels.shape[0]) == indices))
     logger.info("Evaluating recall for dev set...")
     with open(args.dev_queries, "rb") as f:
-        dev_queries = torch.from_numpy(np.load(f))
-        if args.cuda:
-            dev_queries.cuda()
+        dev_queries = torch.from_numpy(np.load(f)).cuda()
+        #if args.cuda:
+        #    dev_queries.cuda()
     with open(args.dev_qids, "rb") as f:
         dev_qids = np.load(f)
     dev_queries = model.query_transformer.forward(dev_queries)
@@ -190,22 +190,22 @@ def test_index(args):
 
 def build_index(args):
     model = args.model
-    index = hnswlib.Index(space=args.similarity, dim=args.dim)
-    index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
     logger.info('Initializing index with parameters:\n'
                 'Max_elements={}\n'
                 'ef_construction={}\n'
                 'M={}'.format(args.max_elems, args.efc, args.M))
+    index = hnswlib.Index(space=args.similarity, dim=args.dim)
+    index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
 
     for i in range(0, args.num_passage_files):
         current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_" + str(i) + ".npy")
         current_index_file = os.path.join(args.passage_folder, "msmarco_indices_" + str(i) + ".npy")
         with open(current_passage_file, "rb") as f:
-            chunk = torch.from_numpy(np.load(f))
+            chunk = torch.from_numpy(np.load(f)).cuda()
             logger.info("type of chunk: {}".format(chunk))
-            if args.cuda:
-                chunk.cuda()
-                logger.info("type of chunk after cuda: {}".format(chunk))
+            #if args.cuda:
+            #    chunk.cuda()
+            #    logger.info("type of chunk after cuda: {}".format(chunk))
         with open(current_index_file, "rb") as f:
             indices = np.load(f)
         passages = model.document_transformer.forward(chunk)
