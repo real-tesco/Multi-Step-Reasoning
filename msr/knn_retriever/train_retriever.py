@@ -252,7 +252,7 @@ def main(args):
 
                 train_binary_classification(args, retriever_model, optimizer, training_loader)
 
-            logger.info('checkpointing  model at {}'.format(args.model_file))
+            logger.info('checkpointing  model at {}.ckpt'.format(args.model_file))
             save(args, retriever_model, optimizer, args.model_file + ".ckpt", epoch=stats['epoch'])
         save(args, retriever_model, optimizer, args.model_file + ".max", epoch=stats['epoch'])
 
@@ -306,8 +306,8 @@ if __name__ == '__main__':
     parser.add_argument('-model_file', type=str, default='knn_index', help='Model file to store checkpoint')
     parser.add_argument('-out_dir', type=str, default='', help='Model file to store checkpoint')
     parser.add_argument('-pretrained', type=str, default='', help='checkpoint file to load checkpoint')
-    parser.add_argument('-index', type=bool, default=False, help='create knn index with transformed passages')
-    parser.add_argument('-index_file', type=bool, default='msmarco_knn_M_96_efc_300.bin',
+    parser.add_argument('-index', type=bool, default=True, help='create knn index with transformed passages')
+    parser.add_argument('-hnsw_index', type=str, default='msmarco_knn_M_96_efc_300.bin',
                         help='create knn index with transformed passages')
     parser.add_argument('-efc', type=int, default=300, help='efc parameter of hnswlib to create knn index')
     parser.add_argument('-M', type=int, default=96, help='M parameter of hnswlib to create knn index')
@@ -337,6 +337,7 @@ if __name__ == '__main__':
     args.dev_queries = os.path.join(args.base_dir, args.dev_queries)
     args.dev_qids = os.path.join(args.base_dir, args.dev_qids)
     args.out_file = os.path.join(args.out_dir, args.out_file)
+    args.hnsw_index = os.path.join(args.out_dir, args.hnsw_index)
 
     args.state_dict = None
     args.train = True

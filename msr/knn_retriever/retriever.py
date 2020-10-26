@@ -12,9 +12,6 @@ class KnnIndex:
     def __init__(self, args):
         self.args = args
         self.index = hnswlib.Index(space=args.similarity, dim=args.dim)
-        logger.info('Loading KNN index...')
-        if not args.train:
-            self.index.load_index(args.index_file)
         self.query_transformer = QueryTransformer(args)
         self.document_transformer = DocumentTransformer(args)
         if args.cuda:
@@ -43,6 +40,10 @@ class KnnIndex:
             if p.requires_grad:
                 params.append(p)
         return params
+
+    def load_index(self):
+        logger.info('Loading KNN index...')
+        self.index.load_index(self.args.index_file)
 
     #dont use optimizer in model, stick to external optimizer
     def init_optimizer(self):
