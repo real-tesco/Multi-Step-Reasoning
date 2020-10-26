@@ -202,8 +202,10 @@ def build_index(args):
         current_index_file = os.path.join(args.passage_folder, "msmarco_indices_" + str(i) + ".npy")
         with open(current_passage_file, "rb") as f:
             chunk = torch.from_numpy(np.load(f))
+            logger.info("type of chunk: {}".format(chunk))
             if args.cuda:
                 chunk.cuda()
+                logger.info("type of chunk after cuda: {}".format(chunk))
         with open(current_index_file, "rb") as f:
             indices = np.load(f)
         passages = model.document_transformer.forward(chunk)
