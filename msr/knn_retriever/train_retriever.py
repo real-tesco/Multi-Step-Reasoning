@@ -135,26 +135,15 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.cuda())
                   for e in ex[:3]]
         ret_input = [*inputs[:]]
-        # logger.info(f"reformulated input: {ret_input}")
+
         scores_positive, scores_negative = ret_model.score_documents(*ret_input)  # todo: look here
 
-        # logger.info(f"positive score: {scores_positive.shape}")
-        # logger.info(f"positive score: {scores_positive}")
-
-        # Triplet loss
-        #batch_loss = triplet_loss(scores_positive, scores_negative))
         loss = torch.nn.MarginRankingLoss(margin=0.4, reduction='sum')
         target = torch.ones_like(scores_positive)
 
         batch_loss = loss(scores_positive, scores_negative, target)
-        #logger.info(f"Loss before backward = {batch_loss.data.item()}")
-        #logger.info(f"Loss before backward without item = {batch_loss}")
         optimizer.zero_grad()
         batch_loss.backward()
-        #logger.info(f"Loss after backward = {batch_loss.data.item()}")
-        #logger.info(f"Loss after backward without item = {batch_loss}")
-        #logger.info(f"after backward: {batch_loss}")
-        #logger.info(f"after backward data item: {batch_loss.data.item()}")
 
         torch.nn.utils.clip_grad_norm(ret_model.get_trainable_parameters(),
                                       2.0)
@@ -166,7 +155,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
 
         if idx % 25 == 0 and idx > 0:
             # | para loss = {:2.4f}
-            logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f} | loss for current batch = {:2.4f}\n'
+            logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f}\n'
                         '__________________________________________________________ \n'
                         'Positive Scores = {} \n'
                         'Negative Scores = {} \n'
@@ -174,7 +163,6 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
                 stats['epoch'],
                 idx + stats['chunk'] * len(train_loader), len(train_loader) * args.num_training_files,
                 para_loss.avg,
-                batch_loss,
                 torch.sum(scores_positive),
                 torch.sum(scores_negative)))
             para_loss.reset()

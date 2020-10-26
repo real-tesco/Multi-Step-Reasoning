@@ -109,37 +109,12 @@ class KnnIndex:
         positives = self.document_transformer.forward(positives)
         negatives = self.document_transformer.forward(negatives)
 
-        logger.info((queries[0] ** 2).sum())
-        #logger.info((positives[0] ** 2).sum())
-
         scores_positive = queries * positives
-        #logger.info(scores_positive.shape)
         scores_positive = scores_positive.sum(dim=1)
-        #logger.info(scores_positive.shape)
-        #logger.info(scores_positive)
-        scores_positive1 = torch.matmul(queries, positives.t())
-        #logger.info(scores_positive1.shape)
-        #logger.info(scores_positive1)
 
         scores_negative = queries * negatives
         scores_negative = scores_negative.sum(dim=1)
 
-        '''
-        scores_positive = torch.matmul(queries, positives.t())
-        
-        p = torch.FloatTensor(queries.shape[0])
-        for idx, _ in enumerate(scores_positive.split(queries.shape[0], 0)):
-            p[idx].copy_(scores_positive[idx][idx])
-
-        negatives = self.document_transformer.forward(negatives)
-        scores_negative = torch.matmul(queries, negatives.t())
-        n = torch.FloatTensor(queries.shape[0])
-        for idx, _ in enumerate(scores_negative.split(queries.shape[0], 0)):
-            n[idx].copy_(scores_negative[idx][idx])
-        logger.info(p)
-        logger.info(p.requires_grad)
-        logger.info(n.requires_grad)
-        '''
         return scores_positive, scores_negative
 
     def get_passage(self, pid):
