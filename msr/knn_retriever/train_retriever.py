@@ -195,10 +195,6 @@ def test_index(args):
     logger.info("Done with evaluation, use trec_eval to evaluate run...")
 
 
-
-
-
-
 def build_index(args):
     model = args.model
     index = hnswlib.Index(space=args.similarity, dim=args.dim)
@@ -327,7 +323,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    args.index = os.path.join(args.base_dir, args.index)
+    #args.index = os.path.join(args.base_dir, args.index)
     args.query_file = os.path.join(args.base_dir, args.query_file)
     args.pid2docid = os.path.join(args.base_dir, args.pid2docid)
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
