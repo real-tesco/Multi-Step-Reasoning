@@ -313,8 +313,8 @@ if __name__ == '__main__':
     parser.add_argument('-efc', type=int, default=300, help='efc parameter of hnswlib to create knn index')
     parser.add_argument('-M', type=int, default=96, help='M parameter of hnswlib to create knn index')
     parser.add_argument('-max_elems', type=int, default=22292343, help='maximum number of elements in index')
-    parser.add_argument('-test', type=bool, default=True, help='test the index for self-recall and query recall')
-    parser.add_argument('-train', type=bool, default=True, help='train document transformer')
+    parser.add_argument('-test', type=str2bool, default=True, help='test the index for self-recall and query recall')
+    parser.add_argument('-train', type=str2bool, default=False, help='train document transformer')
     parser.add_argument('-dev_queries', type=str, default='dev.msmarco_queries_normedf32.npy',
                         help='dev query file .npy')
     parser.add_argument('-dev_qids', type=str, default='dev.msmarco_qids.npy', help='dev qids file .npy')
