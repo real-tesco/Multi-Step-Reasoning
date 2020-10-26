@@ -225,6 +225,7 @@ def main(args):
     # load data from files
     logger.info('Starting load data...')
     logger.info(f'using cuda: {args.cuda}')
+    logger.info(f'args train: {args.train}')
 
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
@@ -338,7 +339,7 @@ if __name__ == '__main__':
     args.dev_qids = os.path.join(args.base_dir, args.dev_qids)
     args.out_file = os.path.join(args.out_dir, args.out_file)
     args.hnsw_index = os.path.join(args.out_dir, args.hnsw_index)
-
+    logger.info(f"start: args train: {args.train}")
     args.state_dict = None
     #args.train = True
 
