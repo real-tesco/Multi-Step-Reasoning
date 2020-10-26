@@ -201,15 +201,15 @@ def build_index(args):
     index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
     logger.info('Initializing index with parameters:\n'
                 'Max_elements={}\n'
-                'ef_construction={}'
+                'ef_construction={}\n'
                 'M={}'.format(args.max_elems, args.efc, args.M))
 
     for i in range(0, args.num_passage_files):
         current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_" + str(i) + ".npy")
         current_index_file = os.path.join(args.passage_folder, "msmarco_indices_" + str(i) + ".npy")
-        with open(current_passage_file, "r") as f:
+        with open(current_passage_file, "rb") as f:
             chunk = np.load(f)
-        with open(current_index_file, "r") as f:
+        with open(current_index_file, "rb") as f:
             indices = np.load(f)
         passages = model.document_transformer.forward(chunk)
         index.add_items(passages, indices)
