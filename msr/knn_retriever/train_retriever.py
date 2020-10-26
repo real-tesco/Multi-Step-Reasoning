@@ -143,7 +143,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
 
         # Triplet loss
         #batch_loss = triplet_loss(scores_positive, scores_negative))
-        loss = torch.nn.MarginRankingLoss()
+        loss = torch.nn.MarginRankingLoss(reduction='sum')
         target = torch.ones_like(scores_positive)
 
         batch_loss = loss(scores_positive, scores_negative, target)
