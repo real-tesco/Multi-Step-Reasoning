@@ -110,7 +110,7 @@ class KnnIndex:
         positives = self.document_transformer.forward(positives)
 
         scores_positive = queries * positives
-        logger.infor(scores_positive.shape)
+        logger.info(scores_positive.shape)
         p = torch.FloatTensor(queries.shape[0])
         for idx, _ in enumerate(scores_positive.split(queries.shape[0], 0)):
             p[idx].copy_(scores_positive[idx][idx])
