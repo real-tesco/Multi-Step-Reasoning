@@ -147,9 +147,12 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         target = torch.ones_like(scores_positive)
 
         batch_loss = loss(scores_positive, scores_negative, target)
-        logger.info(f"Loss = {batch_loss}")
+        logger.info(f"Loss before backward = {batch_loss.data.item()}")
+        logger.info(f"Loss before backward without item = {batch_loss}")
         optimizer.zero_grad()
         batch_loss.backward()
+        logger.info(f"Loss after backward = {batch_loss.data.item()}")
+        logger.info(f"Loss after backward without item = {batch_loss}")
         #logger.info(f"after backward: {batch_loss}")
         #logger.info(f"after backward data item: {batch_loss.data.item()}")
 
