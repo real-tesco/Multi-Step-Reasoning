@@ -107,19 +107,23 @@ class KnnIndex:
     def score_documents(self, queries, positives, negatives):
         queries = self.query_transformer.forward(queries)
         positives = self.document_transformer.forward(positives)
+        negatives = self.document_transformer.forward(negatives)
+
         logger.info((queries[0] ** 2).sum())
         logger.info((positives[0] ** 2).sum())
 
         scores_positive = queries * positives
+        logger.info(scores_positive.shape)
         scores_positive = scores_positive.sum()
         logger.info(scores_positive.shape)
         logger.info(scores_positive)
 
-        scores_positive = torch.matmul(queries, positives.t())
-        #scores_positive = scores_positive.sum()
-        logger.info(scores_positive.shape)
-        logger.info(scores_positive)
+        scores_negative = queries * negatives
+        scores_negative = scores_negative.sum()
 
+        '''
+        scores_positive = torch.matmul(queries, positives.t())
+        
         p = torch.FloatTensor(queries.shape[0])
         for idx, _ in enumerate(scores_positive.split(queries.shape[0], 0)):
             p[idx].copy_(scores_positive[idx][idx])
@@ -132,7 +136,8 @@ class KnnIndex:
         logger.info(p)
         logger.info(p.requires_grad)
         logger.info(n.requires_grad)
-        return p, n
+        '''
+        return scores_positive, scores_negative
 
     def get_passage(self, pid):
         # check if works, else pid needs to be N dim np array
