@@ -12,6 +12,7 @@ import logging
 import json
 from torch.autograd import Variable
 import math
+import hnswlib
 
 
 def str2bool(v):
@@ -126,7 +127,7 @@ def load_qrels(path_to_qrels):
 def train_binary_classification(args, ret_model, optimizer, train_loader):
     # args.train_time = True
     para_loss = utils.AverageMeter()
-    ret_model.query_transformer.train()
+    #ret_model.query_transformer.train()
     ret_model.document_transformer.train()
     for idx, ex in enumerate(train_loader):
         if ex is None:
@@ -168,6 +169,62 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
             para_loss.reset()
 
 
+def test_index(args):
+    logger.info('Evaluate self-recall on first chunk...')
+    index = args.hnsw_index
+    current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_0.npy")
+    current_index_file = os.path.join(args.passage_folder, "msmarco_indices_0.npy")
+    with open(current_passage_file, "r") as f:
+        chunk = np.load(f)
+    with open(current_index_file, "r") as f:
+        indices = np.load(f)
+    labels, distances = index.knn_query(chunk, k=1)
+    logger.info("Recall for dataset: ", np.mean(labels.reshape(labels.shape[0]) == indices))
+
+    logger.info("Evaluating recall for dev set...")
+    with open(args.dev_queries, "r") as f:
+        dev_queries = np.load(f)
+    with open(args.dev_qids, "r") as f:
+        dev_qids = np.load(f)
+    labels, distances = index.knn_query(dev_queries, k=100)
+    with open(args.outfile, "w") as f:
+        for qid in dev_qids:
+            for idx, (label, distance) in enumerate(zip(labels, distances)):
+                docid = args.pid2docid_dict[label]
+                f.write("{} Q0 {} {} {} {}".format(qid, docid, idx, distance, f"M{args.M}EFC{args.efc}"))
+    logger.info("Done with evaluation, use trec_eval to evaluate run...")
+
+
+
+
+
+
+def build_index(args):
+    model = args.model
+    index = hnswlib.Index(space=args.similarity, dim=args.dim)
+    index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
+    logger.info('Initializing index with parameters:\n'
+                'Max_elements={}\n'
+                'ef_construction={}'
+                'M={}'.format(args.max_elems, args.egc, args.M))
+
+    for i in range(0, args.num_passage_files):
+        current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_" + str(i) + ".npy")
+        current_index_file = os.path.join(args.passage_folder, "msmarco_indices_" + str(i) + ".npy")
+        with open(current_passage_file, "r") as f:
+            chunk = np.load(f)
+        with open(current_index_file, "r") as f:
+            indices = np.load(f)
+        passages = model.document_transformer.forward(chunk)
+        index.add_items(passages, indices)
+        logger.info("Added {}/{} chunks...".format(i+1, args.num_passage_files))
+    index_name = "msmarco_knn_M_{}_efc_{}.bin".format(args.M, args.efc)
+    index.save_index(os.path.join(args.out_dir, index_name))
+    logger.info("Finished saving index with name: {}".format(index_name))
+    args.hnsw_index = index
+    return args
+
+
 def main(args):
     # load data from files
     logger.info('Starting load data...')
@@ -175,6 +232,7 @@ def main(args):
 
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
+        args.pid2docid_dict = pid2docid
 
     # initialize Model
     if args.checkpoint:
@@ -183,24 +241,34 @@ def main(args):
     else:
         logger.info('Initializing model from scratch...')
         retriever_model, optimizer = init_from_scratch(args)
+    if args.train:
+        logger.info("Starting training...")
+        for epoch in range(0, args.epochs):
+            stats['epoch'] = epoch
+            # need to load the training data in chunks since its too big
+            for i in range(0, args.num_training_files):
+                logger.info("Load current chunk of training data...")
+                triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
+                triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
 
-    logger.info("Starting training...")
-    for epoch in range(0, args.epochs):
-        stats['epoch'] = epoch
-        # need to load the training data in chunks since its too big
-        for i in range(0, args.num_training_files):
-            logger.info("Load current chunk of training data...")
-            triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
-            triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
+                stats['chunk'] = i
+                training_loader = make_dataloader(None, None, pid2docid, triples, triple_ids, train_time=True)
 
-            stats['chunk'] = i
-            training_loader = make_dataloader(None, None, pid2docid, triples, triple_ids, train_time=True)
+                train_binary_classification(args, retriever_model, optimizer, training_loader)
 
-            train_binary_classification(args, retriever_model, optimizer, training_loader)
+            logger.info('checkpointing  model at {}'.format(args.model_file))
+            save(args, retriever_model, optimizer, args.model_file + ".ckpt", epoch=stats['epoch'])
+        save(args, retriever_model, optimizer, args.model_file + ".max", epoch=stats['epoch'])
 
-        logger.info('checkpointing  model at {}'.format(args.model_file))
-        save(args, retriever_model, optimizer, args.model_file + ".ckpt", epoch=stats['epoch'])
-    save(args, retriever_model, optimizer, args.model_file + ".max", epoch=stats['epoch'])
+    retriever_model.document_transformer.eval()
+    #retriever_model.query_transformer.eval()
+    args.model = retriever_model
+    args.train = False
+
+    if args.index:
+        args = build_index(args)
+    if args.test:
+        test_index(args)
 
 
 if __name__ == '__main__':
@@ -216,8 +284,6 @@ if __name__ == '__main__':
     parser.add_argument('-epochs', type=int, default=30,
                         help='number of epochs to train the retriever')
     parser.add_argument('-base_dir', type=str, help='base directory of training/evaluation files')
-    parser.add_argument('-index', type=str, default='msmarco_knn_index_M_96_efc_300.bin',
-                        help='path to the hnswlib vector index')
     parser.add_argument('-query_file', type=str, default='train.msmarco_queries_normed.npy', help='name of query file')
     parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy', help='name of qid file')
     parser.add_argument('-qrels_file', type=str, default='qrels.train.tsv', help='name of qrels file')
@@ -226,6 +292,8 @@ if __name__ == '__main__':
     parser.add_argument('-pid_folder', type=str, default='msmarco_passage_encodings/', help='name of pids file')
     parser.add_argument('-passage_folder', type=str, default='msmarco_passage_encodings/',
                         help='name of folder with msmarco passage embeddings')
+    parser.add_argument('-num_passage_files', type=int, default=20,
+                        help='number of passage files and indices in folder')
     parser.add_argument('-triples_file', type=str, default='train.triples_msmarco.npy',
                         help='name of triples file with training data')
     parser.add_argument('-triple_ids_file', type=str, default='train.triples.idx_msmarco.npy')
@@ -242,6 +310,20 @@ if __name__ == '__main__':
     parser.add_argument('-model_file', type=str, default='knn_index', help='Model file to store checkpoint')
     parser.add_argument('-out_dir', type=str, default='', help='Model file to store checkpoint')
     parser.add_argument('-pretrained', type=str, default='', help='checkpoint file to load checkpoint')
+    parser.add_argument('-index', type=bool, default=False, help='create knn index with transformed passages')
+    parser.add_argument('-index_file', type=bool, default='msmarco_knn_M_96_efc_300.bin',
+                        help='create knn index with transformed passages')
+    parser.add_argument('-efc', type=int, default=300, help='efc parameter of hnswlib to create knn index')
+    parser.add_argument('-M', type=int, default=96, help='M parameter of hnswlib to create knn index')
+    parser.add_argument('-max_elems', type=int, default=22292343, help='maximum number of elements in index')
+    parser.add_argument('-test', type=bool, default=True, help='test the index for self-recall and query recall')
+    parser.add_argument('-train', type=bool, default=True, help='train document transformer')
+    parser.add_argument('-dev_queries', type=str, default='dev.msmarco_queries_normedf32.npy',
+                        help='dev query file .npy')
+    parser.add_argument('-dev_qids', type=str, default='dev.msmarco_qids.npy', help='dev qids file .npy')
+    parser.add_argument('-out_file', type=str, default='results.tsv',
+                        help='result file for the evaluation of the index')
+
 
     args = parser.parse_args()
 
@@ -256,6 +338,9 @@ if __name__ == '__main__':
     args.triple_ids_file = os.path.join(args.base_dir, args.triple_ids_file)
     args.training_folder = os.path.join(args.base_dir, args.training_folder)
     args.model_file = os.path.join(args.out_dir, args.model_file)
+    args.dev_queries = os.path.join(args.base_dir, args.dev_queries)
+    args.dev_qids = os.path.join(args.base_dir, args.dev_qids)
+    args.out_file = os.path.join(args.out_dir, args.out_file)
 
     args.state_dict = None
     args.train = True

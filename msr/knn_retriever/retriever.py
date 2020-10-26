@@ -14,7 +14,7 @@ class KnnIndex:
         self.index = hnswlib.Index(space=args.similarity, dim=args.dim)
         logger.info('Loading KNN index...')
         if not args.train:
-            self.index.load_index(args.index)
+            self.index.load_index(args.index_file)
         self.query_transformer = QueryTransformer(args)
         self.document_transformer = DocumentTransformer(args)
         if args.cuda:
@@ -105,7 +105,7 @@ class KnnIndex:
         return KnnIndex(args)
 
     def score_documents(self, queries, positives, negatives):
-        queries = self.query_transformer.forward(queries)
+        #queries = self.query_transformer.forward(queries)
         positives = self.document_transformer.forward(positives)
         negatives = self.document_transformer.forward(negatives)
 
