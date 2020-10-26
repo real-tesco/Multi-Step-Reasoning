@@ -340,7 +340,7 @@ if __name__ == '__main__':
     args.hnsw_index = os.path.join(args.out_dir, args.hnsw_index)
 
     args.state_dict = None
-    args.train = True
+    #args.train = True
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
