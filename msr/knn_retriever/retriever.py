@@ -105,7 +105,8 @@ class KnnIndex:
         return KnnIndex(args)
 
     def score_documents(self, queries, positives, negatives):
-        #queries = self.query_transformer.forward(queries)
+        queries = self.query_transformer.forward(queries)
+        logger.info((queries[0]**2).sum())
         positives = self.document_transformer.forward(positives)
 
         scores_positive = torch.matmul(queries, positives.t())
