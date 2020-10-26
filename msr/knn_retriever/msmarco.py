@@ -12,9 +12,10 @@ class MSMARCO(Dataset):
         self.dev = dev_time
         self.index = index_time
         self.pid2docid = pid2docid
-        self.triples = triples
-        self.triple_ids = triple_ids
-        self.number_of_examples = len(triples)
+        if triples is not None:
+            self.triples = triples
+            self.triple_ids = triple_ids
+            self.number_of_examples = len(triples)
 
         if passages is not None:
             self.passages = passages
