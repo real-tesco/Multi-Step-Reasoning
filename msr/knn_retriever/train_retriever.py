@@ -208,11 +208,13 @@ def build_index(args):
         current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_" + str(i) + ".npy")
         current_index_file = os.path.join(args.passage_folder, "msmarco_indices_" + str(i) + ".npy")
         with open(current_passage_file, "rb") as f:
-            chunk = np.load(f)
+            chunk = torch.from_numpy(np.load(f))
+            if args.cuda:
+                chunk.cuda()
         with open(current_index_file, "rb") as f:
             indices = np.load(f)
         passages = model.document_transformer.forward(chunk)
-        index.add_items(passages, indices)
+        index.add_items(passages.cpu().detach().numpy(), indices)
         logger.info("Added {}/{} chunks...".format(i+1, args.num_passage_files))
     index_name = "msmarco_knn_M_{}_efc_{}.bin".format(args.M, args.efc)
     index.save_index(os.path.join(args.out_dir, index_name))
