@@ -29,7 +29,7 @@ def make_dataloader(queries, qids, pid2docid, triples, triple_ids, passages, pid
                     index_time=False):
     dataset = MSMARCO(queries, qids, pid2docid, triples, triple_ids, passages, pids, train_time=train_time,
                       dev_time=dev_time, index_time=index_time)
-    sampler = SequentialSampler(dataset) if not train_time else RandomSampler(dataset)
+    sampler = SequentialSampler(dataset) if not train_time and not index_time else RandomSampler(dataset)
     loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
