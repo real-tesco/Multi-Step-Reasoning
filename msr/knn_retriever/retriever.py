@@ -11,7 +11,7 @@ logger = logging.getLogger()
 class KnnIndex:
     def __init__(self, args):
         self.args = args
-        self.index = hnswlib.Index(space=args.similarity, dim=args.dim)
+        self.index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
         self.query_transformer = QueryTransformer(args)
         self.document_transformer = DocumentTransformer(args)
         if args.cuda:
@@ -66,14 +66,12 @@ class KnnIndex:
                                self.args.optimizer)
 
     def save(self, filename):
-        state_dict = {'q_transformer': copy.copy(self.query_transformer.state_dict()),
-                      'd_transformer': copy.copy(self.document_transformer.state_dict())}
-        #for document
-
+        state_dict = {
+            'q_transformer': copy.copy(self.query_transformer.state_dict()),
+            'd_transformer': copy.copy(self.document_transformer.state_dict())}
         params = {
             'state_dict': state_dict,
-            'args': self.args,
-        }
+            'args': self.args}
         try:
             torch.save(params, filename)
             logger.info('Model saved at {}'.format(filename))
@@ -147,7 +145,7 @@ class KnnIndex:
 class DocumentTransformer(nn.Module):
     def __init__(self, args):
         super(DocumentTransformer, self).__init__()
-        self.linear_layer = nn.Linear(args.dim, args.dim)
+        self.linear_layer = nn.Linear(args.dim_input, args.dim_hidden)
 
     def forward(self, document):
         doc = self.linear_layer(document)
@@ -158,7 +156,7 @@ class DocumentTransformer(nn.Module):
 class QueryTransformer(nn.Module):
     def __init__(self, args):
         super(QueryTransformer, self).__init__()
-        self.linear_layer = nn.Linear(args.dim, args.dim)
+        self.linear_layer = nn.Linear(args.dim_input, args.dim_hidden)
 
     def forward(self, query):
         query = self.linear_layer(query)

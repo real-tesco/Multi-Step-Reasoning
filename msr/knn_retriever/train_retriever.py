@@ -5,6 +5,7 @@ import torch
 from msmarco import MSMARCO
 from retriever import KnnIndex
 import utilities as utils
+import retriever_config as config
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
 import torch.optim as optim
 import numpy as np
@@ -193,14 +194,21 @@ def test_index(args):
 
 def build_index(args):
     model = args.model
-    logger.info('Initializing index with parameters:\n'
-                'Max_elements={}\n'
-                'ef_construction={}\n'
-                'M={}'.format(args.max_elems, args.efc, args.M))
-    index = hnswlib.Index(space=args.similarity, dim=args.dim)
-    index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
+    index_name = os.path.join(args.out_dir, "msmarco_knn_M_{}_efc_{}.bin".format(args.M, args.efc))
+    if os.path.isfile(index_name):
+        index = hnswlib.load_index(index_name)
+        start = args.start_chunk
+    else:
+        logger.info('Initializing index with parameters:\n'
+                    'Max_elements={}\n'
+                    'ef_construction={}\n'
+                    'M={}\n'
+                    'dimension={}\n'.format(args.max_elems, args.efc, args.M, args.dim_hidden))
+        index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
+        index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
+        start = 0
 
-    for i in range(0, args.num_passage_files):
+    for i in range(start, args.num_passage_files):
         current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_" + str(i) + ".npy")
         current_index_file = os.path.join(args.passage_folder, "msmarco_indices_" + str(i) + ".npy")
         with open(current_passage_file, "rb") as f:
@@ -219,8 +227,8 @@ def build_index(args):
 
             index.add_items(passages.cpu().detach().numpy(), ex[1])
         logger.info("Added {}/{} chunks...".format(i+1, args.num_passage_files))
-    index_name = "msmarco_knn_M_{}_efc_{}.bin".format(args.M, args.efc)
-    index.save_index(os.path.join(args.out_dir, index_name))
+        index.save_index(index_name)
+
     logger.info("Finished saving index with name: {}".format(index_name))
     args.hnsw_index = index
     return args
@@ -252,11 +260,9 @@ def main(args):
                 logger.info("Load current chunk of training data...")
                 triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
                 triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
-
                 stats['chunk'] = i
                 training_loader = make_dataloader(None, None, pid2docid, triples, triple_ids, None, None,
                                                   train_time=True)
-
                 train_binary_classification(args, retriever_model, optimizer, training_loader)
 
             logger.info('checkpointing  model at {}.ckpt'.format(args.model_file))
@@ -275,13 +281,15 @@ def main(args):
 
 
 if __name__ == '__main__':
+    '''
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
 
     parser.add_argument('-similarity', type=str, default='ip', choices=['cosine', 'l2', 'ip'],
                         help='similarity score to use when knn index is chosen')
-    parser.add_argument('-dim', type=int, default=768,
-                        help='dimension of the embeddings for knn index')
+    parser.add_argument('-dim_input', type=int, default=768, help="dimension of the embeddings for knn index")
+    parser.add_argument('-dim_hidden', type=int, default=300,
+                        help='hidden dimension of paragraphs, used for knn index.')
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
     parser.add_argument('-epochs', type=int, default=30,
@@ -327,10 +335,9 @@ if __name__ == '__main__':
     parser.add_argument('-out_file', type=str, default='results.tsv',
                         help='result file for the evaluation of the index')
 
-
     args = parser.parse_args()
 
-    #args.index = os.path.join(args.base_dir, args.index)
+    args.hnsw_index = os.path.join(args.base_dir, args.hnsw_index)
     args.query_file = os.path.join(args.base_dir, args.query_file)
     args.pid2docid = os.path.join(args.base_dir, args.pid2docid)
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
@@ -348,6 +355,8 @@ if __name__ == '__main__':
     logger.info(f"start: args train: {args.train}")
     args.state_dict = None
     #args.train = True
+    '''
+    args = config.get_args()
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
