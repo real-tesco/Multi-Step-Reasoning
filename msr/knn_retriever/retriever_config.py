@@ -21,7 +21,7 @@ def get_args():
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
     parser.add_argument('-pretrained', type=str, default='knn_index.max', help='checkpoint file to load checkpoint')
-    parser.add_argument('-checkpoint', type=bool, default=False, help='Wether to use a checkpoint or not')
+    parser.add_argument('-checkpoint', type='bool', default=False, help='Wether to use a checkpoint or not')
     parser.add_argument('-model_name', type=str, default='knn_index', help='Model name to load from/save as checkpoint')
     # training options
     parser.add_argument('-epochs', type=int, default=30,
@@ -64,9 +64,9 @@ def get_args():
     parser.add_argument('-start_chunk', type=int,
                         help='chunk to start indexing with, useful if index construction failed midway')
     # run options
-    parser.add_argument('-test', type=str2bool, default=True, help='test the index for self-recall and query recall')
-    parser.add_argument('-train', type=str2bool, default=True, help='train document transformer')
-    parser.add_argument('-index', type=bool, default=True, help='create knn index with transformed passages')
+    parser.add_argument('-test', type='bool', default=True, help='test the index for self-recall and query recall')
+    parser.add_argument('-train', type='bool', default=True, help='train document transformer')
+    parser.add_argument('-index', type='bool', default=True, help='create knn index with transformed passages')
 
     parser.add_argument('-dev_queries', type=str, default='dev.msmarco_queries_normedf32.npy',
                         help='dev query file .npy')
