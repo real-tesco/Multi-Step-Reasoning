@@ -164,8 +164,9 @@ def test_index(args):
 
     index = args.hnsw_index
     if type(args.hnsw_index) == str:
-        logger.info("Ioad index")
+        logger.info("Load index")
         index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
+        logger.info(args.hnsw_lib)
         index = index.load_index(args.hnsw_index)
     logger.info('Evaluate self-recall on first chunk...')
     model = args.model
