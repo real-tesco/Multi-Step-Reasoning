@@ -163,8 +163,9 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
 def test_index(args):
     logger.info('Evaluate self-recall on first chunk...')
     index = args.hnsw_index
-    if type(index) == str:
-        index = hnswlib.load_index(index)
+    if type(args.hnsw_index) == str:
+        index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
+        index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
     model = args.model
     current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_0.npy")
     current_index_file = os.path.join(args.passage_folder, "msmarco_indices_0.npy")
