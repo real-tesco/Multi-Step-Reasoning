@@ -167,9 +167,7 @@ def test_index(args):
     current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_0.npy")
     current_index_file = os.path.join(args.passage_folder, "msmarco_indices_0.npy")
     with open(current_passage_file, "rb") as f:
-        chunk = torch.from_numpy(np.load(f))
-        if args.cuda:
-            chunk.cuda()
+        chunk = torch.from_numpy(np.load(f)).cuda()
     with open(current_index_file, "rb") as f:
         indices = np.load(f)
     chunk = model.query_transformer.forward(chunk)
