@@ -77,7 +77,6 @@ def get_args():
 
     args = parser.parse_args()
 
-    args.hnsw_index = os.path.join(args.base_dir, args.hnsw_index)
     args.query_file = os.path.join(args.base_dir, args.query_file)
     args.pid2docid = os.path.join(args.base_dir, args.pid2docid)
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
