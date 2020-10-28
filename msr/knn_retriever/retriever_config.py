@@ -52,6 +52,7 @@ def get_args():
     parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
     parser.add_argument('-model_file', type=str, default='knn_index', help='Model file to store checkpoint')
     parser.add_argument('-out_dir', type=str, default='', help='Model file to store checkpoint')
+    parser.add_argument('-trec_eval', type=str, default='', help='path to the trec eval file')
 
     # Index options
     parser.add_argument('-efc', type=int, default=300, help='efc parameter of hnswlib to create knn index')

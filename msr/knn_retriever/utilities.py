@@ -1,6 +1,10 @@
 import torch
 import time
 import logging
+import subprocess
+import shlex
+import sys
+import os
 
 logger = logging.getLogger()
 
@@ -98,3 +102,28 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+
+def evaluate_run_with_trec_eval(qrels, prediction, path_to_trec_eval):
+    cmd = os.path.join(path_to_trec_eval, f"trec_eval {qrels} {prediction} -m map -m recip_rank -m ndcg")
+    pargs = shlex.split(cmd)
+    p = subprocess.Popen(pargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pout, perr = p.communicate()
+    print("running {}".format(cmd))
+    if perr != '':
+        print("error occured! : {}".format(perr))
+    if sys.version_info[0] < 3:
+        lines = pout.split('\n')
+    else:
+        lines = pout.split(b'\n')
+    MAP = float(lines[0].strip().split()[-1])
+    MRR = float(lines[1].strip().split()[-1])
+    ndcg = float(lines[2].strip().split()[-1])
+
+    logger.info(f"MAP: {MAP}")
+    logger.info(f"MRR: {MRR}")
+    logger.info(f"MRR: {ndcg}")
+    print(f"MAP: {MAP}")
+    print(f"MRR: {MRR}")
+    print(f"MRR: {ndcg}")
+    return MAP, MRR, ndcg
