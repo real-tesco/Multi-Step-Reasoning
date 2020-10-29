@@ -233,7 +233,7 @@ def build_index(args):
 
             index.add_items(passages.cpu().detach().numpy(), ex[1])
         logger.info("Added {}/{} chunks...".format(i+1, args.num_passage_files))
-        index.save_index(index_name)
+    index.save_index(index_name)
 
     logger.info("Finished saving index with name: {}".format(index_name))
     #args.hnsw_index = index
