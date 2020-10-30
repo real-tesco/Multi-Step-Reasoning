@@ -188,11 +188,13 @@ def test_index(args):
     with open(args.out_file, "w") as f:
         for idx, qid in enumerate(dev_qids):
             ranked_docids = []
+            current_rank = 1
             for idy, (label, distance) in enumerate(zip(labels[idx], distances[idx])):
                 docid = args.pid2docid_dict[str(label)]
                 if docid in ranked_docids:
                     continue
-                f.write("{} Q0 {} {} {} {}\n".format(qid, docid, idy+1, 1.0-distance, args.hnsw_index))
+                f.write("{} Q0 {} {} {} {}\n".format(qid, docid, current_rank, 1.0-distance, args.hnsw_index))
+                current_rank += 1
                 ranked_docids.append(docid)
     logger.info("Done with evaluation, use trec_eval to evaluate run...")
     #_, _, _ = utils.evaluate_run_with_trec_eval(args.qrels_file, args.out_file, args.trec_eval)
