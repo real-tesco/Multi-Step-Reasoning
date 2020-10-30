@@ -177,7 +177,7 @@ def test_index(args):
         indices = np.load(f)
     chunk = model.query_transformer.forward(chunk)
     labels, distances = index.knn_query(chunk.cpu().detach().numpy(), k=1)
-    logger.info("Recall for dataset: ", np.mean(labels.reshape(labels.shape[0]) == indices))
+    logger.info("Recall for dataset: {}".format(np.mean(labels.reshape(labels.shape[0]) == indices)))
     logger.info("Evaluating recall for dev set...")
     with open(args.dev_queries, "rb") as f:
         dev_queries = torch.from_numpy(np.load(f)).cuda()
@@ -185,7 +185,7 @@ def test_index(args):
         dev_qids = np.load(f)
     dev_queries = model.query_transformer.forward(dev_queries)
     labels, distances = index.knn_query(dev_queries.cpu().detach().numpy(), k=100)
-    with open(args.outfile, "w") as f:
+    with open(args.out_file, "w") as f:
         for idx, qid in enumerate(dev_qids):
             ranked_docids = []
             for idy, (label, distance) in enumerate(zip(labels[idx], distances[idx])):
@@ -195,7 +195,7 @@ def test_index(args):
                 f.write("{} Q0 {} {} {} {}".format(qid, docid, idy, distance, f"M{args.M}EFC{args.efc}"))
                 ranked_docids.append(docid)
     logger.info("Done with evaluation, use trec_eval to evaluate run...")
-    _, _, _ = utils.evaluate_run_with_trec_eval(args.qrels_file, args.outfile, args.trec_eval)
+    _, _, _ = utils.evaluate_run_with_trec_eval(args.qrels_file, args.out_file, args.trec_eval)
 
 
 def build_index(args):
