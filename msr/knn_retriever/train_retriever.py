@@ -295,5 +295,5 @@ if __name__ == '__main__':
     console = logging.StreamHandler()
     console.setFormatter(fmt)
     logger.addHandler(console)
-
+    logger.info(f"path after join: {args.trec_eval}")
     main(args)
