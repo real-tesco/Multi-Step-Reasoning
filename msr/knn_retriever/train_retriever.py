@@ -165,7 +165,7 @@ def test_index(args):
     logger.info("Load index")
     index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
     logger.info(args.hnsw_index)
-    index = index.load_index(args.hnsw_index)
+    index.load_index(args.hnsw_index)
 
     logger.info('Evaluate self-recall on first chunk...')
     model = args.model
