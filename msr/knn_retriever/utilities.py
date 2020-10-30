@@ -105,7 +105,7 @@ class AverageMeter(object):
 
 
 def evaluate_run_with_trec_eval(qrels, prediction, path_to_trec_eval):
-    cmd = os.path.join(path_to_trec_eval, f" {qrels} {prediction} -m map -m recip_rank -m ndcg")
+    cmd = os.path.join(path_to_trec_eval, f" trec_eval {qrels} {prediction} -m map -m recip_rank -m ndcg")
     pargs = shlex.split(cmd)
     p = subprocess.Popen(pargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     pout, perr = p.communicate()

@@ -92,6 +92,6 @@ def get_args():
     args.dev_qids = os.path.join(args.base_dir, args.dev_qids)
     args.out_file = os.path.join(args.out_dir, args.out_file)
     args.hnsw_index = os.path.join(args.out_dir, args.hnsw_index)
-    args.trec_eval = os.path.join(args.base_dir, args.trec_eval, "trec_eval")
+    args.trec_eval = os.path.join(args.base_dir, args.trec_eval)
     args.state_dict = None
     return args
