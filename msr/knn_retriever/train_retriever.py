@@ -189,7 +189,7 @@ def test_index(args):
         for idx, qid in enumerate(dev_qids):
             ranked_docids = []
             for idy, (label, distance) in enumerate(zip(labels[idx], distances[idx])):
-                docid = args.pid2docid_dict[label]
+                docid = args.pid2docid_dict[str(label)]
                 if docid in ranked_docids:
                     continue
                 f.write("{} Q0 {} {} {} {}".format(qid, docid, idy, distance, f"M{args.M}EFC{args.efc}"))
