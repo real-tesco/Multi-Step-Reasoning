@@ -63,7 +63,7 @@ def get_args():
                         help='similarity score to use when knn index is chosen')
     parser.add_argument('-hnsw_index', type=str, default='msmarco_knn_M_96_efc_300.bin',
                         help='create knn index with transformed passages')
-    parser.add_argument('-start_chunk', type=int,
+    parser.add_argument('-start_chunk', type=int, default=0,
                         help='chunk to start indexing with, useful if index construction failed midway')
     # run options
     parser.add_argument('-test', type='bool', default=True, help='test the index for self-recall and query recall')
