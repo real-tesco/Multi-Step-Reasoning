@@ -253,6 +253,7 @@ def main(args):
     logger.info('Starting load data...')
     logger.info(f'using cuda: {args.cuda}')
     logger.info(f'args train: {args.train}')
+    logger.info(f"args num passage file {args.num_passage_files}")
 
     with open(args.pid2docid, 'r') as f:
         pid2docid = json.load(f)
