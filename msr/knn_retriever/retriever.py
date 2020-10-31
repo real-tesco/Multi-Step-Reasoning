@@ -110,6 +110,8 @@ class KnnIndex:
         positives = self.document_transformer.forward(positives)
         negatives = self.document_transformer.forward(negatives)
 
+        '''
+        # Old calculation, now try to input queries and positives/negatives into Triplet Loss
         scores_positive = queries * positives
         scores_positive = scores_positive.sum(dim=1)
 
@@ -117,6 +119,9 @@ class KnnIndex:
         scores_negative = scores_negative.sum(dim=1)
 
         return scores_positive, scores_negative
+        '''
+
+        return queries, positives, negatives
 
     def get_passage(self, pid):
         # check if works, else pid needs to be N dim np array

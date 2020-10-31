@@ -129,12 +129,17 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
                   for e in ex[:3]]
         ret_input = [*inputs[:]]
 
-        scores_positive, scores_negative = ret_model.score_documents(*ret_input)  # todo: look here
+        queries, positives, negatives = ret_model.score_documents(*ret_input)  # todo: look here
+        loss = torch.nn.TripletMarginLoss(margin=1.0, p=2, reduction='mean')
+        batch_loss = loss(queries, positives, negatives)
 
+        '''
+        # scores_positive, scores_negative = ret_model.score_documents(*ret_input)  # todo: look here
         loss = torch.nn.MarginRankingLoss(margin=0.4, reduction='sum')
         target = torch.ones_like(scores_positive)
 
         batch_loss = loss(scores_positive, scores_negative, target)
+        '''
         optimizer.zero_grad()
         batch_loss.backward()
 
