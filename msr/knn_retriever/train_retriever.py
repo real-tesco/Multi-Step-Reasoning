@@ -209,7 +209,8 @@ def build_index(args):
     model = args.model
     index_name = os.path.join(args.out_dir, "msmarco_knn_M_{}_efc_{}.bin".format(args.M, args.efc))
     if os.path.isfile(index_name):
-        index = hnswlib.load_index(index_name)
+        index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
+        index.load_index(index_name)
         start = args.start_chunk
     else:
         logger.info('Initializing index with parameters:\n'
