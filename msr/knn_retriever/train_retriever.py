@@ -221,7 +221,7 @@ def build_index(args):
         index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
         index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
         start = 0
-    for i in range(start, end):
+    for i in range(start, args.num_passage_files):
         current_passage_file = os.path.join(args.passage_folder, "msmarco_passages_normedf32_" + str(i) + ".npy")
         current_index_file = os.path.join(args.passage_folder, "msmarco_indices_" + str(i) + ".npy")
         with open(current_passage_file, "rb") as f:
