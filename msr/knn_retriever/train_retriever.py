@@ -132,6 +132,9 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         queries, positives, negatives = ret_model.score_documents(*ret_input)  # todo: look here
         loss = torch.nn.TripletMarginLoss(margin=1.0, p=2, reduction='mean')
         batch_loss = loss(queries, positives, negatives)
+        scores_positive = torch.sum(queries * positives, dim=1)
+        scores_negative = torch.sum(queries * negatives, dim=1)
+
 
         '''
         # scores_positive, scores_negative = ret_model.score_documents(*ret_input)  # todo: look here
@@ -180,10 +183,16 @@ def test_index(args):
         chunk = torch.from_numpy(np.load(f)).cuda()
     with open(current_index_file, "rb") as f:
         indices = np.load(f)
+    chunk = model.document_transformer.forward(chunk)
+    labels, distances = index.knn_query(chunk.cpu().detach().numpy(), k=1)
+    logger.info("Recall for dataset encoded with doc transformer: "
+                "{}".format(np.mean(labels.reshape(labels.shape[0]) == indices)))
     chunk = model.query_transformer.forward(chunk)
     labels, distances = index.knn_query(chunk.cpu().detach().numpy(), k=1)
-    logger.info("Recall for dataset: {}".format(np.mean(labels.reshape(labels.shape[0]) == indices)))
-    logger.info("Evaluating recall for dev set...")
+    logger.info("Recall for dataset encoded with query transformer: "
+                "{}".format(np.mean(labels.reshape(labels.shape[0]) == indices)))
+
+    logger.info("Evaluating trec metrics for dev set...")
     with open(args.dev_queries, "rb") as f:
         dev_queries = torch.from_numpy(np.load(f)).cuda()
     with open(args.dev_qids, "rb") as f:
@@ -209,6 +218,11 @@ def build_index(args):
     model = args.model
     index_name = os.path.join(args.out_dir, "msmarco_knn_M_{}_efc_{}.bin".format(args.M, args.efc))
     if os.path.isfile(index_name):
+        logger.info('Loading index with parameters: \n'
+                    'ef_construction={}\n'
+                    'M={}\n'
+                    'dimension={}'.format(args.M, args.efc, args.dim_hidden)
+                    )
         index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
         index.load_index(index_name)
         start = args.start_chunk
