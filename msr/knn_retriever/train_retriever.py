@@ -183,12 +183,12 @@ def test_index(args):
         chunk = torch.from_numpy(np.load(f)).cuda()
     with open(current_index_file, "rb") as f:
         indices = np.load(f)
-    chunk = model.document_transformer.forward(chunk)
-    labels, distances = index.knn_query(chunk.cpu().detach().numpy(), k=1)
+    d1 = model.document_transformer.forward(chunk)
+    labels, distances = index.knn_query(d1.cpu().detach().numpy(), k=1)
     logger.info("Recall for dataset encoded with doc transformer: "
                 "{}".format(np.mean(labels.reshape(labels.shape[0]) == indices)))
-    chunk = model.query_transformer.forward(chunk)
-    labels, distances = index.knn_query(chunk.cpu().detach().numpy(), k=1)
+    d2 = model.query_transformer.forward(chunk)
+    labels, distances = index.knn_query(d2.cpu().detach().numpy(), k=1)
     logger.info("Recall for dataset encoded with query transformer: "
                 "{}".format(np.mean(labels.reshape(labels.shape[0]) == indices)))
 
