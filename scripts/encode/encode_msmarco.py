@@ -208,3 +208,5 @@ if __name__ == '__main__':
         encode_passages(args)
     if args.encode_queries:
         encode_queries(args)
+    if args.to_numpy:
+        to_numpy(args)
