@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 
 import os
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
+try:
+    os.environ["JAVA_HOME"]
+except KeyError:
+    os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
 
 import argparse
 import csv
