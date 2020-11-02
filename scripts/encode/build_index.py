@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+#LEGACY
+
 from timeit import default_timer
 import io
 import os

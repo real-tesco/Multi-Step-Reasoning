@@ -8,6 +8,7 @@ import os
 
 logger = logging.getLogger()
 
+
 def batchify(args, train_time, index_time):
     return lambda x: batchify_(args, x, train_time, index_time)
 

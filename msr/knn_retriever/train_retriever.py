@@ -36,7 +36,8 @@ def make_dataloader(queries, qids, pid2docid, triples, triple_ids, passages, pid
         batch_size=args.batch_size,
         sampler=sampler,
         num_workers=args.data_workers,
-        collate_fn=utils.batchify(args, train_time=train_time, index_time=index_time),  # TODO: write batch function for dataloader
+        collate_fn=utils.batchify(args, train_time=train_time, index_time=index_time),
+        # TODO: write batch function for dataloader
         pin_memory=True
     )
     return loader
@@ -135,7 +136,6 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         scores_positive = torch.sum(queries * positives, dim=1)
         scores_negative = torch.sum(queries * negatives, dim=1)
 
-
         '''
         # scores_positive, scores_negative = ret_model.score_documents(*ret_input)  # todo: look here
         loss = torch.nn.MarginRankingLoss(margin=0.4, reduction='sum')
@@ -169,7 +169,6 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
 
 
 def test_index(args):
-
     logger.info("Load index")
     index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
     logger.info(args.hnsw_index)
@@ -207,11 +206,11 @@ def test_index(args):
                 docid = args.pid2docid_dict[str(label)]
                 if docid in ranked_docids:
                     continue
-                f.write("{} Q0 {} {} {} {}\n".format(qid, docid, current_rank, 1.0-distance, args.hnsw_index))
+                f.write("{} Q0 {} {} {} {}\n".format(qid, docid, current_rank, 1.0 - distance, args.hnsw_index))
                 current_rank += 1
                 ranked_docids.append(docid)
     logger.info("Done with evaluation, use trec_eval to evaluate run...")
-    #_, _, _ = utils.evaluate_run_with_trec_eval(args.qrels_file, args.out_file, args.trec_eval)
+    # _, _, _ = utils.evaluate_run_with_trec_eval(args.qrels_file, args.out_file, args.trec_eval)
 
 
 def build_index(args):
@@ -253,12 +252,12 @@ def build_index(args):
             passages = model.document_transformer.forward(inputs[0])
 
             index.add_items(passages.cpu().detach().numpy(), ex[1])
-        logger.info("Added {}/{} chunks...".format(i+1, args.num_passage_files))
+        logger.info("Added {}/{} chunks...".format(i + 1, args.num_passage_files))
     index.save_index(index_name)
 
     logger.info("Finished saving index with name: {}".format(index_name))
-    #args.hnsw_index = index
-    #return args
+    # args.hnsw_index = index
+    # return args
 
 
 def main(args):

@@ -138,8 +138,6 @@ if __name__ == '__main__':
     #Arguments = /home/brandt/Multistep_Query_Modelling/scripts/encode/encode_msmarco.py -model_dir /home/brandt/data/
     #models -base_dir /home/brandt/msmarco/ -end_chunk 1114 -limit 150 -max_seq_len 256 -encode_queries 1 -to_numpy 1
 
-
-
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
     parser.add_argument('-encode_queries', type='bool', default=False,
