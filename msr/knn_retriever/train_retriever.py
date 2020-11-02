@@ -130,7 +130,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         ret_input = [*inputs[:]]
 
         queries, positives, negatives = ret_model.score_documents(*ret_input)  # todo: look here
-        loss = torch.nn.TripletMarginLoss(margin=1.0, p=2, reduction='mean')
+        loss = torch.nn.TripletMarginLoss(margin=args.margin, p=2, reduction='mean')
         batch_loss = loss(queries, positives, negatives)
         scores_positive = torch.sum(queries * positives, dim=1)
         scores_negative = torch.sum(queries * negatives, dim=1)

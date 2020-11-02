@@ -9,6 +9,7 @@ import argparse
 import time
 import sys
 import numpy as np
+import sklearn.preprocessing as preprocessing
 
 from bert_serving.server.helper import get_args_parser
 from bert_serving.server import BertServer
@@ -21,24 +22,6 @@ def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
-def compress(tar_file, members):
-    """
-    Adds files (`members`) to a tar_file and compress it
-    """
-    # open file for gzip compressed writing
-    tar = tarfile.open(tar_file, mode="w:gz")
-    # with progress bar
-    # set the progress bar
-    progress = tqdm(members)
-    for member in progress:
-        # add file/folder/link to the tar file (compress)
-        tar.add(member)
-        # set the progress description of the progress bar
-        progress.set_description(f"Compressing {member}")
-    # close the file
-    tar.close()
-
-
 def encode_passages(args):
     chunks = []
     base_dir = args.base_dir
@@ -47,7 +30,6 @@ def encode_passages(args):
     limit = args.limit
     step_size = args.step_size
     bert_client = args.bert_client
-    zip_chunks = args.zip_chunks
     output = args.out_dir
     print('loaded args in encode_passages..')
 
@@ -60,10 +42,6 @@ def encode_passages(args):
 
             fname = base_dir + output + str(chunk_id) + '_encoded_passages_' + str(limit) + '.json'
 
-            # save encoded name in list for compressing later
-            if fname not in chunks:
-                chunks.append(fname)
-
             # check if file name already exists, skip
             if not os.path.isfile(fname):
                 passage_dict = dict()
@@ -72,53 +50,52 @@ def encode_passages(args):
                 pids = []
 
                 # load passages and pids, take time for monitoring
-                #start = default_timer()
                 for line in tqdm(corpus_in):
                     split = line.strip().split('\t')
                     passages.append(split[1])
                     pids.append(split[0])
-                #end = default_timer()
-                #length = len(passages) // 2
-                #print(f"Time for appending {chunk_id}-th chunk: {end - start}s")
-                #logger.info(f"Time for appending {chunk_id}-th chunk: {end - start}s")
+
                 start = default_timer()
                 encoded_passages = bert_client.encode(passages).tolist()
                 end = default_timer()
                 print(f"Time for encoding {chunk_id} current chunk: {end - start}s")
-                #logger.info(f"Time for encoding half of {chunk_id} current chunk: {end - start}s")
-                #encoded_passages2 = bert_client.encode(passages[length:]).tolist()
-                #start = default_timer()
-                #print(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
-                #logger.info(f"Time for encoding second half of {chunk_id} current chunk: {start - end}s")
-                #encoded_passages.extend(encoded_passages2)
-
                 # create passage dict to store in json
-                j = 0
-                for pid in tqdm(pids):
-                    passage_dict[pid] = encoded_passages[j]
-                    j += 1
-
+                for idx, pid in enumerate(tqdm(pids)):
+                    passage_dict[pid] = encoded_passages[idx]
                 with open(fname, 'w') as fp:
                     json.dump(passage_dict, fp)
-
-                # for monitoring
-                #fname = base_dir + 'last_odd_chunk.txt'
-                #with open(fname, 'w') as fp:
-                #    fp.write(str(chunk_id) + '\n')
             else:
                 print(f'chunk id {chunk_id} already encoded...')
                 #logger.info(f'chunk id {chunk_id} already encoded...')
-
-            if zip_chunks > 0:
-                if chunk_id != 0 and len(chunks) >= zip_chunks:
-                    # add current chunks to zip
-                    print('compressing current chunks...')
-                    #logger.info('compressing current chunks...')
-                    tar_name = base_dir + 'tars_odd/' + str(starting_chunk) + '_to_' + str(chunk_id) + '_odd.tar.gz'
-                    compress(tar_name, chunks)
-                    chunks = []
-
             corpus_in.close()
+
+
+def to_numpy(args):
+    passages_to_numpy = []
+    pids_to_numpy = []
+    for chunk_id in tqdm(range(0, args.end_chunk)):
+        fname = args.base_dir + args.out_dir + str(chunk_id) + '_encoded_passages_' + str(args.limit) + '.json'
+        with open(fname, 'w') as fp:
+            passages = json.load(fp)
+            for key in passages:
+                passages_to_numpy.append(passages[key])
+                pids_to_numpy.append(key)
+
+    steps = len(passages_to_numpy) // args.num_pass_files
+    for i in tqdm(range(0, args.num_pass_files)):
+        if i+1 not in range(0, args.num_pass_files):
+            current_passages = np.asarray(passages_to_numpy[i * steps:]).astype(np.float32)
+            current_pids = np.asarray(pids_to_numpy[i * steps:]).astype(int)
+        else:
+            current_passages = np.asarray(passages_to_numpy[i*steps:(i+1)*steps]).astype(np.float32)
+            current_pids = np.asarray(pids_to_numpy[i*steps:(i+1)*steps]).astype(int)
+        current_passages = preprocessing.normalize(current_passages, norm="l2")
+        fname_passages = args.base_dir + args.out_dir + str(i) + '_msmarco_passages.npy'
+        fname_pids = args.base_dir + args.out_dir + str(i) + '_msmarco_pids.npy'
+        with open(fname_passages, 'wb') as f:
+            np.save(f, current_passages)
+        with open(fname_pids, 'wb') as f:
+            np.save(f, current_pids)
 
 
 def encode_queries(args):
@@ -135,14 +112,9 @@ def encode_queries(args):
         logger.info(f'encoding {len(qids)} queries...')
         print(f'encoding {len(qids)} queries...')
         encoded_queries = bert_client.encode(queries)
+        encoded_queries = preprocessing.normalize(encoded_queries, norm="l2").astype(np.float32)
         print(f'encoding of {len(qids)} queries done with bert')
-        #for i in tqdm(range(0, len(encoded_queries))):
-        #    norm = np.linalg.norm(encoded_queries[i])
-        #    if norm != 0:
-        #        encoded_queries[i] = encoded_queries[i] / norm
-        #logger.info('encoding done!')
-        #print.info('encoding done!')
-        if args.output_numpy:
+        if args.to_numpy:
             logger.info('save qids and queries as .npy')
             print('save qids and queries as .npy')
             qids = np.asarray(qids)
@@ -162,49 +134,21 @@ def encode_queries(args):
         logger.info('queries encoded and saved!')
         print('queries encoded and saved!')
 
-
-def convert_to_numpy(args):
-    passages = []
-    pids = []
-    for chunk_id in tqdm(range(0, args.end_chunk)):
-        if chunk_id % 100 == 0:
-            logger.info(f'loading chunk {chunk_id}/{args.end_chunk} into list')
-        chunk_file = os.path.join(args.base_dir, args.out_dir, str(chunk_id) + '_encoded_passages_' + args.limit + '.json')
-
-        with open(chunk_file, 'r') as f:
-            passage_dict = json.load(f)
-            for pid in passage_dict:
-                passages.append(passage_dict[pid])
-                pids.append(pid)
-    fname = os.path.join(args.base_dir, 'msmarco_encoded_passages.npy')
-    logger.info(f'convert passages to numpy and store into file: {fname}')
-    passages = np.asarray(passages)
-    np.save(fname, passages)
-    fname = os.path.join(args.base_dir, 'pids_msmarco_encoded_passages.npy')
-    logger.info(f'convert passages to numpy and store into file: {fname}')
-    pids = np.asarray(pids)
-    np.save(fname, pids)
-
-
 if __name__ == '__main__':
     #Arguments = /home/brandt/Multistep_Query_Modelling/scripts/encode/encode_msmarco.py -model_dir /home/brandt/data/
-    #models -base_dir /home/brandt/msmarco/ -end_chunk 1114 -limit 150 -max_seq_len 256 -encode_queries 1 -output_numpy 1
+    #models -base_dir /home/brandt/msmarco/ -end_chunk 1114 -limit 150 -max_seq_len 256 -encode_queries 1 -to_numpy 1
 
 
 
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
-    parser.add_argument('-encode_queries', type=bool, default=False,
+    parser.add_argument('-encode_queries', type='bool', default=False,
                         help='encode msmarco queries')
     parser.add_argument('-query_file_name', type=str, default='msmarco-doctrain-queries.tsv',
                         help='name of the file with qid<tab>query')
-    parser.add_argument('-encode_chunks', type=bool, default=False,
+    parser.add_argument('-encode_chunks', type='bool', default=False,
                         help='encode msmarco chunks')
-    parser.add_argument('-output_numpy', type=bool, default=False,
-                        help='if true output in npy file, else every chunk in a single json file')
-    parser.add_argument('-convert_to_npy', type=bool, default=False,
-                        help='convert already encoded chunks to numpy format')
-    parser.add_argument('-base_dir', type=str, default=None,
+    parser.add_argument('-base_dir', type=str, default='',
                         help='base directory of the chunked dataset')
     parser.add_argument('-out_dir', type=str, default='',
                         help='output directory, where to store the embeddings')
@@ -221,11 +165,12 @@ if __name__ == '__main__':
                              'even / odd')
     parser.add_argument('-limit', type=int, default=150,
                         help='limit used for paragraph splitting')
-    parser.add_argument('-zip_chunks', type=int, default=0,
-                        help='number of chunks after which they get compressed into .tar.gz use 0 to not zip')
     parser.add_argument('-num_worker', type=int, default=1,
                         help='number of workers used for bert server, should be less or equal to count of gpus')
     parser.add_argument('-name', type=str, default='train', help='name of data to load (dev, train, test)')
+    parser.add_argument('-to_numpy', type='bool', default=False,
+                        help='convert encoded chunks into -num_pass_files npy files')
+    parser.add_argument('-num_pass_files', type=int, default=20, help='number of npy files to store training data in')
 
     # Set logging
     logger.setLevel(logging.INFO)
@@ -263,5 +208,3 @@ if __name__ == '__main__':
         encode_passages(args)
     if args.encode_queries:
         encode_queries(args)
-    if args.convert_to_numpy:
-        convert_to_numpy(args)
