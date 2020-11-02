@@ -1,5 +1,9 @@
-import argparse
+#!/usr/bin/python3
 
+import os
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
+
+import argparse
 import csv
 import random
 import gzip
@@ -125,8 +129,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
-    parser.add_argument('-encode_queries', type='bool', default=False,
-                        help='encode msmarco queries')
     parser.add_argument('-docid2pid', type=str, default='docid2pids.json',
                         help='the json file with dict for doc id to passage id mapping')
     parser.add_argument('-base_dir', type=str, help='base directory for files')

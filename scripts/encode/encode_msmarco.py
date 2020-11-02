@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from timeit import default_timer
 import io
 import os.path
