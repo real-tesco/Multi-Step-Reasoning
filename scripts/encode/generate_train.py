@@ -14,6 +14,7 @@ import os
 from collections import defaultdict
 import numpy as np
 import json
+import pyserini
 from pyserini.search import SimpleSearcher
 
 # train triples form: Query_id \t positive_id \t negative_id
