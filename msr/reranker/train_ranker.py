@@ -77,7 +77,7 @@ def init_from_scratch(args):
     parameters = ranker.parameters()
 
     optimizer = None
-    if parameters is not None and len(parameters) > 0:
+    if parameters is not None:
         if args.optimizer == 'sgd':
             optimizer = optim.SGD(parameters, args.learning_rate,
                                   momentum=args.momentum,
