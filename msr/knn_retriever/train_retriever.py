@@ -146,8 +146,7 @@ def train_binary_classification(args, ret_model, optimizer, train_loader):
         optimizer.zero_grad()
         batch_loss.backward()
 
-        torch.nn.utils.clip_grad_norm(ret_model.get_trainable_parameters(),
-                                      2.0)
+        torch.nn.utils.clip_grad_norm(ret_model.get_trainable_parameters(), 2.0)
         optimizer.step()
         para_loss.update(batch_loss.data.item())
         if math.isnan(para_loss.avg):
