@@ -19,6 +19,7 @@ from pyserini.search import SimpleSearcher
 
 # train triples form: Query_id \t positive_id \t negative_id
 
+
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
