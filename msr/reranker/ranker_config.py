@@ -66,8 +66,6 @@ def get_args():
     args.pid2docid = os.path.join(args.base_dir, args.pid2docid)
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
     args.qid_file = os.path.join(args.base_dir, args.qid_file)
-    args.triples_file = os.path.join(args.base_dir, args.triples_file)
-    args.triple_ids_file = os.path.join(args.base_dir, args.triple_ids_file)
     args.training_folder = os.path.join(args.base_dir, args.training_folder)
     args.dev_queries = os.path.join(args.base_dir, args.dev_queries)
     args.dev_qids = os.path.join(args.base_dir, args.dev_qids)
