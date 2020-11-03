@@ -1,11 +1,9 @@
 import os
-
-import argparse
 import torch
 from msmarco import MSMARCO
 from ranking_model import NeuralRanker
 import utilities as utils
-import retriever_config as config
+import ranker_config as config
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
 import torch.optim as optim
 import numpy as np
@@ -13,8 +11,6 @@ import logging
 import json
 from torch.autograd import Variable
 import math
-import hnswlib
-
 
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')

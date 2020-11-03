@@ -18,10 +18,10 @@ def get_args():
     parser.add_argument('-ranker_input', type=int, default=768*2,
                         help="dimension of the input to the ranker, should be twice of the embedding dim")
     parser.add_argument('-ranker_hidden', type=int, default=768,
-                        help='hidden dimension of paragraphs, used for knn index.')
+                        help='hidden dimension of ranker')
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
-    parser.add_argument('-pretrained', type=str, default='', help='checkpoint file to load checkpoint')
+    parser.add_argument('-pretrained', type=str, default='ranker.ckpt', help='checkpoint file to load checkpoint')
     parser.add_argument('-checkpoint', type='bool', default=False, help='Whether to use a checkpoint or not')
     parser.add_argument('-model_name', type=str, default='ranker', help='Model name to load from/save as checkpoint')
 
@@ -43,9 +43,6 @@ def get_args():
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json',
                         help='name of passage to doc file')
 
-    parser.add_argument('-triples_file', type=str, default='train.triples_msmarco.npy',
-                        help='name of triples file with training data')
-    parser.add_argument('-triple_ids_file', type=str, default='train.triples.idx_msmarco.npy')
     parser.add_argument('-training_folder', type=str, default='train/', help='folder with chunks of training triples')
     parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
 
