@@ -123,7 +123,7 @@ def train_binary_classification(args, ranking_model, optimizer, train_loader):
 
         scores_positive, scores_negative = ranking_model.score_documents(*ranker_input)  # todo: look here
         true_labels_positive = torch.ones_like(scores_positive)
-        true_labels_negative = torch.zeroes_like(scores_negative)
+        true_labels_negative = torch.zeros_like(scores_negative)
 
         loss = torch.nn.BCEWithLogitsLoss()
         batch_loss = loss(scores_positive, true_labels_positive)
