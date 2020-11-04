@@ -96,7 +96,7 @@ def main(args):
 
     # For each topicid, the list of positive docids is qrel[topicid]
     qrel = {}
-    with open("msmarco-doctrain-qrels.tsv", 'rt', encoding='utf8') as f:
+    with open(args.qrels_file, 'rt', encoding='utf8') as f:
         for line in f:
             split = line.split()
             assert len(split) == 4
