@@ -13,6 +13,9 @@ import numpy as np
 import json
 import pyserini
 from pyserini.search import SimpleSearcher
+import logging
+
+logger = logging.getLogger()
 
 # train triples form: Query_id \t positive_id \t negative_id
 
@@ -40,7 +43,7 @@ def generate_triples(args):
     with open(args.doc_train_100_file, 'rt', encoding='utf8') as top100f, \
             open(args.triples_name, 'w', encoding="utf8") as out:
         negatives = []
-        for line in top100f:
+        for idx, line in enumerate(top100f):
             [topicid, _, unjudged_docid, _, _, _] = line.split()
 
             if already_done_a_triple_for_topicid == topicid:
@@ -74,7 +77,9 @@ def generate_triples(args):
 
             query_text = args.queries[topicid]
             hits = searcher.search(query_text)
-            print(hits[:10])
+            if idx < 3:
+                logger.info(f" Top 10 hits for query: {query_text} : {hits[:10]}")
+                logger.info(f" Hit 0 info: {hits[0].lucene_document}")
             assert len(hits) > 0
             best_pid = -1
             for i in range(0, len(hits)):
@@ -147,5 +152,12 @@ if __name__ == '__main__':
     args.triples_name = os.path.join(args.base_dir, args.triples_name)
     args.anserini_index = os.path.join(args.base_dir, args.anserini_index)
     args.query_file = os.path.join(args.base_dir, args.query_file)
+
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
+                            '%m/%d/%Y %I:%M:%S %p')
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    logger.addHandler(console)
 
     main(args)
