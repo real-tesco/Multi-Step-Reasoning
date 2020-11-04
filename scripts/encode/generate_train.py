@@ -84,12 +84,15 @@ def generate_triples(args):
 
             # generate positive example, best bm25 passage regarding query, from positive judged document
             query_text = args.queries[topicid]
-            logger.info(f"query text: {query_text}")
+
             hits = searcher.search(query_text)
             if idx < 3:
-                logger.info(f" Top 10 hits for query: {query_text} : {hits[:10]}")
+                logger.info(f"query text: {query_text}")
                 logger.info(f" Hit 0 info: {hits[0].lucene_document}")
-            assert len(hits) > 0
+                logger.info(f" Hit 0 info: {hits[0].raw}")
+            if len(hits) == 0:
+                stats['skipped'] += 1
+                continue
             best_pid = -1
             for i in range(0, len(hits)):
                 if hits[i].docid in docid2pids[positive_docid]:
@@ -97,6 +100,8 @@ def generate_triples(args):
                     break
             if best_pid == -1:
                 best_pid = hits[0].docid
+                logger.info("not found pid of correct doc, using top rated pid instead ")
+                stats['best_pid_not_in_positive_doc'] += 1
 
             out.write("{}\t{}\t{}\n".format(topicid, best_pid, random.choice(negative_passages)))
 
