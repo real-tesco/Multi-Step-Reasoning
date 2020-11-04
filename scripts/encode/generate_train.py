@@ -84,6 +84,7 @@ def generate_triples(args):
 
             # generate positive example, best bm25 passage regarding query, from positive judged document
             query_text = args.queries[topicid]
+            logger.info(f"query text: {query_text}")
             hits = searcher.search(query_text)
             if idx < 3:
                 logger.info(f" Top 10 hits for query: {query_text} : {hits[:10]}")
