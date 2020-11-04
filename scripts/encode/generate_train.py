@@ -91,13 +91,12 @@ def generate_triples(args):
 
 
 def main(args):
-    with open('docid2pids.json', 'r') as f:
+    with open(args.docid2pid, 'r') as f:
         docid2pid = json.load(f)
 
     # For each topicid, the list of positive docids is qrel[topicid]
     qrel = {}
     with open("msmarco-doctrain-qrels.tsv", 'rt', encoding='utf8') as f:
-        # tsvreader = csv.reader(f, delimiter="\t")
         for line in f:
             split = line.split()
             assert len(split) == 4
