@@ -77,7 +77,7 @@ def generate_triples(args):
             # Use topicid to get our positive_docid
             positive_docid = random.choice(qrel[topicid])
             if positive_docid not in docid2pids:
-                stats['skipped'] += 1
+                stats['skipped_positive_not_in_docid2pid'] += 1
                 continue
             assert positive_docid in docid2pids
             positive_pids = docid2pids[positive_docid]
@@ -89,22 +89,24 @@ def generate_triples(args):
 
             hits = searcher.search(query_text)
             if len(hits) == 0:
-                stats['skipped'] += 1
-                logger.info("skipped another one")
+                stats['skipped_hits_len_0'] += 1
+                #logger.info("skipped another one")
                 continue
             best_pid = -1
             for i in range(0, len(hits)):
                 if hits[i].docid in positive_pids:
                     best_pid = hits[i].docid
-                    logger.info("found pid of correct doc writing that to out")
+                    #logger.info("found pid of correct doc writing that to out")
                     break
             if best_pid == -1:
                 best_pid = hits[0].docid
-                logger.info("not found pid of correct doc, using top rated pid instead ")
+                #logger.info("not found pid of correct doc, using first passage of positive doc")
                 stats['best_pid_not_in_positive_doc'] += 1
 
             out.write("{}\t{}\t{}\n".format(topicid, best_pid, random.choice(negative_passages)))
-
+            stats['total'] += 1
+            if idx % 100 == 0:
+                logger.info(f"{idx} / {len(qrel)} examples done!")
             negatives = []
     return stats
 
