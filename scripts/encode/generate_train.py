@@ -96,10 +96,12 @@ def generate_triples(args):
 
 
 def main(args):
+    logger.info("Opening docid2pid...")
     with open(args.docid2pid, 'r') as f:
         docid2pid = json.load(f)
 
     # For each topicid, the list of positive docids is qrel[topicid]
+    logger.info("Loading qrel file...")
     qrel = {}
     with open(args.qrels_file, 'rt', encoding='utf8') as f:
         for line in f:
@@ -113,6 +115,7 @@ def main(args):
             else:
                 qrel[topicid] = [docid]
 
+    logger.info("Loading query file...")
     queries = {}
     with open(args.query_file, "r") as f:
         for line in f:
@@ -122,14 +125,14 @@ def main(args):
     args.queries = queries
     args.qrel = qrel
     args.docid2pid = docid2pid
-    print("opened files")
-    print("load anserini index...")
+    logger.info("Opened files")
+    logger.info(f"Loading anserini index from path {args.anserini_index}...")
     searcher = SimpleSearcher(args.anserini_index)
     args.searcher = searcher
     stats = generate_triples(args)
 
     for key, val in stats.items():
-        print(f"{key}\t{val}")
+        logger.info(f"{key}\t{val}")
 
 
 if __name__ == '__main__':
@@ -141,7 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('-qrels_file', type=str, default='msmarco-doctrain-qrels.tsv')
     parser.add_argument('-triples_name', type=str, default='msmarco_train_triples.tsv')
     parser.add_argument('-doc_train_100_file', type=str, default="msmarco-doctrain-top100")
-    parser.add_argument('-anserini_index', type=str, default='/indexes/msmarco_passaged_150_anserini')
+    parser.add_argument('-anserini_index', type=str, default='/indexes/msmarco_passaged_150_anserini/')
     parser.add_argument('-query_file', type=str, default='msmarco-doctrain-queries.tsv')
 
     args = parser.parse_args()
