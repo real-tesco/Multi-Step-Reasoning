@@ -144,7 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('-qrels_file', type=str, default='msmarco-doctrain-qrels.tsv')
     parser.add_argument('-triples_name', type=str, default='msmarco_train_triples.tsv')
     parser.add_argument('-doc_train_100_file', type=str, default="msmarco-doctrain-top100")
-    parser.add_argument('-anserini_index', type=str, default='/indexes/msmarco_passaged_150_anserini/')
+    parser.add_argument('-anserini_index', type=str, default='indexes/msmarco_passaged_150_anserini/')
     parser.add_argument('-query_file', type=str, default='msmarco-doctrain-queries.tsv')
 
     args = parser.parse_args()
