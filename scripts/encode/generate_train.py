@@ -59,13 +59,6 @@ def generate_triples(args):
             assert topicid in qrel
             # assert unjudged_docid in docoffset
 
-            # Use topicid to get our positive_docid
-            positive_docid = random.choice(qrel[topicid])
-            if positive_docid not in docid2pids:
-                stats['skipped'] += 1
-                continue
-            assert positive_docid in docid2pids
-
             # generate negative example
             negative_passages = []
             if not args.random_sample:
@@ -80,23 +73,30 @@ def generate_triples(args):
                     if doc in docid2pids:
                         for pid in docid2pids[doc]:
                             negative_passages.append(pid)
+
+            # Use topicid to get our positive_docid
+            positive_docid = random.choice(qrel[topicid])
+            if positive_docid not in docid2pids:
+                stats['skipped'] += 1
+                continue
+            assert positive_docid in docid2pids
+            positive_pids = docid2pids[positive_docid]
+
             stats['kept'] += 1
 
             # generate positive example, best bm25 passage regarding query, from positive judged document
             query_text = args.queries[topicid]
 
             hits = searcher.search(query_text)
-            if idx < 3:
-                logger.info(f"query text: {query_text}")
-                logger.info(f" Hit 0 info: {hits[0].lucene_document}")
-                logger.info(f" Hit 0 info: {hits[0].raw}")
             if len(hits) == 0:
                 stats['skipped'] += 1
+                logger.info("skipped another one")
                 continue
             best_pid = -1
             for i in range(0, len(hits)):
-                if hits[i].docid in docid2pids[positive_docid]:
+                if hits[i].docid in positive_pids:
                     best_pid = hits[i].docid
+                    logger.info("found pid of correct doc writing that to out")
                     break
             if best_pid == -1:
                 best_pid = hits[0].docid
@@ -128,6 +128,8 @@ def main(args):
                 qrel[topicid].append(docid)
             else:
                 qrel[topicid] = [docid]
+            if len(qrel[topicid]) > 1:
+                logger.info("More than 1 docid for this query")
 
     logger.info("Loading query file...")
     queries = {}
