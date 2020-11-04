@@ -39,22 +39,22 @@ def generate_triples(args):
     qrel = args.qrel
     stats = defaultdict(int)
     already_done_a_triple_for_topicid = -1
+    negatives = []
 
     with open(args.doc_train_100_file, 'rt', encoding='utf8') as top100f, \
             open(args.triples_name, 'w', encoding="utf8") as out:
-        negatives = []
         for idx, line in enumerate(top100f):
             [topicid, _, unjudged_docid, _, _, _] = line.split()
 
             if already_done_a_triple_for_topicid == topicid:
                 continue
-            else:
+            elif not args.random_sample:
                 if unjudged_docid in docid2pids:
                     negatives.append(unjudged_docid)
                 if len(negatives) < 5:
                     continue
-                else:
-                    already_done_a_triple_for_topicid = topicid
+
+            already_done_a_triple_for_topicid = topicid
 
             assert topicid in qrel
             # assert unjudged_docid in docoffset
@@ -66,15 +66,23 @@ def generate_triples(args):
                 continue
             assert positive_docid in docid2pids
 
-            # 5 examples top rated in doctrain100 but not in qrels
-            negatives_unjudged = [value for value in negatives if value not in qrel[topicid]]
+            # generate negative example
             negative_passages = []
-            for neg in negatives_unjudged:
-                for pid in docid2pids[neg]:
-                    negative_passages.append(pid)
-
+            if not args.random_sample:
+                # 5 examples top rated in doctrain100 but not in qrels
+                negatives_unjudged = [value for value in negatives if value not in qrel[topicid]]
+                for neg in negatives_unjudged:
+                    for pid in docid2pids[neg]:
+                        negative_passages.append(pid)
+            else:
+                docs = random.choices(args.docids, k=5)
+                for doc in docs:
+                    if doc in docid2pids:
+                        for pid in docid2pids[doc]:
+                            negative_passages.append(pid)
             stats['kept'] += 1
 
+            # generate positive example, best bm25 passage regarding query, from positive judged document
             query_text = args.queries[topicid]
             hits = searcher.search(query_text)
             if idx < 3:
@@ -122,13 +130,23 @@ def main(args):
             split = line.split('\t')
             queries[split[0]] = split[1]
 
+    logger.info("Loading doc lookup...")
+    docids = []
+    with open(args.doc_lookup, "r") as f:
+        for line in f:
+            split = line.split('\t')
+            docids.append(split[0])
+    args.docids = docids
     args.queries = queries
     args.qrel = qrel
     args.docid2pid = docid2pid
     logger.info("Opened files")
     logger.info(f"Loading anserini index from path {args.anserini_index}...")
     searcher = SimpleSearcher(args.anserini_index)
+    searcher.set_bm25(0.9, 0.4)
+    searcher.set_rm3(10, 10, 0.5)
     args.searcher = searcher
+
     stats = generate_triples(args)
 
     for key, val in stats.items():
@@ -146,6 +164,9 @@ if __name__ == '__main__':
     parser.add_argument('-doc_train_100_file', type=str, default="msmarco-doctrain-top100")
     parser.add_argument('-anserini_index', type=str, default='indexes/msmarco_passaged_150_anserini/')
     parser.add_argument('-query_file', type=str, default='msmarco-doctrain-queries.tsv')
+    parser.add_argument('-doc_lookup', type=str, default='msmarco-docs-lookup.tsv')
+    parser.add_argument('-random_sample', type='bool', default=True,
+                        help='do the negative sampling at random or take top ranked docs by BM25')
 
     args = parser.parse_args()
 
@@ -155,6 +176,7 @@ if __name__ == '__main__':
     args.triples_name = os.path.join(args.base_dir, args.triples_name)
     args.anserini_index = os.path.join(args.base_dir, args.anserini_index)
     args.query_file = os.path.join(args.base_dir, args.query_file)
+    args.doc_lookup = os.path.join(args.base_dir, args.doc_lookup)
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
