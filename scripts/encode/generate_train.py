@@ -105,11 +105,78 @@ def generate_triples(args):
 
             out.write("{}\t{}\t{}\n".format(topicid, best_pid, random.choice(negative_passages)))
             stats['total'] += 1
-            if idx % 100 == 0:
+            if idx % 1000 == 0:
                 logger.info(f"{idx} / {len(qrel)} examples done!")
             negatives = []
     return stats
 
+
+def generate_triples_from_qrel(args):
+    """Generates triples comprising:
+    - Query: The current topicid and query string
+    - Pos: One of the positively-judged documents for this query
+    - Rnd: Any of the top-100 documents for this query other than Pos
+    Since we have the URL, title and body of each document, this gives us ten columns in total:
+    topicid, query, posdocid, posurl, postitle, posbody, rnddocid, rndurl, rndtitle, rndbody
+    outfile: The filename where the triples are written
+    triples_to_generate: How many triples to generate
+    """
+    searcher = args.searcher
+    docid2pids = args.docid2pid
+    qrel = args.qrel
+    stats = defaultdict(int)
+    already_done_a_triple_for_topicid = -1
+    negatives = []
+
+    with open(args.triples_name, 'w', encoding="utf8") as out:
+        for idx, topicid in enumerate(qrel):
+
+            # generate negative example
+            negative_passages = []
+            docs = random.choices(args.docids, k=5)
+            for doc in docs:
+                if doc in docid2pids:
+                    for pid in docid2pids[doc]:
+                        negative_passages.append(pid)
+
+            # Use topicid to get our positive_docid
+            positive_docid = random.choice(qrel[topicid])
+            if positive_docid not in docid2pids:
+                stats['skipped_positive_not_in_docid2pid'] += 1
+                continue
+
+            assert positive_docid in docid2pids
+
+            positive_pids = docid2pids[positive_docid]
+            stats['kept'] += 1
+
+            # generate positive example, best bm25 passage regarding query, from positive judged document
+            query_text = args.queries[topicid]
+
+            hits = searcher.search(query_text)
+            best_pid = -1
+            if len(hits) == 0:
+                stats['hits_len_0'] += 1
+                #logger.info("skipped another one")
+                best_pid = min(positive_pids)
+
+            for i in range(0, len(hits)):
+                if hits[i].docid in positive_pids:
+                    best_pid = hits[i].docid
+                    stats['found_correct_pid_with_searcher'] += 1
+                    #logger.info("found pid of correct doc writing that to out")
+                    break
+            if best_pid == -1:
+                best_pid = min(positive_pids)
+                #logger.info("not found pid of correct doc, using first passage of positive doc")
+                stats['best_pid_not_in_positive_doc'] += 1
+
+            out.write("{}\t{}\t{}\n".format(topicid, best_pid, random.choice(negative_passages)))
+            stats['total'] += 1
+            if idx % 1000 == 0:
+                logger.info(f"{idx} / {len(qrel)} examples done!")
+
+    return stats
 
 def main(args):
     logger.info("Opening docid2pid...")
@@ -157,7 +224,8 @@ def main(args):
     searcher.set_rm3(10, 10, 0.5)
     args.searcher = searcher
 
-    stats = generate_triples(args)
+    #stats = generate_triples(args)
+    stats = generate_triples_from_qrel(args)
 
     for key, val in stats.items():
         logger.info(f"{key}\t{val}")
