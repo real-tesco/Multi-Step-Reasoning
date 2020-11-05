@@ -43,7 +43,7 @@ def get_args():
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json',
                         help='name of passage to doc file')
 
-    parser.add_argument('-training_folder', type=str, default='train/train_triples',
+    parser.add_argument('-training_folder', type=str, default='train/',
                         help='folder with chunks of training triples')
     parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
 
