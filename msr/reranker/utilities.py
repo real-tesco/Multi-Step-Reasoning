@@ -25,12 +25,12 @@ def batchify_(args, batch, train_time):
         return None
 
     #qid, pid, nid, query, positive, negative
-    qids = [ex[0] for ex in batch]
-    pids = [ex[1] for ex in batch]
-    nids = [ex[2] for ex in batch]
-    queries = [ex[3] for ex in batch]
-    positives = [ex[4] for ex in batch]
-    negatives = [ex[5] for ex in batch]
+    #qids = [ex[0] for ex in batch]
+    #pids = [ex[1] for ex in batch]
+    #nids = [ex[2] for ex in batch]
+    queries = [ex[0] for ex in batch]
+    positives = [ex[1] for ex in batch]
+    negatives = [ex[2] for ex in batch]
     q = torch.FloatTensor(len(queries), len(queries[0]))
     for idx, query in enumerate(queries):
         q[idx].copy_(query)
@@ -40,7 +40,7 @@ def batchify_(args, batch, train_time):
     n = torch.FloatTensor(len(negatives), len(negatives[0]))
     for idx, negative in enumerate(queries):
         n[idx].copy_(negative)
-    return q, p, n, qids, pids, nids
+    return q, p, n#, qids, pids, nids
 
 
 class Timer(object):

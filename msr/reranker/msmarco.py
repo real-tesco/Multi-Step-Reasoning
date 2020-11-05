@@ -4,16 +4,16 @@ from torch.utils.data import Dataset
 import numpy as np
 
 
-def vectorize_(curr_triple, triple_ids):
-    assert len(curr_triple) == len(triple_ids) == 3
-    qid = triple_ids[0]
-    pid = triple_ids[1]
-    nid = triple_ids[2]
+def vectorize_(curr_triple):#, triple_ids):
+    assert len(curr_triple) == 3#len(triple_ids) == 3
+    #qid = triple_ids[0]
+    #pid = triple_ids[1]
+    #nid = triple_ids[2]
     query = torch.FloatTensor(curr_triple[0])
     positive = torch.FloatTensor(curr_triple[1])
     negative = torch.FloatTensor(curr_triple[2])
 
-    return qid, pid, nid, query, positive, negative
+    return query, positive, negative#qid, pid, nid, query, positive, negative
 
 
 def vectorize_query_(curr_query, curr_qid):
@@ -41,7 +41,7 @@ class MSMARCO(Dataset):
 
     def __getitem__(self, idx):
         if self.train:
-            return vectorize_(self.triples[idx], self.triple_ids[idx])
+            return vectorize_(self.triples[idx])#), self.triple_ids[idx])
         elif self.dev:
             return vectorize_query_(self.queries[idx], self.query_ids[idx])
         else:
