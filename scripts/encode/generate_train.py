@@ -286,13 +286,14 @@ if __name__ == '__main__':
                         help='do the negative sampling at random or take top ranked docs by BM25')
     parser.add_argument('-split_into_numpy', type=int, default=0, help='split generated training data into npy')
     parser.add_argument('-generate_train', type='bool', default=True, help='generate training data')
-    parser.add_argument('-queries', type=str, default='', help='all encoded queries in npy')
-    parser.add_argument('-queries_indices', type=str,
-                        default='embeddings/query_embeddings/train.msmarco_queries_normed.npy',
+    parser.add_argument('-queries', type=str, default='embeddings/query_embeddings/train.msmarco_queries_normed.npy',
                         help='all encoded queries in npy')
-    parser.add_argument('-passages', type=str, default='msmarco_passages_normed_f32.npy',
+    parser.add_argument('-queries_indices', type=str,
+                        default='embeddings/query_embeddings/train.msmarco_qids.npy',
+                        help='all encoded queries in npy')
+    parser.add_argument('-passages', type=str, default='train/msmarco_passages_normed_f32.npy',
                         help='all encoded passages in npy')
-    parser.add_argument('-passages_indices', type=str, default='msmarco_indices.npy')
+    parser.add_argument('-passages_indices', type=str, default='train/msmarco_indices.npy')
     parser.add_argument('-out_dir', type=str, help='output directory')
     args = parser.parse_args()
 
@@ -301,11 +302,12 @@ if __name__ == '__main__':
     args.doc_train_100_file = os.path.join(args.base_dir, args.doc_train_100_file)
     args.triples_name = os.path.join(args.out_dir, args.triples_name)
     args.anserini_index = os.path.join(args.base_dir, args.anserini_index)
-    args.query_file = os.path.join(args.base_dir, "embeddings/query_embeddings", args.query_file)
+    args.query_file = os.path.join(args.base_dir, args.query_file)
     args.doc_lookup = os.path.join(args.base_dir, args.doc_lookup)
     args.passages = os.path.join(args.base_dir, args.passages)
     args.passages_indices = os.path.join(args.base_dir, args.passages_indices)
-    args.queries_indices = os.path.join(args.base_dir, "embeddings/query_embeddings" ,args.queries_indices)
+    args.queries_indices = os.path.join(args.base_dir, args.queries_indices)
+    args.queries = os.path.join(args.base_dir, args.queries)
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
