@@ -200,7 +200,8 @@ def main(args):
                 logger.info("Load current chunk of training data...")
                 if args.num_training_files > 1:
                     triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
-                    triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
+                    #triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
+                    triple_ids = None
                     stats['chunk'] = i
                 else:
                     triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco.npy"))
