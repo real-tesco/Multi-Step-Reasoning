@@ -291,9 +291,9 @@ if __name__ == '__main__':
     parser.add_argument('-queries_indices', type=str,
                         default='embeddings/query_embeddings/train.msmarco_qids.npy',
                         help='all encoded queries in npy')
-    parser.add_argument('-passages', type=str, default='train/msmarco_passages_normed_f32.npy',
+    parser.add_argument('-passages', type=str, default='input/msmarco_passages_normed_f32.npy',
                         help='all encoded passages in npy')
-    parser.add_argument('-passages_indices', type=str, default='train/msmarco_indices.npy')
+    parser.add_argument('-passages_indices', type=str, default='input/msmarco_indices.npy')
     parser.add_argument('-out_dir', type=str, help='output directory')
     args = parser.parse_args()
 
