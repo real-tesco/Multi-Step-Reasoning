@@ -140,16 +140,10 @@ def train_binary_classification(args, ranking_model, optimizer, train_loader):
             pdb.set_trace()
 
         if idx % 25 == 0 and idx > 0:
-            logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f}\n'
-                        '__________________________________________________________ \n'
-                        'Positive Scores = {} \n'
-                        'Negative Scores = {} \n'
-                        '__________________________________________________________'.format(
+            logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f}\n'.format(
                 stats['epoch'],
                 idx + stats['chunk'] * len(train_loader), len(train_loader) * args.num_training_files,
-                para_loss.avg,
-                torch.sum(scores_positive),
-                torch.sum(scores_negative)))
+                para_loss.avg))
             para_loss.reset()
 
 
@@ -204,9 +198,13 @@ def main(args):
             # need to load the training data in chunks since its too big
             for i in range(0, args.num_training_files):
                 logger.info("Load current chunk of training data...")
-                triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
-                triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
-                stats['chunk'] = i
+                if args.num_training_files > 1:
+                    triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
+                    triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
+                    stats['chunk'] = i
+                else:
+                    triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco.npy"))
+                    triple_ids = None
                 training_loader = make_dataloader(pid2docid, triples, triple_ids, train_time=True)
                 train_binary_classification(args, ranker_model, optimizer, training_loader)
 
