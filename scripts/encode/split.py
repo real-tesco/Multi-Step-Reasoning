@@ -12,5 +12,5 @@ with open("/home/brandt/msmarco/trids_marco-doc-10.tsv", "r") as f, \
         else:
             out.write(f"{qid}\t{posid}\t1\n")
             out.write(f"{qid}\t{negid}\t0\n")
-            already_done_example_for_qid = qid
+            already_done_positive_example_for_qid = qid
 
