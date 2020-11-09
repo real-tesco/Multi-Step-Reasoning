@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 with open("/home/brandt/msmarco/trids_marco-doc-10.tsv", "r") as f, \
-        open("/home/brandt/msmarco/train-marco-doc.tsv") as out:
+        open("/home/brandt/msmarco/train-marco-doc.tsv", "w") as out:
     already_done_positive_example_for_qid = -1
     for line in tqdm(f):
         qid, posid, negid = line.split()
