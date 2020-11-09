@@ -270,6 +270,7 @@ def main(args):
     if args.split_into_numpy > 0:
         split_training(args)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)

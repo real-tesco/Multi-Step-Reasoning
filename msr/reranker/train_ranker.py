@@ -215,6 +215,7 @@ def main(args):
     if args.eval:
         eval_ranker(args)
 
+
 if __name__ == '__main__':
     args = config.get_args()
 

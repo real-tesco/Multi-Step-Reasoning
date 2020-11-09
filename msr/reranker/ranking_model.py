@@ -22,7 +22,8 @@ class NeuralRanker(nn.Module):
         x = self.batchnorm1(x)
         x = self.h1(x)
         x = self.batchnorm2(x)
-        x = self.dropout(x)
+        if self.args.train:
+            x = self.dropout(x)
         x = self.output(x)
 
         return x
