@@ -218,7 +218,7 @@ def generate_pairs(args):
         for idx, topicid in enumerate(qrel):
             out.write("{} {} {}\n".format(topicid, random.choice(qrel[topicid]), 1))
             stats["kept"] += 1
-            for i in range(0, args.neg_samples):
+            for i in range(0, args.negative_samples):
                 negative = random.choice(docs)
                 if negative in qrel[topicid]:
                     stats["skipped"] += 1
