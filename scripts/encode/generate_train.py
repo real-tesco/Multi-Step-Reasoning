@@ -210,6 +210,24 @@ def split_training(args):
     logger.info("Finished..")
 
 
+def generate_pairs(args):
+    qrel = args.qrel
+    docs = args.docids
+    stats = {"skipped": 0, "kept": 0}
+    with open(args.triples_name, 'w', encoding="utf8") as out:
+        for idx, topicid in enumerate(qrel):
+            out.write("{} {} {}\n".format(topicid, random.choice(qrel[topicid]), 1))
+            stats["kept"] += 1
+            for i in range(0, args.neg_samples):
+                negative = random.choice(docs)
+                if negative in qrel[topicid]:
+                    stats["skipped"] += 1
+                    continue
+                out.write("{} {} {}\n".format(topicid, negative, 0))
+                stats["kept"] += 1
+    return stats
+
+
 def generate_train(args):
     logger.info("Opening docid2pid...")
     with open(args.docid2pid, 'r') as f:
@@ -256,8 +274,9 @@ def generate_train(args):
     searcher.set_rm3(10, 10, 0.5)
     args.searcher = searcher
 
+    stats = generate_pairs(args)
     # stats = generate_triples(args)
-    stats = generate_triples_from_qrel(args)
+    #stats = generate_triples_from_qrel(args)
 
     for key, val in stats.items():
         logger.info(f"{key}\t{val}")
@@ -296,6 +315,7 @@ if __name__ == '__main__':
                         help='all encoded passages in npy')
     parser.add_argument('-passages_indices', type=str, default='input/msmarco_indices.npy')
     parser.add_argument('-out_dir', type=str, help='output directory')
+    parser.add_argument('-negative_samples', type=int, default=5, help='output directory')
     args = parser.parse_args()
 
     args.docid2pid = os.path.join(args.base_dir, args.docid2pid)
