@@ -40,6 +40,7 @@ def get_args():
     parser.add_argument('-query_file', type=str, default='train.msmarco_queries_normed.npy', help='name of query file')
     parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy', help='name of qid file')
     parser.add_argument('-qrels_file', type=str, default='qrels.train.tsv', help='name of qrels file')
+    parser.add_argument('-qrels_dev_file', type=str, default='', help='name of qrels file')
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json',
                         help='name of passage to doc file')
 
@@ -72,5 +73,6 @@ def get_args():
     args.dev_qids = os.path.join(args.base_dir, args.dev_qids)
     args.out_file = os.path.join(args.out_dir, args.out_file)
     args.trec_eval = os.path.join(args.base_dir, args.trec_eval)
+    args.qrels_dev_file = os.path.join(args.base_dir, args.qrels_dev_file)
 
     return args
