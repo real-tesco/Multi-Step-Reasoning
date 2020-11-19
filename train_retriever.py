@@ -111,7 +111,11 @@ def save_embeddings(args, model, doc_loader, device):
                 chunk += 1
                 docs = []
                 doc_ids = []
-                logger.info(f'Saved {idx+1} / {len(doc_loader)} batches a {args.batch_size} docs in {chunk} chunks..')
+                logger.info('New chunk saved to disk...')
+                logger.info(f'Saved {idx + 1} / {len(doc_loader)} batches a {args.batch_size} docs in {chunk} chunks..')
+            if (idx+1) % args.print_every == 0:
+                logger.info(f'Saved {idx + 1} / {len(doc_loader)} batches a {args.batch_size} docs in {chunk} chunks..')
+
 
 
 # Legacy TODO: refactor
