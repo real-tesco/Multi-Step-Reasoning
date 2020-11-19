@@ -4,166 +4,50 @@ import torch.nn as nn
 import logging
 import torch.optim as optim
 import copy
+from transformers import AutoTokenizer
 
 logger = logging.getLogger()
 
 
 class KnnIndex:
-    def __init__(self, args):
-        self.args = args
-        self.index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
-        self.query_transformer = QueryTransformer(args)
-        self.document_transformer = DocumentTransformer(args)
-        if args.cuda:
-            self.query_transformer.cuda()
-            self.document_transformer.cuda()
-
-        if args.state_dict is not None:
-            if 'q_transformer' in args.state_dict:
-                self.query_transformer.load_state_dict(args.state_dict['q_transformer'])
-                logger.info("Loaded Query Transformer state dict..")
-            if 'd_transformer' in args.state_dict:
-                self.document_transformer.load_state_dict(args.state_dict['d_transformer'])
-                logger.info("Loaded Document Transformer state dict..")
-            #self.query_transformer.eval()
-        #self.init_optimizer()
+    def __init__(self, args, model):
+        self._args = args
+        self._seq_max_len = args.max_doc_len
+        self._query_max_len = args.query_max_len
+        self._index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
+        self._tokenizer = AutoTokenizer.from_pretrained(args.vocab)
+        self._model = model
 
     def knn_query(self, query, k=1):
-        query = self.query_transformer.forward(query)
-        labels, distances = self.index.knn_query(query=query, k=k)
+        q_input_ids, q_segment_ids, q_input_mask = self.tokenize(query)
+        query_embedding = self._model.calculate_embedding(q_input_ids, q_segment_ids, q_input_mask, doc=False)
+        labels, distances = self._index.knn_query(query=query_embedding, k=k)
         return labels, distances
 
-    def get_trainable_parameters(self):
-        params = []
-        for p in self.query_transformer.parameters():
-            if p.requires_grad:
-                params.append(p)
-        for p in self.document_transformer.parameters():
-            if p.requires_grad:
-                params.append(p)
-        return params
+    def tokenize(self, query):
+        tokens = self._tokenizer.tokenize(query)
+        input_tokens = [self._tokenizer.cls_token] + tokens + [self._tokenizer.sep_token]
+        input_ids = self._tokenizer.convert_tokens_to_ids(input_tokens)
+        segment_ids = [1] * len(input_ids)
+        input_mask = [1] * len(input_ids)
+
+        padding_len = self._seq_max_len - len(input_ids)
+
+        input_ids = input_ids + [self._tokenizer.pad_token_id] * padding_len
+        input_mask = input_mask + [0] * padding_len
+        segment_ids = segment_ids + [0] * padding_len
+
+        assert len(input_ids) == self._seq_max_len
+        assert len(input_mask) == self._seq_max_len
+        assert len(segment_ids) == self._seq_max_len
+        return input_ids, segment_ids, input_mask
 
     def load_index(self):
         logger.info('Loading KNN index...')
-        self.index.load_index(self.args.index_file)
+        self._index.load_index(self._args.index_file)
 
-    #dont use optimizer in model, stick to external optimizer
-    def init_optimizer(self):
-        """Initialize an optimizer for the free parameters of the Query transformer.
-        """
-
-        parameters = self.get_trainable_parameters()
-
-        if self.args.optimizer == 'sgd':
-            self.optimizer = optim.SGD(parameters, self.args.learning_rate,
-                                       momentum=self.args.momentum,
-                                       weight_decay=self.args.weight_decay)
-        elif self.args.optimizer == 'adamax':
-            self.optimizer = optim.Adamax(parameters,
-                                          weight_decay=self.args.weight_decay)
-        else:
-            raise RuntimeError('Unsupported optimizer: %s' %
-                               self.args.optimizer)
-
-    def save(self, filename):
-        state_dict = {
-            'q_transformer': copy.copy(self.query_transformer.state_dict()),
-            'd_transformer': copy.copy(self.document_transformer.state_dict())}
-        params = {
-            'state_dict': state_dict,
-            'args': self.args}
-        try:
-            torch.save(params, filename)
-            logger.info('Model saved at {}'.format(filename))
-        except BaseException:
-            logger.warning('WARN: Saving failed... continuing anyway.')
-
-    def checkpoint(self, filename, epoch):
-        state_dict = {'q_transformer': copy.copy(self.query_transformer.state_dict()),
-                      'd_transformer': copy.copy(self.document_transformer.state_dict())}
-        # for document
-        params = {
-            'state_dict': state_dict,
-            'args': self.args,
-            'epoch': epoch
-        }
-        try:
-            torch.save(params, filename)
-            logger.info('Model saved at {}'.format(filename))
-        except BaseException:
-            logger.warning('WARN: Saving failed... continuing anyway.')
-
-    @staticmethod
-    def load(filename):
-        logger.info('Loading model %s' % filename)
-        saved_params = torch.load(
-            filename, map_location=lambda storage, loc: storage
-        )
-        state_dict = saved_params['state_dict']
-        args = saved_params['args']
-        args.state_dict = state_dict
-
-        return KnnIndex(args)
-
-    def score_documents(self, queries, positives, negatives):
-        queries = self.query_transformer.forward(queries)
-        positives = self.document_transformer.forward(positives)
-        negatives = self.document_transformer.forward(negatives)
-
-        '''
-        # Old calculation, now try to input queries and positives/negatives into Triplet Loss
-        scores_positive = queries * positives
-        scores_positive = scores_positive.sum(dim=1)
-
-        scores_negative = queries * negatives
-        scores_negative = scores_negative.sum(dim=1)
-
-        return scores_positive, scores_negative
-        '''
-
-        return queries, positives, negatives
-
-    def get_passage(self, pid):
+    def get_document(self, pid):
         # check if works, else pid needs to be N dim np array
-        return self.index.get_items(pid)
-
-    '''@staticmethod
-    def load_checkpoint(filename, new_args, normalize=True):
-        logger.info('Loading model %s' % filename)
-        saved_params = torch.load(
-            filename, map_location=lambda storage, loc: storage
-        )
-        word_dict = saved_params['word_dict']
-        feature_dict = saved_params['feature_dict']
-        state_dict = saved_params['state_dict']
-        epoch = saved_params['epoch']
-        optimizer = saved_params['optimizer']
-        args = saved_params['args']
-        if new_args:
-            args = override_model_args(args, new_args)
-        model = Model(args, word_dict, feature_dict, state_dict=state_dict, normalize=normalize)
-        model.init_optimizer(optimizer)
-        return model, epoch
-        '''
+        return self._index.get_items(pid)
 
 
-class DocumentTransformer(nn.Module):
-    def __init__(self, args):
-        super(DocumentTransformer, self).__init__()
-        self.linear_layer = nn.Linear(args.dim_input, args.dim_hidden)
-
-    def forward(self, document):
-        doc = self.linear_layer(document)
-        doc = nn.functional.normalize(doc, p=2, dim=1)
-        return doc
-
-
-class QueryTransformer(nn.Module):
-    def __init__(self, args):
-        super(QueryTransformer, self).__init__()
-        self.linear_layer = nn.Linear(args.dim_input, args.dim_hidden)
-
-    def forward(self, query):
-        query = self.linear_layer(query)
-        query = nn.functional.normalize(query, p=2, dim=1)
-        return query

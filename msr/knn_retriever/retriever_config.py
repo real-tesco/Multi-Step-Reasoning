@@ -25,7 +25,7 @@ def get_args():
     parser.add_argument('-model_name', type=str, default='knn_index', help='Model name to load from/save as checkpoint')
 
     # training options
-    parser.add_argument('-epochs', type=int, default=30,
+    parser.add_argument('-epochs', type=int, default=3,
                         help='number of epochs to train the retriever')
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
@@ -69,6 +69,7 @@ def get_args():
     # run options
     parser.add_argument('-test', type='bool', default=True, help='test the index for self-recall and query recall')
     parser.add_argument('-train', type='bool', default=True, help='train document transformer')
+    parser.add_argument('-train', action=msr.utils.DictOrStr, default='./data/train_toy.jsonl')
     parser.add_argument('-index', type='bool', default=True, help='create knn index with transformed passages')
 
     parser.add_argument('-dev_queries', type=str, default='dev.msmarco_queries_normedf32.npy',
