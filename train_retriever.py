@@ -261,8 +261,8 @@ def main(args):
     model.to(device)
 
     if args.save_embeddings > 0:
-        if torch.cuda.device_count() > 1:
-            model = torch.nn.DataParallel(model)
+        #if torch.cuda.device_count() > 1:
+        #    model = torch.nn.DataParallel(model)
         save_embeddings(args, model, embed_loader, device)
 
     elif not args.index:
@@ -318,7 +318,7 @@ if __name__ == '__main__':
     parser.add_argument('-efc', type=int, default=100)
     parser.add_argument('-similarity', type=str, default='ip')
     parser.add_argument('-dim_hidden', type=int, default=768)
-    parser.add_argument('-start_chunk', type=int, default=1)
+    parser.add_argument('-start_chunk', type=int, default=0)
 
     args = parser.parse_args()
 
