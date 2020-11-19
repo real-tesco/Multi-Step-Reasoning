@@ -102,7 +102,7 @@ def save_embeddings(args, model, doc_loader, device):
                                                       document_dict['d_input_mask'].to(device),
                                                       document_dict['d_segment_ids'].to(device), doc=True)
             docs.append(doc_embedding.detach().cpu().numpy())
-            doc_ids.append(doc_id.detach().cpu().numpy())
+            doc_ids.append(doc_id)
             if len(docs) > args.docs_per_chunk or (idx+1) == len(doc_loader):
                 docs = np.asarray(docs).astype(np.float32)
                 np.save(os.path.join(args.embed_dir, 'marco_doc_embeddings_' + str(chunk) + '.npy'), docs)
