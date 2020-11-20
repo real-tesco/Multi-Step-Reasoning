@@ -84,7 +84,7 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                         mes = metric.get_metric(args.qrels, args.res, args.metric)
                 if mes >= best_mes:
                     best_mes = mes
-                    print('save_model...')
+                    logger.info('save_model...')
                     if torch.cuda.device_count() > 1:
                         torch.save(model.module.state_dict(), args.save)
                     else:
@@ -115,7 +115,6 @@ def save_embeddings(args, model, doc_loader, device):
                 logger.info(f'Saved {idx + 1} / {len(doc_loader)} batches a {args.batch_size} docs in {chunk} chunks..')
             if (idx+1) % args.print_every == 0:
                 logger.info(f'Saved {idx + 1} / {len(doc_loader)} batches a {args.batch_size} docs in {chunk} chunks..')
-
 
 
 # Legacy TODO: refactor
@@ -274,6 +273,7 @@ def main(args):
         loss_fn.to(device)
 
         if torch.cuda.device_count() > 1:
+            logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
             loss_fn = torch.nn.DataParallel(loss_fn)
             model = torch.nn.DataParallel(model)
 
