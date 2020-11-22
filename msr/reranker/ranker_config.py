@@ -61,6 +61,7 @@ def get_args():
     parser.add_argument('-dev_qids', type=str, default='dev.msmarco_qids.npy', help='dev qids file .npy')
     parser.add_argument('-out_file', type=str, default='ranking_results.tsv',
                         help='result file for the evaluation of the index')
+    parser.add_argument('-test_file', type=str)
 
     args = parser.parse_args()
 
