@@ -1,9 +1,10 @@
 import os
 import torch
-from msmarco import MSMARCO
-from ranking_model import NeuralRanker
-import utilities as utils
-import ranker_config as config
+import msr
+from msr.data.datasets.rankingdataset import RankingDataset
+from msr.reranker.ranking_model import NeuralRanker
+import msr.reranker.utilities as utils
+import msr.reranker.ranker_config as config
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
 import torch.optim as optim
 import numpy as np
@@ -12,27 +13,23 @@ import json
 from torch.autograd import Variable
 import math
 
+
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
 logger = logging.getLogger()
-
 global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 
-def make_dataloader(pid2docid, triples, triple_ids, train_time=False, dev_time=False):
-    dataset = MSMARCO(pid2docid, triples, triple_ids, train_time=train_time, dev_time=dev_time)
-    sampler = SequentialSampler(dataset) if not train_time else RandomSampler(dataset)
-    loader = torch.utils.data.DataLoader(
+def make_dataloader(triples_file, mode='train'):
+    dataset = RankingDataset(triples_file, mode=mode)
+    loader = msr.data.dataloader.DataLoader(
         dataset,
         batch_size=args.batch_size,
-        sampler=sampler,
-        num_workers=args.data_workers,
-        collate_fn=utils.batchify(args, train_time=train_time),
-        # TODO: write batch function for dataloader
-        pin_memory=True
+        shuffle=(mode == 'train'),
+        num_workers=args.data_workers
     )
     return loader
 
@@ -41,7 +38,7 @@ def save(args, model, optimizer, filename, epoch=None):
     params = {'state_dict': {
         'model': model.state_dict(),
         'optimizer': optimizer.state_dict()
-    }, 'config': vars(args)}
+    }}
     if epoch:
         params['epoch'] = epoch
     try:
@@ -93,44 +90,23 @@ def init_from_scratch(args):
     return ranker, optimizer
 
 
-def load_qrels(path_to_qrels):
-    qrel = {}
-    with open(path_to_qrels, 'rt', encoding='utf8') as f:
-        for line in f:
-            split = line.split()
-            assert len(split) == 4
-            topicid, _, docid, rel = split
-            assert rel == "1"
-            if topicid in qrel:
-                qrel[topicid].append(docid)
-            else:
-                qrel[topicid] = [docid]
-    return qrel
-
-
 # TODO: look here
-def train_binary_classification(args, loss, ranking_model, optimizer, device, train_loader, dev_loader):
+def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader):
     para_loss = utils.AverageMeter()
-    ranking_model.train()
 
     for idx, ex in enumerate(train_loader):
         if ex is None:
             continue
 
-        inputs = [e if e is None or type(e) != type(ex[0]) else Variable(e.to(device))
-                  for e in ex[:3]]
-        ranker_input = [*inputs[:]]
+        scores_p, scores_n = ranking_model.score_documents(ex['query'].to(device),
+                                                           ex['positive_doc'].to(device),
+                                                           ex['negative_doc'].to(device))  # todo: look here
 
-        scores_positive, scores_negative = ranking_model.score_documents(*ranker_input)  # todo: look here
-        #true_labels_positive = torch.ones_like(scores_positive).to(device)
-        #true_labels_negative = torch.zeros_like(scores_negative).to(device)
-
-        batch_loss = loss(scores_positive, scores_negative, torch.ones(scores_positive.size()).to(device))
-        #batch_loss += loss(scores_negative, true_labels_negative).item()
+        batch_loss = loss(scores_p, scores_n, torch.ones(scores_p.size()).to(device))
 
         optimizer.zero_grad()
         batch_loss.backward()
-        torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
+        #torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
         optimizer.step()
         para_loss.update(batch_loss.data.item())
 
@@ -175,24 +151,18 @@ def eval_ranker(args, model, dev_loader, device):
 
 
 def main(args):
-    # load data from files
-    logger.info('Starting load data...')
-    logger.info(f'using cuda: {args.cuda}')
-    logger.info(f'args train: {args.train}')
-    # TODO: DEV LOADER
-    logger.info(f'loading dev data..')
-    with open(args.dev_queries, "rb") as f:
-        dev_queries = torch.from_numpy(np.load(f))
-    with open(args.dev_qids, "rb") as f:
-        dev_qids = np.load(f)
-    logger.info(f'creating dev loader...')
-    dev_loader = None
-
-    with open(args.pid2docid, 'r') as f:
-        pid2docid = json.load(f)
-        args.pid2docid_dict = pid2docid
-
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    test1 = np.load(args.test_file)
+    test2 = np.load(args.test_file)
+    logger.info("1")
+    test1 = torch.tensor(test1).to(device)
+    test2 = torch.tensor(test2).to(device)
+    logger.info("2")
+    test = test1 * test2
+    logger.info("3")
+
+    dev_loader = make_dataloader(args.dev_file, mode='dev')
 
     # initialize Model
     if args.checkpoint:
@@ -215,15 +185,12 @@ def main(args):
             for i in range(0, args.num_training_files):
                 logger.info("Load current chunk of training data...")
                 if args.num_training_files > 1:
-                    triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco" + str(i) + ".npy"))
-                    #triple_ids = np.load(os.path.join(args.training_folder, "msmarco_indices_" + str(i) + ".npy"))
-                    triple_ids = None
+                    triples_file = os.path.join(args.train_folder, "train.triples.msmarco_" + str(i) + ".npy")
                     stats['chunk'] = i
                 else:
-                    triples = np.load(os.path.join(args.training_folder, "train.triples_msmarco.npy"))
-                    triple_ids = None
-                training_loader = make_dataloader(pid2docid, triples, triple_ids, train_time=True)
-                train_binary_classification(args, loss, ranker_model, optimizer, device, training_loader, dev_loader)
+                    triples_file = os.path.join(args.training_folder, "train.triples.msmarco.npy")
+                training_loader = make_dataloader(triples_file, mode='train')
+                train(args, loss, ranker_model, optimizer, device, training_loader, dev_loader)
 
             if (epoch+1) % args.eval_every == 0:
                 rst = eval_ranker(args, ranker_model, dev_loader, device)
@@ -244,4 +211,5 @@ if __name__ == '__main__':
     console.setFormatter(fmt)
     logger.addHandler(console)
     logger.info(f"path after join: {args.trec_eval}")
+
     main(args)
