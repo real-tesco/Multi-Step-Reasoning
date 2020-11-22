@@ -96,18 +96,23 @@ def save_embeddings(args, model, doc_loader, device):
         docs = []
         doc_ids = []
         chunk = 0
+        embed_type = "query" if args.embed_queries else "doc"
+        embed_docs = not args.embed_queries
         for idx, document_dict in enumerate(doc_loader):
             doc_id = document_dict['doc_id']
             doc_embedding = model.calculate_embedding(document_dict['d_input_ids'].to(device),
                                                       document_dict['d_input_mask'].to(device),
-                                                      document_dict['d_segment_ids'].to(device), doc=True)
-            docs.append(doc_embedding.detach().cpu().numpy())
-            doc_ids.append(doc_id)
-            if len(docs) > args.docs_per_chunk or (idx+1) == len(doc_loader):
+                                                      document_dict['d_segment_ids'].to(device), doc=embed_docs)
+            docs.extend(doc_embedding.detach().cpu().tolist())
+            doc_ids.extend(doc_id)
+            if len(docs) == args.docs_per_chunk or (idx+1) == len(doc_loader):
                 docs = np.asarray(docs).astype(np.float32)
-                np.save(os.path.join(args.embed_dir, 'marco_doc_embeddings_' + str(chunk) + '.npy'), docs)
+                logger.info(f'shape of docs: {docs.shape}')
+                np.save(os.path.join(args.embed_dir, 'marco_' + embed_type + '_embeddings_' + str(chunk) +
+                                     '.npy'), docs)
                 doc_ids = np.asarray(doc_ids)
-                np.save(os.path.join(args.embed_dir, 'marco_doc_embeddings_indices_' + str(chunk) + '.npy'), doc_ids)
+                np.save(os.path.join(args.embed_dir, 'marco_' + embed_type + '_embeddings_indices_' + str(chunk) +
+                                     '.npy'), doc_ids)
                 chunk += 1
                 docs = []
                 doc_ids = []
@@ -314,6 +319,7 @@ if __name__ == '__main__':
     parser.add_argument('-print_every', type=int, default=1000)
     parser.add_argument('-embed', type=str, default='./data/msmarco-docs.jsonl')
     parser.add_argument('-save_embeddings', type=int, default=0)
+    parser.add_argument('-embed_queries', type='bool', default=False)
     parser.add_argument('-embed_dir', type=str, default='./data/embeddings')
     parser.add_argument('-index', type='bool', default=False)
     parser.add_argument('-docs_per_chunk', type=int, default=200000)

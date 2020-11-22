@@ -11,7 +11,7 @@ class DataLoader(DataLoader):
         self,
         dataset: Dataset,
         batch_size: int,
-        shuffle: str = False,
+        shuffle: bool = False,
         num_workers: int = 0
     ) -> None:
         super().__init__(
