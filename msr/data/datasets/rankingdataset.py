@@ -17,23 +17,32 @@ class RankingDataset(Dataset):
             ) -> None:
         self._mode = mode
         self._doc_ids = []
-        self._docs = []
-        self._queries = []
+        self._docs = {}
+        self._queries = {}
         self._query_ids = []
 
         # Load documents and convert to tensors
-        self._doc_ids.extend(np.load(x) for x in doc_ids_files)
-        self._doc_ids = np.concatenate(self._doc_ids, axis=0)
-        print(self._doc_ids.shape)
+        tmp_docids = []
+        tmp_docids.extend(np.load(x) for x in doc_ids_files)
+        tmp_docids = np.concatenate(tmp_docids, axis=0)
+        print(tmp_docids.shape)
 
-        self._docs.extend(torch.tensor(np.load(x)) for x in doc_embedding_files)
-        self._docs = torch.cat(self._docs, dim=0)
-        print(self._docs.shape)
+        tmp_docs = []
+        tmp_docs.extend(torch.tensor(np.load(x)) for x in doc_embedding_files)
+        tmp_docs = torch.cat(tmp_docs, dim=0)
+        print(tmp_docs.shape)
+        #self._docs[self._doc_ids[i]] = tmp_docs[i] for i in range(0, len(tmp_docs))
+        self._docs = {idx: embed for idx, embed in zip(tmp_docids, tmp_docs)}
+
+        print(self._docs.keys())
+        print(len(self._docs))
 
         self._query_ids.extend(np.load(x) for x in query_ids_files)
-        self._queries.extend(torch.tensor(np.load(x)) for x in query_embedding_files)
-        self._queries = torch.cat(self._queries)
-        print(self._queries.shape)
+        tmp_queries = []
+        tmp_queries.extend(torch.tensor(np.load(x)) for x in query_embedding_files)
+        tmp_queries = torch.cat(tmp_queries)
+        print(tmp_queries.shape)
+
 
         self._dataset = dataset
 
@@ -43,7 +52,6 @@ class RankingDataset(Dataset):
                 for i, line in enumerate(f):
                     line = line.strip().split()
                     self._examples.append(line)
-        print(self._examples[0][0], self._examples[0][1], self._examples[0][2])
         self._count = len(self._examples)
 
     def __getitem__(self, idx):
