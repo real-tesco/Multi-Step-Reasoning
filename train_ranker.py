@@ -155,7 +155,6 @@ def main(args):
 
     logger.info("Loading train data...")
     doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
-    logger.info(doc_embedding_list)
     doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
     query_embedding_list = (args.query_embedding_format.format(i) for i in range(0, args.num_query_files))
     query_ids_list = (args.query_ids_format.format(i) for i in range(0, args.num_query_files))
@@ -165,8 +164,9 @@ def main(args):
 
     logger.info("Loading dev data...")
     dev_query_embedding_list = [args.dev_query_embedding_file]
+    print(dev_query_embedding_list)
     dev_query_ids_list = [args.dev_query_ids_file]
-
+    print(dev_query_ids_list)
     dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, dev_query_embedding_list,
                                  dev_query_ids_list, args.dev_file, mode='dev')
 
