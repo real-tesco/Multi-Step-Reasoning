@@ -22,7 +22,7 @@ class RankingDataset(Dataset):
         self._query_ids = []
 
         # Load documents and convert to tensors
-        print(doc_ids_files[:3])
+        print(doc_ids_files)
         self._doc_ids.extend(np.load(x).tolist() for x in doc_ids_files)
         print(len(self._doc_ids))
         #print(self._doc_ids[:3])
