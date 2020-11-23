@@ -18,6 +18,7 @@ class RankingDataset(Dataset):
         self._mode = mode
 
         # Load documents and convert to tensors
+        print(doc_ids_files)
         tmp_docids = []
         tmp_docids.extend(np.load(x) for x in doc_ids_files)
         print(tmp_docids)
