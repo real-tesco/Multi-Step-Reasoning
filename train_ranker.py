@@ -93,7 +93,7 @@ def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader
     para_loss = utils.AverageMeter()
     best_mrr = 0.0
     mrr = 0.0
-    for epoch in range(args.epochs):
+    for epoch in range(0, args.epochs):
         for idx, ex in enumerate(train_loader):
             if ex is None:
                 continue
@@ -177,9 +177,7 @@ def main(args):
     doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
     doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
     dev_query_embedding_list = [args.dev_query_embedding_file]
-    # print(dev_query_embedding_list)
     dev_query_ids_list = [args.dev_query_ids_file]
-    # print(dev_query_ids_list)
     dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, dev_query_embedding_list,
                                  dev_query_ids_list, args.dev_file, mode='dev')
 
@@ -209,6 +207,5 @@ if __name__ == '__main__':
     console = logging.StreamHandler()
     console.setFormatter(fmt)
     logger.addHandler(console)
-    logger.info(f"path after join: {args.trec_eval}")
 
     main(args)

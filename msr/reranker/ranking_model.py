@@ -12,7 +12,6 @@ class NeuralRanker(nn.Module):
         self.h1 = nn.Linear(args.ranker_hidden, args.ranker_hidden)
         self.output = nn.Linear(args.ranker_hidden, 1)
 
-        self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=0.1)
         self.batchnorm1 = nn.BatchNorm1d(args.ranker_hidden)
         self.batchnorm2 = nn.BatchNorm1d(args.ranker_hidden)
@@ -26,7 +25,7 @@ class NeuralRanker(nn.Module):
         if self.train:
             x = self.dropout(x)
         x = self.output(x)
-
+        x = torch.sigmoid(x)
         return x
 
     def score_documents(self, queries, positives, negatives=None):
