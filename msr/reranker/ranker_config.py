@@ -43,13 +43,19 @@ def get_args():
     parser.add_argument('-doc_ids_format', type=str, default='./data/embeddings/marco_doc_embeddings_indices_{}.npy',
                         help='folder with chunks of document ids, with format brackets for idx')
     parser.add_argument('-num_doc_files', type=int, default=13, help='number of chunks of training triples')
-    parser.add_argument('-query_embedding_format', type=str, default='./data/embeddings/marco_query_embeddings_{}.npy',
+    parser.add_argument('-query_embedding_format', type=str,
+                        default='./data/embeddings/marco_train_query_embeddings_{}.npy',
                         help='folder with chunks of document embeddings, with format brackets for idx')
-    parser.add_argument('-query_ids_format', type=str, default='./data/embeddings/marco_query_embeddings_indices_{}.npy',
+    parser.add_argument('-query_ids_format', type=str,
+                        default='./data/embeddings/marco_train_query_embeddings_indices_{}.npy',
                         help='folder with chunks of document ids, with format brackets for idx')
     parser.add_argument('-num_query_files', type=int, default=1, help='number of chunks of training triples')
     parser.add_argument('-triples', type=str, default='./data/trids_marco-doc-10.tsv',
                         help='number of chunks of training triples')
+    parser.add_argument('-dev_query_embedding_file', type=str,
+                        default='./data/embeddings/marco_dev_query_embeddings_0.npy')
+    parser.add_argument('-dev_query_ids_file', type=str,
+                        default='./data/embeddings/marco_dev_query_embeddings_indices_0.npy')
 
 
     parser.add_argument('-out_dir', type=str, default='', help='directory for output')

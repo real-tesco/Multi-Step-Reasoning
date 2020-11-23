@@ -153,7 +153,7 @@ def eval_ranker(args, model, dev_loader, device):
 def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    logger.info("Loading data...")
+    logger.info("Loading train data...")
     doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
     logger.info(doc_embedding_list)
     doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
@@ -162,8 +162,13 @@ def main(args):
 
     train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.triples,
                                    mode='train')
-    dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.dev_file,
-                                 mode='dev')
+
+    logger.info("Loading dev data...")
+    dev_query_embedding_list = [args.dev_query_embedding_file]
+    dev_query_ids_list = [args.dev_query_ids_file]
+
+    dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, dev_query_embedding_list,
+                                 dev_query_ids_list, args.dev_file, mode='dev')
 
     # initialize Model
     if args.checkpoint:
