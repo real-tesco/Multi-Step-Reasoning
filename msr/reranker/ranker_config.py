@@ -54,6 +54,9 @@ def get_args():
     parser.add_argument('-query_ids_format', type=str, default='./data/embeddings/marco_query_embeddings_indices_{}.npy',
                         help='folder with chunks of document ids, with format brackets for idx')
     parser.add_argument('-num_query_files', type=int, default=1, help='number of chunks of training triples')
+    parser.add_argument('-triples', type=str, default='./data/trids_marco-doc-10.tsv',
+                        help='number of chunks of training triples')
+
 
     parser.add_argument('-out_dir', type=str, default='', help='directory for output')
     parser.add_argument('-trec_eval', type=str, default='', help='path to the trec eval file')
