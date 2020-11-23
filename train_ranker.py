@@ -164,9 +164,9 @@ def main(args):
 
     logger.info("Loading dev data...")
     dev_query_embedding_list = [args.dev_query_embedding_file]
-    print(dev_query_embedding_list)
+    # print(dev_query_embedding_list)
     dev_query_ids_list = [args.dev_query_ids_file]
-    print(dev_query_ids_list)
+    # print(dev_query_ids_list)
     dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, dev_query_embedding_list,
                                  dev_query_ids_list, args.dev_file, mode='dev')
 

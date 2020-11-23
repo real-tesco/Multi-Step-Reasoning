@@ -20,6 +20,7 @@ class RankingDataset(Dataset):
         # Load documents and convert to tensors
         tmp_docids = []
         tmp_docids.extend(np.load(x) for x in doc_ids_files)
+        print(tmp_docids)
         tmp_docids = np.concatenate(tmp_docids, axis=0)
 
         tmp_docs = []
