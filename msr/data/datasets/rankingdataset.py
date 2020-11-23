@@ -37,7 +37,7 @@ class RankingDataset(Dataset):
 
         self._queries = {idx: embed for idx, embed in zip(tmp_query_ids, tmp_queries)}
 
-        del tmp_queries, tmp_query_ids, tmp_docs, tmp_docids
+        #del tmp_queries, tmp_query_ids, tmp_docs, tmp_docids
 
         print(f"len of docs: {len(self._docs)} | len of queries: {len(self._queries)}")
 
@@ -61,6 +61,7 @@ class RankingDataset(Dataset):
         else:
             print("unknown dataset name..")
         self._count = len(self._examples)
+        print(f"len of examples: {self._count}")
 
     def __getitem__(self, idx):
         example = self._examples[idx]
