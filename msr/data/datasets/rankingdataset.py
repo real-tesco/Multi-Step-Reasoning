@@ -3,6 +3,9 @@ import json
 import torch
 from torch.utils.data import Dataset
 import numpy as np
+import logging
+
+logger = logging.getLogger()
 
 
 class RankingDataset(Dataset):
@@ -18,10 +21,8 @@ class RankingDataset(Dataset):
         self._mode = mode
 
         # Load documents and convert to tensors
-        print(doc_ids_files)
         tmp_docids = []
         tmp_docids.extend(np.load(x) for x in doc_ids_files)
-        print(tmp_docids)
         tmp_docids = np.concatenate(tmp_docids, axis=0)
 
         tmp_docs = []
@@ -41,10 +42,9 @@ class RankingDataset(Dataset):
 
         #del tmp_queries, tmp_query_ids, tmp_docs, tmp_docids
 
-        print(f"len of docs: {len(self._docs)} | len of queries: {len(self._queries)}")
+        logger.info(f"len of docs: {len(self._docs)} | len of queries: {len(self._queries)}")
 
         self._dataset = dataset
-        print(self._dataset)
 
         if self._dataset.split('.')[-1] == 'tsv':
             if isinstance(self._dataset, str):
@@ -61,22 +61,22 @@ class RankingDataset(Dataset):
                         line = json.loads(line)
                         self._examples.append(line)
         else:
-            print("unknown dataset name..")
+            logger.info("unknown dataset name..")
         self._count = len(self._examples)
-        print(f"len of examples: {self._count}")
+        logger.info(f"len of examples: {self._count}")
 
     def __getitem__(self, idx):
         example = self._examples[idx]
         if self._mode == 'train':
             return {'query': self._queries[example[0]],
-                    'positive_doc': self.docs[example[1]],
+                    'positive_doc': self._docs[example[1]],
                     'negative_doc': self._docs[example[2]]}
         elif self._mode == 'dev':
             query_id = example['query_id']
             doc_id = example['doc_id']
             retrieval_score = example['retrieval_score']
             label = example['label']
-            return {'query_id': query_id, 'doc_id': doc_id, 'label': label,'retrieval_score': retrieval_score,
+            return {'query_id': query_id, 'doc_id': doc_id, 'label': label, 'retrieval_score': retrieval_score,
                     'query': self._queries[query_id], 'doc': self._docs[doc_id]}
 
     def collate(self, batch):
