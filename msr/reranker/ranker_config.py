@@ -44,9 +44,16 @@ def get_args():
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json',
                         help='name of passage to doc file')
 
-    parser.add_argument('-training_folder', type=str, default='train/',
-                        help='folder with chunks of training triples')
-    parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
+    parser.add_argument('-doc_embedding_format', type=str, default='./data/embeddings/marco_doc_embeddings_{}.npy',
+                        help='folder with chunks of document embeddings, with format brackets for idx')
+    parser.add_argument('-doc_ids_format', type=str, default='./data/embeddings/marco_doc_embeddings_indices_{}.npy',
+                        help='folder with chunks of document ids, with format brackets for idx')
+    parser.add_argument('-num_doc_files', type=int, default=13, help='number of chunks of training triples')
+    parser.add_argument('-query_embedding_format', type=str, default='./data/embeddings/marco_query_embeddings_{}.npy',
+                        help='folder with chunks of document embeddings, with format brackets for idx')
+    parser.add_argument('-query_ids_format', type=str, default='./data/embeddings/marco_query_embeddings_indices_{}.npy',
+                        help='folder with chunks of document ids, with format brackets for idx')
+    parser.add_argument('-num_query_files', type=int, default=1, help='number of chunks of training triples')
 
     parser.add_argument('-out_dir', type=str, default='', help='directory for output')
     parser.add_argument('-trec_eval', type=str, default='', help='path to the trec eval file')

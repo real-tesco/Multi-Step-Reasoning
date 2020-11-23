@@ -8,13 +8,35 @@ import numpy as np
 class RankingDataset(Dataset):
     def __init__(
         self,
+        doc_embedding_files: List,
+        doc_ids_files: List,
+        query_embedding_files: List,
+        query_ids_files: List,
         dataset: str,
         mode: str = 'train'
             ) -> None:
-        self._dataset = dataset
         self._mode = mode
-        self._examples = np.load(dataset).astype(np.float32)
-        self._examples2 = np.load(dataset).astype(np.float32)
+        self._doc_ids = torch.tensor([np.load(x) for x in doc_ids_files])
+        print(self._doc_ids.shape)
+        self._doc_ids = torch.cat(self._doc_ids)
+        print(self._doc_ids.shape)
+        print(type(self._doc_ids))
+
+        self._docs = [np.load(x) for x in doc_embedding_files]
+        self._queries = [np.load(x) for x in query_embedding_files]
+        self._queries = [np.load(x) for x in query_ids_files]
+
+        self._dataset = dataset
+
+        if isinstance(self._dataset, str):
+            with open(self._dataset, 'r') as f:
+                self._examples = []
+                for i, line in enumerate(f):
+                    if i >= self._max_input:
+                        break
+                    line = line.strip().split()
+                    self._examples.append(line)
+
         self._count = len(self._examples)
 
     def __getitem__(self, idx):

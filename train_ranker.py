@@ -23,8 +23,8 @@ global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 
-def make_dataloader(triples_file, mode='train'):
-    dataset = RankingDataset(triples_file, mode=mode)
+def make_dataloader(doc_list, docid_list, query_list, query_id_list, triples, mode='train'):
+    dataset = RankingDataset(doc_list, docid_list, query_list, query_id_list, triples, mode=mode)
     loader = msr.data.dataloader.DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -91,7 +91,7 @@ def init_from_scratch(args):
 
 
 # TODO: look here
-def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader):
+def train(args, loss, ranking_model, optimizer, device, train_loader):
     para_loss = utils.AverageMeter()
 
     for idx, ex in enumerate(train_loader):
@@ -153,16 +153,15 @@ def eval_ranker(args, model, dev_loader, device):
 def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    test1 = np.load(args.test_file)
-    test2 = np.load(args.test_file)
-    logger.info("1")
-    test1 = torch.tensor(test1).to(device)
-    test2 = torch.tensor(test2).to(device)
-    logger.info("2")
-    test = test1 * test2
-    logger.info("3")
+    logger.info("Loading data...")
+    doc_embedding_list = [args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files)]
+    doc_ids_list = [args.doc_ids_format.format(i) for i in range(0, args.num_doc_files)]
+    query_embedding_list = [args.query_embedding_format.format(i) for i in range(0, args.num_query_files)]
+    query_ids_list = [args.query_ids_format.format(i) for i in range(0, args.num_query_files)]
 
-    dev_loader = make_dataloader(args.dev_file, mode='dev')
+    train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.triples,
+                                   mode='train')
+    #dev_loader = make_dataloader(args.dev_file, mode='dev')
 
     # initialize Model
     if args.checkpoint:
@@ -181,16 +180,8 @@ def main(args):
         best_mrr = 0.0
         for epoch in range(0, args.epochs):
             stats['epoch'] = epoch
-            # need to load the training data in chunks since its too big
-            for i in range(0, args.num_training_files):
-                logger.info("Load current chunk of training data...")
-                if args.num_training_files > 1:
-                    triples_file = os.path.join(args.train_folder, "train.triples.msmarco_" + str(i) + ".npy")
-                    stats['chunk'] = i
-                else:
-                    triples_file = os.path.join(args.training_folder, "train.triples.msmarco.npy")
-                training_loader = make_dataloader(triples_file, mode='train')
-                train(args, loss, ranker_model, optimizer, device, training_loader, dev_loader)
+
+            train(args, loss, ranker_model, optimizer, device, train_loader)
 
             if (epoch+1) % args.eval_every == 0:
                 rst = eval_ranker(args, ranker_model, dev_loader, device)
