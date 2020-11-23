@@ -68,6 +68,7 @@ class RankingDataset(Dataset):
     def __getitem__(self, idx):
         example = self._examples[idx]
         if self._mode == 'train':
+            logger.info(f'example: {example} | query: {self._queries[example[0]]} | pos doc: {self._docs[example[1]]}')
             return {'query': self._queries[example[0]],
                     'positive_doc': self._docs[example[1]],
                     'negative_doc': self._docs[example[2]]}
