@@ -93,7 +93,7 @@ def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader
     para_loss = utils.AverageMeter()
     best_mrr = 0.0
     mrr = 0.0
-    for epoch in range(args.epoch):
+    for epoch in range(args.epochs):
         for idx, ex in enumerate(train_loader):
             if ex is None:
                 continue
