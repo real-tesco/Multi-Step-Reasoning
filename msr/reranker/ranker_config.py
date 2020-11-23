@@ -68,11 +68,10 @@ def get_args():
     parser.add_argument('-dev_qids', type=str, default='dev.msmarco_qids.npy', help='dev qids file .npy')
     parser.add_argument('-out_file', type=str, default='ranking_results.tsv',
                         help='result file for the evaluation of the index')
-    parser.add_argument('-test_file', type=str)
 
     args = parser.parse_args()
 
-    args.query_file = os.path.join(args.base_dir, args.query_file)
+    '''
     args.pid2docid = os.path.join(args.base_dir, args.pid2docid)
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
     args.qid_file = os.path.join(args.base_dir, args.qid_file)
@@ -82,5 +81,6 @@ def get_args():
     args.out_file = os.path.join(args.out_dir, args.out_file)
     args.trec_eval = os.path.join(args.base_dir, args.trec_eval)
     args.qrels_dev_file = os.path.join(args.base_dir, args.qrels_dev_file)
+    '''
 
     return args
