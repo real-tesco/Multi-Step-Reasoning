@@ -196,21 +196,8 @@ def main(args):
     loss = loss.to(device)
 
     if args.train:
-        train(args, loss, ranker_model, optimizer, device, train_loader, dev_loader)
         logger.info("Starting training...")
-        best_mrr = 0.0
-        for epoch in range(0, args.epochs):
-            stats['epoch'] = epoch
-
-            train(args, loss, ranker_model, optimizer, device, train_loader)
-
-            if (epoch+1) % args.eval_every == 0:
-                rst = eval_ranker(args, ranker_model, dev_loader, device)
-                if rst > best_mrr:
-                    best_mrr = rst
-                    logger.info('New best MRR = {:2.4f}'.format(rst))
-                    logger.info('checkpointing  model at {}.ckpt'.format(args.model_name))
-                    save(args, ranker_model, optimizer, args.model_name + ".ckpt", epoch=stats['epoch'])
+        train(args, loss, ranker_model, optimizer, device, train_loader, dev_loader)
 
 
 if __name__ == '__main__':
