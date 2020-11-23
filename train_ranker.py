@@ -103,23 +103,24 @@ def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader
             batch_loss = loss(scores_p, scores_n, torch.ones(scores_p.size()).to(device))
             optimizer.zero_grad()
             batch_loss.backward()
-            #torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
+            # torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
             optimizer.step()
             para_loss.update(batch_loss.data.item())
             if math.isnan(para_loss.avg):
                 import pdb
                 pdb.set_trace()
 
-            if (idx+1) % args.print_every == 0:
-                logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f} | last mrr = {} |current best mrr = {}'.format(
-                    stats['epoch'],
-                    idx+1, len(train_loader),
+            if (idx + 1) % args.print_every == 0:
+                logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f} | last mrr = {:2.5f} | '
+                            'current best mrr = {:2.5f}'.format(
+                    epoch,
+                    idx + 1, len(train_loader),
                     para_loss.avg,
                     mrr,
                     best_mrr))
                 para_loss.reset()
 
-            if (idx+1) % args.eval_every == 0:
+            if (idx + 1) % args.eval_every == 0:
                 mrr = eval_ranker(args, ranking_model, dev_loader, device)
                 if mrr > best_mrr:
                     best_mrr = mrr
@@ -139,7 +140,7 @@ def eval_ranker(args, model, dev_loader, device):
         with torch.no_grad():
 
             batch_score = model.score_documents(dev_batch['query'].to(device),
-                                                      dev_batch['doc'].to(device))
+                                                dev_batch['doc'].to(device))
 
             # TODO: write to file
             batch_score = batch_score.detach().cpu().tolist()
