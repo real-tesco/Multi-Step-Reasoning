@@ -163,6 +163,8 @@ def main(args):
                                    mode='train')
 
     logger.info("Loading dev data...")
+    doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
+    doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
     dev_query_embedding_list = [args.dev_query_embedding_file]
     # print(dev_query_embedding_list)
     dev_query_ids_list = [args.dev_query_ids_file]
