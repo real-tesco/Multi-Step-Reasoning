@@ -155,6 +155,7 @@ def main(args):
 
     logger.info("Loading data...")
     doc_embedding_list = [args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files)]
+    logger.info(doc_embedding_list)
     doc_ids_list = [args.doc_ids_format.format(i) for i in range(0, args.num_doc_files)]
     query_embedding_list = [args.query_embedding_format.format(i) for i in range(0, args.num_query_files)]
     query_ids_list = [args.query_ids_format.format(i) for i in range(0, args.num_query_files)]
