@@ -7,6 +7,7 @@ import torch.nn as nn
 class NeuralRanker(nn.Module):
     def __init__(self, args):
         super(NeuralRanker, self).__init__()
+        self.train = args.train
         self.input = nn.Linear(args.ranker_input, args.ranker_hidden)
         self.h1 = nn.Linear(args.ranker_hidden, args.ranker_hidden)
         self.output = nn.Linear(args.ranker_hidden, 1)
@@ -22,7 +23,7 @@ class NeuralRanker(nn.Module):
         x = self.batchnorm1(x)
         x = self.h1(x)
         x = self.batchnorm2(x)
-        if self.args.train:
+        if self.train:
             x = self.dropout(x)
         x = self.output(x)
 

@@ -125,6 +125,7 @@ def train(args, loss, ranking_model, optimizer, device, train_loader):
 def eval_ranker(args, model, dev_loader, device):
     logger.info("Evaluating trec metrics for dev set...")
     rst_dict = {}
+    model.train = False
     for step, dev_batch in enumerate(dev_loader):
         # TODO: msmarco dataset refactoring
         query_id, doc_id, label, retrieval_score = dev_batch['query_id'], dev_batch['doc_id'], dev_batch['label'], \
@@ -143,8 +144,8 @@ def eval_ranker(args, model, dev_loader, device):
                     rst_dict[q_id] = [(b_s, d_id, l)]
         if (step + 1) % (4 * args.print_every) == 0:
             print(f"-- eval: {step + 1}/{len(dev_loader)} --")
+    model.train = True
     utils.save_trec(args.out_file, rst_dict)
-
     logger.info("Done with evaluation, use trec_eval to evaluate run...")
     mrr = utils.get_mrr(args.qrels, args.out_file)
     return mrr

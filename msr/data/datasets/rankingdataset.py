@@ -91,8 +91,8 @@ class RankingDataset(Dataset):
             doc_id = [item['doc_id']for item in batch]
             retrieval_score = [item['retrieval_score'] for item in batch]
             labels = [item['label'] for item in batch]
-            queries = torch.tensor([item['query'] for item in batch])
-            docs = torch.tensor([item['doc'] for item in batch])
+            queries = torch.stack([item['query'] for item in batch])
+            docs = torch.stack([item['doc'] for item in batch])
             return {'query_id': query_id, 'doc_id': doc_id, 'label': labels, 'retrieval_score': retrieval_score,
                     'doc': docs, 'query': queries}
 
