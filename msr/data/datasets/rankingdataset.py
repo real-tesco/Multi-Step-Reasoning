@@ -44,14 +44,14 @@ class RankingDataset(Dataset):
         self._dataset = dataset
         print(self._dataset)
 
-        if self._dataset.split('.')[-1] == '.tsv':
+        if self._dataset.split('.')[-1] == 'tsv':
             if isinstance(self._dataset, str):
                 with open(self._dataset, 'r') as f:
                     self._examples = []
                     for i, line in enumerate(f):
                         line = line.strip().split()
                         self._examples.append(line)
-        elif self._dataset.split('.')[-1] == '.jsonl':
+        elif self._dataset.split('.')[-1] == 'jsonl':
             if isinstance(self._dataset, str):
                 with open(self._dataset, 'r') as f:
                     self._examples = []
