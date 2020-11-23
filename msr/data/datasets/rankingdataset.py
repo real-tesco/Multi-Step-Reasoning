@@ -81,10 +81,10 @@ class RankingDataset(Dataset):
 
     def collate(self, batch):
         if self._mode == 'train':
-            logger.info(f'COLLATE batch: {batch} | query: {[item["query"][:10] for item in batch]}')
-            queries = torch.tensor([item['query'] for item in batch])
-            positive_docs = torch.tensor([item['positive_doc'] for item in batch])
-            negative_docs = torch.tensor([item['negative_doc'] for item in batch])
+            #logger.info(f'COLLATE batch: {batch} | query: {[item["query"][:10] for item in batch]}')
+            queries = torch.stack([item['query'] for item in batch])
+            positive_docs = torch.stack([item['positive_doc'] for item in batch])
+            negative_docs = torch.stack([item['negative_doc'] for item in batch])
             return {'query': queries, 'positive_doc': positive_docs, 'negative_doc': negative_docs}
         elif self._mode == 'dev':
             query_id = [item['query_id'] for item in batch]
