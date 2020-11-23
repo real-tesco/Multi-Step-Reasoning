@@ -35,12 +35,6 @@ def get_args():
     parser.add_argument('-batch_size', type=int, default=64, help='batch size to use')
     parser.add_argument('-data_workers', type=int, default=5, help='number of data workers to use')
 
-    # file options
-    parser.add_argument('-base_dir', type=str, help='base directory of training/evaluation files')
-    parser.add_argument('-query_file', type=str, default='train.msmarco_queries_normed.npy', help='name of query file')
-    parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy', help='name of qid file')
-    parser.add_argument('-qrels_file', type=str, default='qrels.train.tsv', help='name of qrels file')
-    parser.add_argument('-qrels_dev_file', type=str, default='', help='name of qrels file')
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json',
                         help='name of passage to doc file')
 
@@ -66,10 +60,9 @@ def get_args():
     parser.add_argument('-test', type='bool', default=True, help='test the index for self-recall and query recall')
     parser.add_argument('-train', type='bool', default=True, help='train document transformer')
 
-    parser.add_argument('-dev_queries', type=str, default='dev.msmarco_queries_normedf32.npy',
-                        help='dev query file .npy')
-    parser.add_argument('-dev_qids', type=str, default='dev.msmarco_qids.npy', help='dev qids file .npy')
-    parser.add_argument('-out_file', type=str, default='ranking_results.tsv',
+    parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv',
+                        help='dev qrels file')
+    parser.add_argument('-out_file', type=str, default='./results/ranking_results.tsv',
                         help='result file for the evaluation of the index')
 
     args = parser.parse_args()

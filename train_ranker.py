@@ -131,8 +131,8 @@ def eval_ranker(args, model, dev_loader, device):
                                                    dev_batch['retrieval_score']
         with torch.no_grad():
 
-            batch_score, _, _ = model.score_documents(dev_batch['q_embedding'].to(device),
-                                                      dev_batch['d_embedding'].to(device))
+            batch_score, _, _ = model.score_documents(dev_batch['query'].to(device),
+                                                      dev_batch['doc'].to(device))
 
             # TODO: write to file
             batch_score = batch_score.detach().cpu().tolist()
@@ -146,7 +146,7 @@ def eval_ranker(args, model, dev_loader, device):
     utils.save_trec(args.out_file, rst_dict)
 
     logger.info("Done with evaluation, use trec_eval to evaluate run...")
-    mrr = utils.get_mrr(args.qrels_dev_file, args.out_file)
+    mrr = utils.get_mrr(args.qrels, args.out_file)
     return mrr
 
 
@@ -162,7 +162,8 @@ def main(args):
 
     train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.triples,
                                    mode='train')
-    #dev_loader = make_dataloader(args.dev_file, mode='dev')
+    dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.dev_file,
+                                 mode='dev')
 
     # initialize Model
     if args.checkpoint:

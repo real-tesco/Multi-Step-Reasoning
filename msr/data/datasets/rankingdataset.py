@@ -43,20 +43,35 @@ class RankingDataset(Dataset):
 
         self._dataset = dataset
 
-        if isinstance(self._dataset, str):
-            with open(self._dataset, 'r') as f:
-                self._examples = []
-                for i, line in enumerate(f):
-                    line = line.strip().split()
-                    self._examples.append(line)
+        if self._dataset.split('.')[-1] == '.tsv':
+            if isinstance(self._dataset, str):
+                with open(self._dataset, 'r') as f:
+                    self._examples = []
+                    for i, line in enumerate(f):
+                        line = line.strip().split()
+                        self._examples.append(line)
+        elif self._dataset.split('.')[-1] == '.jsonl':
+            if isinstance(self._dataset, str):
+                with open(self._dataset, 'r') as f:
+                    self._examples = []
+                    for i, line in enumerate(f):
+                        line = json.loads(line)
+                        self._examples.append(line)
         self._count = len(self._examples)
 
     def __getitem__(self, idx):
         example = self._examples[idx]
         if self._mode == 'train':
-            return {'query': example[0], 'positive_doc': example[1], 'negative_doc': example[2]}
+            return {'query': self._queries[example[0]],
+                    'positive_doc': self.docs[example[1]],
+                    'negative_doc': self._docs[example[2]]}
         elif self._mode == 'dev':
-            return {}
+            query_id = example['query_id']
+            doc_id = example['doc_id']
+            retrieval_score = example['retrieval_score']
+            label = example['label']
+            return {'query_id': query_id, 'doc_id': doc_id, 'label': label,'retrieval_score': retrieval_score,
+                    'query': self._queries[query_id], 'doc': self._docs[doc_id]}
 
     def collate(self, batch):
         if self._mode == 'train':
@@ -65,7 +80,14 @@ class RankingDataset(Dataset):
             negative_docs = torch.tensor([item['negative_doc'] for item in batch])
             return {'query': queries, 'positive_doc': positive_docs, 'negative_doc': negative_docs}
         elif self._mode == 'dev':
-            return {}
+            query_id = [item['query_id'] for item in batch]
+            doc_id = [item['doc_id']for item in batch]
+            retrieval_score = [item['retrieval_score'] for item in batch]
+            labels = [item['label'] for item in batch]
+            queries = torch.tensor([item['query'] for item in batch])
+            docs = torch.tensor([item['doc'] for item in batch])
+            return {'query_id': query_id, 'doc_id': doc_id, 'label': labels, 'retrieval_score': retrieval_score,
+                    'doc': docs, 'query': queries}
 
     def __len__(self):
         return self._count
