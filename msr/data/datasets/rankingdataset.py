@@ -68,8 +68,6 @@ class RankingDataset(Dataset):
     def __getitem__(self, idx):
         example = self._examples[idx]
         if self._mode == 'train':
-            logger.info(f'GETITEM: example: {example} | query: {self._queries[example[0]] is not None} | '
-                        f'pos doc: {self._docs[example[1]] is not None}')
             return {'query': self._queries[example[0]],
                     'positive_doc': self._docs[example[1]],
                     'negative_doc': self._docs[example[2]]}
@@ -83,7 +81,7 @@ class RankingDataset(Dataset):
 
     def collate(self, batch):
         if self._mode == 'train':
-            logger.info(f'COLLATE batch: {batch} | query: {[item["query"]for item in batch]}')
+            logger.info(f'COLLATE batch: {batch} | query: {[item["query"][:10] for item in batch]}')
             queries = torch.tensor([item['query'] for item in batch])
             positive_docs = torch.tensor([item['positive_doc'] for item in batch])
             negative_docs = torch.tensor([item['negative_doc'] for item in batch])
