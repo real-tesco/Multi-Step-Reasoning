@@ -58,7 +58,7 @@ def get_args():
                         default='./data/embeddings/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-dev_query_ids_file', type=str,
                         default='./data/embeddings/marco_dev_query_embeddings_indices_0.npy')
-
+    parser.add_argument('-print_every', type=int, default=100)
 
     parser.add_argument('-out_dir', type=str, default='', help='directory for output')
     parser.add_argument('-trec_eval', type=str, default='', help='path to the trec eval file')

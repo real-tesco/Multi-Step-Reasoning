@@ -27,7 +27,7 @@ def make_dataloader(doc_list, docid_list, query_list, query_id_list, triples, mo
     dataset = RankingDataset(doc_list, docid_list, query_list, query_id_list, triples, mode=mode)
     loader = msr.data.dataloader.DataLoader(
         dataset,
-        batch_size=args.batch_size,
+        batch_size=args.batch_size if mode == 'train' else args.batch_size * 8,
         shuffle=(mode == 'train'),
         num_workers=args.data_workers
     )
@@ -117,7 +117,7 @@ def train(args, loss, ranking_model, optimizer, device, train_loader):
         if idx % 25 == 0 and idx > 0:
             logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f}\n'.format(
                 stats['epoch'],
-                idx, len(train_loader) * args.num_training_files,
+                idx, len(train_loader),
                 para_loss.avg))
             para_loss.reset()
 
@@ -142,7 +142,7 @@ def eval_ranker(args, model, dev_loader, device):
                     rst_dict[q_id].append((b_s, d_id, l))
                 else:
                     rst_dict[q_id] = [(b_s, d_id, l)]
-        if (step + 1) % (4 * args.print_every) == 0:
+        if (step + 1) % args.print_every == 0:
             print(f"-- eval: {step + 1}/{len(dev_loader)} --")
     model.train = True
     utils.save_trec(args.out_file, rst_dict)
