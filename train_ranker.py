@@ -117,7 +117,7 @@ def train(args, loss, ranking_model, optimizer, device, train_loader):
         if idx % 25 == 0 and idx > 0:
             logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f}\n'.format(
                 stats['epoch'],
-                idx + stats['chunk'] * len(train_loader), len(train_loader) * args.num_training_files,
+                idx, len(train_loader) * args.num_training_files,
                 para_loss.avg))
             para_loss.reset()
 
