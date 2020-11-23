@@ -34,13 +34,11 @@ def make_dataloader(doc_list, docid_list, query_list, query_id_list, triples, mo
     return loader
 
 
-def save(args, model, optimizer, filename, epoch=None):
+def save(args, model, optimizer, filename):
     params = {'state_dict': {
         'model': model.state_dict(),
         'optimizer': optimizer.state_dict()
     }}
-    if epoch:
-        params['epoch'] = epoch
     try:
         torch.save(params, filename)
     except BaseException:
@@ -91,35 +89,47 @@ def init_from_scratch(args):
 
 
 # TODO: look here
-def train(args, loss, ranking_model, optimizer, device, train_loader):
+def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader):
     para_loss = utils.AverageMeter()
+    best_mrr = 0.0
+    mrr = 0.0
+    for epoch in range(args.epoch):
+        for idx, ex in enumerate(train_loader):
+            if ex is None:
+                continue
 
-    for idx, ex in enumerate(train_loader):
-        if ex is None:
-            continue
+            scores_p, scores_n = ranking_model.score_documents(ex['query'].to(device),
+                                                               ex['positive_doc'].to(device),
+                                                               ex['negative_doc'].to(device))  # todo: look here
 
-        scores_p, scores_n = ranking_model.score_documents(ex['query'].to(device),
-                                                           ex['positive_doc'].to(device),
-                                                           ex['negative_doc'].to(device))  # todo: look here
+            batch_loss = loss(scores_p, scores_n, torch.ones(scores_p.size()).to(device))
 
-        batch_loss = loss(scores_p, scores_n, torch.ones(scores_p.size()).to(device))
+            optimizer.zero_grad()
+            batch_loss.backward()
+            #torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
+            optimizer.step()
+            para_loss.update(batch_loss.data.item())
 
-        optimizer.zero_grad()
-        batch_loss.backward()
-        #torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
-        optimizer.step()
-        para_loss.update(batch_loss.data.item())
+            if math.isnan(para_loss.avg):
+                import pdb
+                pdb.set_trace()
 
-        if math.isnan(para_loss.avg):
-            import pdb
-            pdb.set_trace()
+            if idx+1 % args.print_every == 0:
+                logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f} | last mrr = {} |current best mrr = {}'.format(
+                    stats['epoch'],
+                    idx, len(train_loader),
+                    para_loss.avg,
+                    mrr,
+                    best_mrr))
+                para_loss.reset()
 
-        if idx % 25 == 0 and idx > 0:
-            logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f}\n'.format(
-                stats['epoch'],
-                idx, len(train_loader),
-                para_loss.avg))
-            para_loss.reset()
+            if idx+1 % args.eval_every == 0:
+                mrr = eval_ranker(args, ranking_model, dev_loader, device)
+                if mrr > best_mrr:
+                    best_mrr = mrr
+                    logger.info('New best MRR = {:2.4f}'.format(mrr))
+                    logger.info('checkpointing  model at {}.ckpt'.format(args.model_name))
+                    save(args, ranking_model, optimizer, args.model_name + ".ckpt")
 
 
 def eval_ranker(args, model, dev_loader, device):
@@ -186,6 +196,7 @@ def main(args):
     loss = loss.to(device)
 
     if args.train:
+        train(args, loss, ranker_model, optimizer, device, train_loader, dev_loader)
         logger.info("Starting training...")
         best_mrr = 0.0
         for epoch in range(0, args.epochs):
