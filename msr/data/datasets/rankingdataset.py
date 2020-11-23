@@ -16,33 +16,30 @@ class RankingDataset(Dataset):
         mode: str = 'train'
             ) -> None:
         self._mode = mode
-        self._doc_ids = []
-        self._docs = {}
-        self._queries = {}
-        self._query_ids = []
 
         # Load documents and convert to tensors
         tmp_docids = []
         tmp_docids.extend(np.load(x) for x in doc_ids_files)
         tmp_docids = np.concatenate(tmp_docids, axis=0)
-        print(tmp_docids.shape)
 
         tmp_docs = []
         tmp_docs.extend(torch.tensor(np.load(x)) for x in doc_embedding_files)
         tmp_docs = torch.cat(tmp_docs, dim=0)
-        print(tmp_docs.shape)
-        #self._docs[self._doc_ids[i]] = tmp_docs[i] for i in range(0, len(tmp_docs))
+
         self._docs = {idx: embed for idx, embed in zip(tmp_docids, tmp_docs)}
 
-        print(self._docs.keys())
-        print(len(self._docs))
-
-        self._query_ids.extend(np.load(x) for x in query_ids_files)
+        tmp_query_ids = []
+        tmp_query_ids.extend(np.load(x) for x in query_ids_files)
+        tmp_query_ids = np.concatenate(tmp_query_ids, axis=0)
         tmp_queries = []
         tmp_queries.extend(torch.tensor(np.load(x)) for x in query_embedding_files)
-        tmp_queries = torch.cat(tmp_queries)
-        print(tmp_queries.shape)
+        tmp_queries = torch.cat(tmp_queries, dim=0)
 
+        self._queries = {idx: embed for idx, embed in zip(tmp_query_ids, tmp_queries)}
+
+        del tmp_queries, tmp_query_ids, tmp_docs, tmp_docids
+
+        print(f"len of docs: {len(self._docs)} | len of queries: {len(self._queries)}")
 
         self._dataset = dataset
 
