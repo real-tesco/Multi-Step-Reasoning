@@ -53,7 +53,7 @@ def get_args():
     parser.add_argument('-triples', type=str, default='./data/trids_marco-doc-10.tsv',
                         help='number of chunks of training triples')
 
-    parser.add_argument('-dev_file', type=str, defualt='./data/msmarco-doc.dev.jsonl')
+    parser.add_argument('-dev_file', type=str, default='./data/msmarco-doc.dev.jsonl')
     parser.add_argument('-dev_query_embedding_file', type=str,
                         default='./data/embeddings/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-dev_query_ids_file', type=str,
