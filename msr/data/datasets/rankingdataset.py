@@ -21,12 +21,12 @@ class RankingDataset(Dataset):
         print(self._doc_ids[:40])
         #self._doc_ids = torch.cat(self._doc_ids)
         #print(self._doc_ids.shape)
-        print(type(self._doc_ids))
+        print(len(self._doc_ids))
         self._docs = []
         self._docs.extend(torch.tensor(np.load(x)) for x in doc_embedding_files)
-        self._docs = torch.tensor(self._docs)
+        #self._docs = torch.tensor(self._docs)
         #print(self._docs.shape)
-        self._docs = torch.cat(self._docs)
+        self._docs = torch.cat(self._docs, dim=0)
         print(self._docs.shape)
 
         self._queries = [np.load(x) for x in query_embedding_files]
