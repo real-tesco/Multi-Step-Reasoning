@@ -42,6 +42,7 @@ class RankingDataset(Dataset):
         print(f"len of docs: {len(self._docs)} | len of queries: {len(self._queries)}")
 
         self._dataset = dataset
+        print(self._dataset)
 
         if self._dataset.split('.')[-1] == '.tsv':
             if isinstance(self._dataset, str):
@@ -57,6 +58,8 @@ class RankingDataset(Dataset):
                     for i, line in enumerate(f):
                         line = json.loads(line)
                         self._examples.append(line)
+        else:
+            print("unknown dataset name..")
         self._count = len(self._examples)
 
     def __getitem__(self, idx):
