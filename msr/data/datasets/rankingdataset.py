@@ -24,6 +24,7 @@ class RankingDataset(Dataset):
         # Load documents and convert to tensors
         self._doc_ids.append(np.load(x) for x in doc_ids_files)
         print(len(self._doc_ids))
+        print(len(self._doc_ids[0]))
         self._docs.extend(torch.tensor(np.load(x)) for x in doc_embedding_files)
         self._docs = torch.cat(self._docs, dim=0)
         print(self._docs.shape)
