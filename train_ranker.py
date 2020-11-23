@@ -113,7 +113,7 @@ def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader
             if (idx+1) % args.print_every == 0:
                 logger.info('Epoch = {} | iter={}/{} | avg loss = {:2.4f} | last mrr = {} |current best mrr = {}'.format(
                     stats['epoch'],
-                    idx, len(train_loader),
+                    idx+1, len(train_loader),
                     para_loss.avg,
                     mrr,
                     best_mrr))
@@ -138,7 +138,7 @@ def eval_ranker(args, model, dev_loader, device):
                                                    dev_batch['retrieval_score']
         with torch.no_grad():
 
-            batch_score, _, _ = model.score_documents(dev_batch['query'].to(device),
+            batch_score = model.score_documents(dev_batch['query'].to(device),
                                                       dev_batch['doc'].to(device))
 
             # TODO: write to file
