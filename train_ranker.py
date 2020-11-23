@@ -97,19 +97,20 @@ def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader
         for idx, ex in enumerate(train_loader):
             if ex is None:
                 continue
-
+            logger.info(f'{idx} in epoch {epoch}')
+            logger.info('before calculation')
             scores_p, scores_n = ranking_model.score_documents(ex['query'].to(device),
                                                                ex['positive_doc'].to(device),
                                                                ex['negative_doc'].to(device))  # todo: look here
-
+            logger.info('after calculation')
             batch_loss = loss(scores_p, scores_n, torch.ones(scores_p.size()).to(device))
-
+            logger.info('after loss')
             optimizer.zero_grad()
             batch_loss.backward()
             #torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
             optimizer.step()
             para_loss.update(batch_loss.data.item())
-
+            logger.info('after optimizer step')
             if math.isnan(para_loss.avg):
                 import pdb
                 pdb.set_trace()
