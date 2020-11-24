@@ -43,7 +43,7 @@ def create_knn_index(args):
             docid2indexid[docid] = idx
             idx += 1
         logger.info('Starting adding current chunk of docs to knn index...')
-        p.add_items(data, indices)
+        p.add_items(data, current_idxs)
         logger.info(f'Indexed {len(indices)} / {max_elements} passages!')
 
     logger.info(f'Finished creating index added {idx} chunks, starting saving index and docid2indexid file')
