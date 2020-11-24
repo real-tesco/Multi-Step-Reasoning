@@ -153,8 +153,8 @@ def eval_ranker(args, model, dev_loader, device):
             print(f"-- eval: {step + 1}/{len(dev_loader)} --")
     model.train = True
     utils.save_trec(args.out_file, rst_dict)
-    logger.info("Done with evaluation, use trec_eval to evaluate run...")
     mrr = utils.get_mrr(args.qrels, args.out_file)
+    logger.info(f"Done with evaluation, mrr = {mrr}...")
     return mrr
 
 
