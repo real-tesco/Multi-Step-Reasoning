@@ -110,6 +110,7 @@ if __name__ == '__main__':
                         default='./data/embeddings/marco_doc_embeddings_indices_{}.npy',
                         help='path to the indices for the passages')
     parser.add_argument('-number_of_doc_files', type=int, default=13)
+    parser.add_argument('-max_elements', type=int, default=3213835)
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
                             '%m/%d/%Y %I:%M:%S %p')
