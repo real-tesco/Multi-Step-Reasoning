@@ -30,11 +30,18 @@ def create_knn_index(args):
 
     p = hnswlib.Index(space=args.similarity, dim=args.dimension)
     p.init_index(max_elements=max_elements, ef_construction=args.ef_construction, M=args.M)  # parameter tuning
+    idx = 0
+    docid2indexid = {}
 
     for i in range(0, args.number_of_doc_files):
         data = np.load(args.passage_file_format.format(i))
         indices = np.load(args.indices_file_format.format(i))
-
+        current_idxs = np.array(indices.shape)
+        for docid in indices:
+            current_idxs[idx] = idx
+            docid2indexid[docid] = idx
+            idx += 1
+        assert idx == max_elements
         logger.info('Starting adding current chunk of docs to knn index...')
         p.add_items(data, indices)
         logger.info(f'Indexed {len(indices)} / {max_elements} passages!')
