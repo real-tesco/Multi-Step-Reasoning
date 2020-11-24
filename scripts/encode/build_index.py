@@ -38,8 +38,8 @@ def create_knn_index(args):
         indices = np.load(args.indices_file_format.format(i))
         print(indices.shape)
         current_idxs = np.empty(len(indices))
-        for docid in indices:
-            current_idxs[idx] = idx
+        for idy, docid in enumerate(indices):
+            current_idxs[idy] = idx
             docid2indexid[docid] = idx
             idx += 1
         logger.info('Starting adding current chunk of docs to knn index...')
