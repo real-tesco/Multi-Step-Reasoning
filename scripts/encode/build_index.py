@@ -42,14 +42,16 @@ def create_knn_index(args):
             current_idxs[idx] = idx
             docid2indexid[docid] = idx
             idx += 1
-        assert idx == max_elements
         logger.info('Starting adding current chunk of docs to knn index...')
         p.add_items(data, indices)
         logger.info(f'Indexed {len(indices)} / {max_elements} passages!')
 
-    logger.info('Finished creating index, starting saving index')
+    logger.info(f'Finished creating index added {idx} chunks, starting saving index and docid2indexid file')
     index_name = args.out_dir + f'msmarco_knn_index_M_{args.M}_efc_{args.ef_construction}.bin'
     p.save_index(index_name)
+    with open(args.mapping_file, 'w+') as f:
+        json.dump(docid2indexid, f)
+    logger.info('Finished!')
 
     if args.test:
         data = np.load(args.passage_file_format.format(0))
@@ -119,6 +121,7 @@ if __name__ == '__main__':
                         help='path to the indices for the passages')
     parser.add_argument('-number_of_doc_files', type=int, default=13)
     parser.add_argument('-max_elements', type=int, default=3213835)
+    parser.add_argument('-mapping_file', type=str, default='./data/indexes/mapping_docid2indexid.json')
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
                             '%m/%d/%Y %I:%M:%S %p')
@@ -128,10 +131,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    logger.info('testing pyjnius')
-    #JString = autoclass('java.lang.String')
-    #test = JString('Hello world')
-    #logger.info(test)
     if args.convert_tsv_to_json:
         convert_tsv_to_json(args)
     elif args.index_type == 'knn':
