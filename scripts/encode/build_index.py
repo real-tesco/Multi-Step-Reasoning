@@ -36,7 +36,8 @@ def create_knn_index(args):
     for i in range(0, args.number_of_doc_files):
         data = np.load(args.passage_file_format.format(i))
         indices = np.load(args.indices_file_format.format(i))
-        current_idxs = np.array(indices.shape)
+        print(indices.shape)
+        current_idxs = np.empty(len(indices))
         for docid in indices:
             current_idxs[idx] = idx
             docid2indexid[docid] = idx
