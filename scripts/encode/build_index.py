@@ -44,7 +44,7 @@ def create_knn_index(args):
             idx += 1
         logger.info('Starting adding current chunk of docs to knn index...')
         p.add_items(data, current_idxs)
-        logger.info(f'Indexed {len(indices)} / {max_elements} passages!')
+        logger.info(f'Indexed {idx} / {max_elements} passages!')
 
     logger.info(f'Finished creating index added {idx} chunks, starting saving index and docid2indexid file')
     index_name = args.out_dir + f'msmarco_knn_index_M_{args.M}_efc_{args.ef_construction}.bin'
