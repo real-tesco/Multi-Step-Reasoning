@@ -2,7 +2,7 @@ import os
 import json
 from argparse import Action
 import time
-import Dict
+from typing import List, Dict
 
 
 class DictOrStr(Action):
