@@ -4,7 +4,6 @@ import msr
 from msr.data.datasets.rankingdataset import RankingDataset
 from msr.reranker.ranking_model import NeuralRanker
 import msr.utils as utils
-import msr.metrics.metric as metric
 import msr.reranker.ranker_config as config
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
 import torch.optim as optim
@@ -201,9 +200,11 @@ def main(args):
     loss = torch.nn.MarginRankingLoss(margin=1)
     loss = loss.to(device)
 
+    metric = msr.metrics.Metric()
+
     if args.train:
         logger.info("Starting training...")
-        train(args, loss, ranker_model, optimizer, device, train_loader, dev_loader)
+        train(args, loss, ranker_model, metric, optimizer, device, train_loader, dev_loader)
 
 
 if __name__ == '__main__':
