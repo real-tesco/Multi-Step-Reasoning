@@ -3,6 +3,7 @@ import json
 from argparse import Action
 import time
 from typing import List, Dict
+import pytrec_eval
 
 
 class DictOrStr(Action):
