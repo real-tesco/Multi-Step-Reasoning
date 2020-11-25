@@ -24,6 +24,8 @@ def get_args():
     parser.add_argument('-pretrained', type=str, default='ranker.ckpt', help='checkpoint file to load checkpoint')
     parser.add_argument('-checkpoint', type='bool', default=False, help='Whether to use a checkpoint or not')
     parser.add_argument('-model_name', type=str, default='ranker', help='Model name to load from/save as checkpoint')
+    parser.add_argument('-metric', type=str, default='ndcg_cut_10', help='metric to evaluate ranker with')
+
 
     # training options
     parser.add_argument('-epochs', type=int, default=30,

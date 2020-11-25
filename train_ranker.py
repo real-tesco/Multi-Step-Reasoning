@@ -4,6 +4,7 @@ import msr
 from msr.data.datasets.rankingdataset import RankingDataset
 from msr.reranker.ranking_model import NeuralRanker
 import msr.utils as utils
+import msr.metrics.metric as metric
 import msr.reranker.ranker_config as config
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
 import torch.optim as optim
@@ -89,8 +90,10 @@ def init_from_scratch(args):
 
 
 # TODO: look here
-def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader):
+def train(args, loss, ranking_model, metric, optimizer, device, train_loader, dev_loader):
     para_loss = utils.AverageMeter()
+    mes = 0.0
+    best_mes = 0.0
     best_mrr = 0.0
     best_ndcg = 0.0
     mrr = 0.0
@@ -113,25 +116,31 @@ def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader
                 pdb.set_trace()
 
             if (idx + 1) % args.print_every == 0:
-                logger.info('Epoch={} | iter={}/{} | avg loss={:2.4f} | last mrr={:2.5f} | '
-                            'best mrr={:2.5f} | last ndcg={:2.5f} | best ndcg={:2.5f}'.format(
+                logger.info('Epoch={} | iter={}/{} | avg loss={:2.4f} | last mes={:2.5f} | '
+                            'best mes={:2.5f} | last ndcg={:2.5f} | best ndcg={:2.5f}'.format(
                     epoch,
                     idx + 1, len(train_loader),
                     para_loss.avg,
-                    mrr,
-                    best_mrr,
+                    mes,
+                    best_mes,
                     ndcg,
                     best_ndcg))
                 para_loss.reset()
 
             if (idx + 1) % args.eval_every == 0:
-                mrr, ndcg = eval_ranker(args, ranking_model, dev_loader, device)
-                if mrr > best_mrr or ndcg > best_ndcg:
-                    best_mrr = mrr if mrr > best_mrr else best_mrr
-                    best_ndcg = ndcg if ndcg > best_ndcg else best_ndcg
-                    logger.info('New best MRR = {:2.4f}'.format(mrr))
+                rst_dict = eval_ranker(args, ranking_model, metric, dev_loader, device)
+                msr.utils.save_trec(args.res, rst_dict)
+                if args.metric.split('_')[0] == 'mrr':
+                    mes = metric.get_mrr(args.qrels, args.res, args.metric)
+                else:
+                    mes = metric.get_metric(args.qrels, args.res, args.metric)
+                if mes > best_mes:
+                    best_mes = mes
+                    #best_mrr = mrr if mrr > best_mrr else best_mrr
+                    #best_ndcg = ndcg if ndcg > best_ndcg else best_ndcg
+                    logger.info('New best mes = {:2.4f}'.format(best_mes))
                     logger.info('checkpointing  model at {}.ckpt'.format(args.model_name))
-                    save(args, ranking_model, optimizer, args.model_name + ".ckpt")
+                    torch.save(ranking_model.state_dict(), args.model_name + ".ckpt")
 
 
 def eval_ranker(args, model, dev_loader, device):
@@ -157,11 +166,7 @@ def eval_ranker(args, model, dev_loader, device):
         if (step + 1) % args.print_every == 0:
             print(f"-- eval: {step + 1}/{len(dev_loader)} --")
     model.train = True
-    utils.save_trec(args.out_file, rst_dict)
-    mrr = utils.get_mrr(args.qrels, args.out_file)
-    ndcg = utils.get_metric(args.qrels, args.out_file, metric='ndcg_cut_10')
-    logger.info(f"Done with evaluation, mrr = {mrr} ndcg = {ndcg}...")
-    return mrr, ndcg
+    return rst_dict
 
 
 def main(args):
