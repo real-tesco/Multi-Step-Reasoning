@@ -25,7 +25,7 @@ class NeuralRanker(nn.Module):
         if self.train:
             x = self.dropout(x)
         x = self.output(x)
-        x = torch.sigmoid(x)
+        # x = torch.sigmoid(x)
         return x
 
     def score_documents(self, queries, positives, negatives=None):
