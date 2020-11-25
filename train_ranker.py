@@ -3,7 +3,7 @@ import torch
 import msr
 from msr.data.datasets.rankingdataset import RankingDataset
 from msr.reranker.ranking_model import NeuralRanker
-import msr.reranker.utilities as utils
+import utils as utils
 import msr.reranker.ranker_config as config
 from torch.utils.data.sampler import SequentialSampler, RandomSampler
 import torch.optim as optim
