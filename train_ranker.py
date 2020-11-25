@@ -127,7 +127,7 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                 para_loss.reset()
 
             if (idx + 1) % args.eval_every == 0:
-                rst_dict = eval_ranker(args, ranking_model, metric, dev_loader, device)
+                rst_dict = eval_ranker(args, ranking_model, dev_loader, device)
                 msr.utils.save_trec(args.res, rst_dict)
                 if args.metric.split('_')[0] == 'mrr':
                     mes = metric.get_mrr(args.qrels, args.res, args.metric)
@@ -142,7 +142,7 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                     torch.save(ranking_model.state_dict(), args.model_name + ".ckpt")
 
 
-def eval_ranker(args, model, dev_loader, device):
+def eval_ranker(args, model,  dev_loader, device):
     logger.info("Evaluating trec metrics for dev set...")
     rst_dict = {}
     model.train = False
