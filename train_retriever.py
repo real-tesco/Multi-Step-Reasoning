@@ -70,8 +70,8 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
             m_optim.zero_grad()
 
             if (step + 1) % args.print_every == 0:
-                logger.info(f"{step + 1} / {len(train_loader)} | {avg_loss / args.print_every} | last metric: {mes} "
-                            f"| best metric: {best_mes}")
+                logger.info(f"Epoch={epoch} | {step + 1} / {len(train_loader)} | {avg_loss / args.print_every} | "
+                            f"last metric: {mes} | best metric: {best_mes}")
                 avg_loss = 0.0
 
             if (step + 1) % args.eval_every == 0:
