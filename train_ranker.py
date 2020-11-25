@@ -197,7 +197,7 @@ def main(args):
         ranker_model, optimizer = init_from_scratch(args)
 
     ranker_model.to(device)
-    loss = torch.nn.MarginRankingLoss(margin=1)
+    loss = torch.nn.MarginRankingLoss(margin=1.0)
     loss = loss.to(device)
 
     metric = msr.metrics.Metric()
