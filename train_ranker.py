@@ -94,6 +94,7 @@ def train(args, loss, ranking_model, optimizer, device, train_loader, dev_loader
     best_mrr = 0.0
     best_ndcg = 0.0
     mrr = 0.0
+    ndcg = 0.0
     for epoch in range(0, args.epochs):
         for idx, ex in enumerate(train_loader):
             if ex is None:
