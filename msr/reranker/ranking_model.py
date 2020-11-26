@@ -13,15 +13,18 @@ class NeuralRanker(nn.Module):
         self.output = nn.Linear(args.ranker_hidden, 1)
 
         self.dropout = nn.Dropout(p=0.1)
-        self.batchnorm1 = nn.BatchNorm1d(args.ranker_hidden)
-        self.batchnorm2 = nn.BatchNorm1d(args.ranker_hidden)
+        self.activation = nn.ReLU()
+        #self.batchnorm1 = nn.BatchNorm1d(args.ranker_hidden)
+        #self.batchnorm2 = nn.BatchNorm1d(args.ranker_hidden)
 
     # no sigmoid since BCE loss with logits
     def forward(self, inputs):
         x = self.input(inputs)
-        x = self.batchnorm1(x)
+        x = self.activation(x)
+        #x = self.batchnorm1(x)
         x = self.h1(x)
-        x = self.batchnorm2(x)
+        x = self.activation(x)
+        #x = self.batchnorm2(x)
         if self.train:
             x = self.dropout(x)
         x = self.output(x)
