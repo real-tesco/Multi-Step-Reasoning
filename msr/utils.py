@@ -33,22 +33,6 @@ def save_trec(rst_file, rst_dict):
     return
 
 
-def get_metric(qrels: str, trec: str, metric: str = 'ndcg_cut_10') -> Dict[str, float]:
-    with open(qrels, 'r') as f_qrel:
-        qrel = pytrec_eval.parse_qrel(f_qrel)
-    with open(trec, 'r') as f_run:
-        run = pytrec_eval.parse_run(f_run)
-
-    evaluator = pytrec_eval.RelevanceEvaluator(qrel, pytrec_eval.supported_measures)
-    results = evaluator.evaluate(run)
-    for query_id, query_measures in sorted(results.items()):
-        pass
-    mes = {}
-    for measure in sorted(query_measures.keys()):
-        mes[measure] = pytrec_eval.compute_aggregated_measure(measure, [query_measures[measure] for query_measures in
-                                                                        results.values()])
-    return mes[metric]
-
 
 def get_mrr(qrels: str, trec: str, metric: str = 'mrr_cut_10') -> float:
     k = int(metric.split('_')[-1])
