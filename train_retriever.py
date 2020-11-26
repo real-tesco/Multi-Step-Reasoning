@@ -84,6 +84,7 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                         mes = metric.get_metric(args.qrels, args.res, args.metric)
                 if mes >= best_mes:
                     best_mes = mes
+                    msr.utils.save_trec(args.res + ".best", rst_dict)
                     logger.info('save_model...')
                     if torch.cuda.device_count() > 1:
                         torch.save(model.module.state_dict(), args.save)

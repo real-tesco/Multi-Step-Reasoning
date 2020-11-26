@@ -127,22 +127,24 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                 para_loss.reset()
 
             if (idx + 1) % args.eval_every == 0:
-                rst_dict = eval_ranker(args, ranking_model, dev_loader, device)
-                msr.utils.save_trec(args.res, rst_dict)
-                if args.metric.split('_')[0] == 'mrr':
-                    mes = metric.get_mrr(args.qrels, args.res, args.metric)
-                else:
-                    mes = metric.get_metric(args.qrels, args.res, args.metric)
-                ndcg = metric.get_metric(args.qrels, args.res, "ndcg_cut_100")
-                if ndcg > best_ndcg:
-                    best_ndcg = ndcg
-                if mes > best_mes:
-                    best_mes = mes
-                    #best_mrr = mrr if mrr > best_mrr else best_mrr
-                    #best_ndcg = ndcg if ndcg > best_ndcg else best_ndcg
-                    logger.info('New best mes = {:2.4f}'.format(best_mes))
-                    logger.info('checkpointing  model at {}.ckpt'.format(args.model_name))
-                    torch.save(ranking_model.state_dict(), args.model_name + ".ckpt")
+                with torch.no_grad():
+                    rst_dict = eval_ranker(args, ranking_model, dev_loader, device)
+                    msr.utils.save_trec(args.res, rst_dict)
+                    if args.metric.split('_')[0] == 'mrr':
+                        mes = metric.get_mrr(args.qrels, args.res, args.metric)
+                    else:
+                        mes = metric.get_metric(args.qrels, args.res, args.metric)
+                    ndcg = metric.get_metric(args.qrels, args.res, "ndcg_cut_100")
+                    if ndcg > best_ndcg:
+                        best_ndcg = ndcg
+                    if mes > best_mes:
+                        msr.utils.save_trec(args.res + '.best', rst_dict)
+                        best_mes = mes
+                        #best_mrr = mrr if mrr > best_mrr else best_mrr
+                        #best_ndcg = ndcg if ndcg > best_ndcg else best_ndcg
+                        logger.info('New best mes = {:2.4f}'.format(best_mes))
+                        logger.info('checkpointing  model at {}.ckpt'.format(args.model_name))
+                        torch.save(ranking_model.state_dict(), args.model_name + ".ckpt")
 
 
 def eval_ranker(args, model,  dev_loader, device):
