@@ -15,7 +15,7 @@ def get_args():
     parser.register('type', 'bool', str2bool)
 
     # ranker model options
-    parser.add_argument('-ranker_input', type=int, default=768*2,
+    parser.add_argument('-ranker_input', type=int, default=768,
                         help="dimension of the input to the ranker, should be twice of the embedding dim")
     parser.add_argument('-ranker_hidden', type=int, default=768,
                         help='hidden dimension of ranker')

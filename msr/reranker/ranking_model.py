@@ -21,6 +21,8 @@ class NeuralRanker(nn.Module):
     def forward(self, inputs):
         x = self.input(inputs)
         x = self.activation(x)
+        if self.train:
+            x = self.dropout(x)
         #x = self.batchnorm1(x)
         x = self.h1(x)
         x = self.activation(x)
@@ -32,11 +34,13 @@ class NeuralRanker(nn.Module):
         return x
 
     def score_documents(self, queries, positives, negatives=None):
-        positives = torch.cat((queries, positives), dim=1)
+        #positives = torch.cat((queries, positives), dim=1)
+        positives = queries * positives
         scores_positive = self.forward(positives)
 
         if negatives is not None:
-            negatives = torch.cat((queries, negatives), dim=1)
+            # negatives = torch.cat((queries, negatives), dim=1)
+            negatives = queries * negatives
             scores_negative = self.forward(negatives)
             return scores_positive, scores_negative
 
