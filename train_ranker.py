@@ -133,6 +133,9 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                     mes = metric.get_mrr(args.qrels, args.res, args.metric)
                 else:
                     mes = metric.get_metric(args.qrels, args.res, args.metric)
+                ndcg = metric.get_metric(args.qrels, args.res, "ndcg_cut_100")
+                if ndcg > best_ndcg:
+                    best_ndcg = ndcg
                 if mes > best_mes:
                     best_mes = mes
                     #best_mrr = mrr if mrr > best_mrr else best_mrr
