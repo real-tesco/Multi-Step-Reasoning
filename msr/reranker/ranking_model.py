@@ -15,6 +15,7 @@ class NeuralRanker(nn.Module):
             self.h1 = nn.Linear(args.extra_layer, args.ranker_hidden)
         else:
             self.h1 = nn.Linear(args.ranker_hidden, args.ranker_hidden)
+            self.extra_hidden = None
 
         self.output = nn.Linear(args.ranker_hidden, 1)
         self.dropout = nn.Dropout(p=0.1)
@@ -26,6 +27,9 @@ class NeuralRanker(nn.Module):
         x = self.activation(x)
         if self.train:
             x = self.dropout(x)
+        if self.extra_hidden is not None:
+            x = self.extra_hidden(x)
+            x = self.activation(x)
         #x = self.batchnorm1(x)
         x = self.h1(x)
         x = self.activation(x)
