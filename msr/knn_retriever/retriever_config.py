@@ -39,7 +39,7 @@ def get_args():
     parser.add_argument('-margin', type=float, default=0.5, help='value for the margin to use in triplet loss')
 
     # file options
-    parser.add_argument('-index_file', type=str, default='./data/msmarco_knn_index_M_84_efc_100.bin')
+    parser.add_argument('-index_file', type=str, default='./data/indexes/msmarco_knn_index_M_84_efc_100.bin')
     parser.add_argument('-index_mapping', type=str, default='./data/indexes/mapping_docid2indexid.json')
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json',
                         help='name of passage to doc file')
@@ -51,13 +51,11 @@ def get_args():
     parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
 
     # Index options
-    parser.add_argument('-efc', type=int, default=300, help='efc parameter of hnswlib to create knn index')
-    parser.add_argument('-M', type=int, default=96, help='M parameter of hnswlib to create knn index')
+    parser.add_argument('-efc', type=int, default=100, help='efc parameter of hnswlib to create knn index')
+    parser.add_argument('-M', type=int, default=84, help='M parameter of hnswlib to create knn index')
     parser.add_argument('-max_elems', type=int, default=22292343, help='maximum number of elements in index')
     parser.add_argument('-similarity', type=str, default='ip', choices=['cosine', 'l2', 'ip'],
                         help='similarity score to use when knn index is chosen')
-    parser.add_argument('-hnsw_index', type=str, default='msmarco_knn_M_96_efc_300.bin',
-                        help='create knn index with transformed passages')
     parser.add_argument('-start_chunk', type=int, default=0,
                         help='chunk to start indexing with, useful if index construction failed midway')
     # run options
