@@ -24,6 +24,8 @@ def get_args():
     parser.add_argument('-pretrained', type=str, default='knn_index.max', help='checkpoint file to load checkpoint')
     parser.add_argument('-checkpoint', type='bool', default=False, help='Wether to use a checkpoint or not')
     parser.add_argument('-model_name', type=str, default='knn_index', help='Model name to load from/save as checkpoint')
+    parser.add_argument('-max_query_len', type=int, default=64)
+    parser.add_argument('-max_doc_len', type=int, default=512)
 
     # training options
     parser.add_argument('-epochs', type=int, default=3,
