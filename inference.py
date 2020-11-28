@@ -66,7 +66,7 @@ def main():
 
     # DataLoaders for dev
     logger.info("Loading dev data...")
-    tokenizer = AutoTokenizer(args.pretrain)
+    tokenizer = AutoTokenizer.from_pretrained(args.pretrain)
     dev_dataset = BertDataset(
         dataset=args.dev,
         tokenizer=tokenizer,
