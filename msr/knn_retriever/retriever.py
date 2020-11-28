@@ -5,6 +5,8 @@ import logging
 import torch.optim as optim
 import copy
 from transformers import AutoTokenizer
+import json
+import numpy as np
 
 logger = logging.getLogger()
 
@@ -17,12 +19,34 @@ class KnnIndex:
         self._index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
         self._tokenizer = AutoTokenizer.from_pretrained(args.vocab)
         self._model = model
+        self._docid2indexid = {}
+        self._indexid2docid = {}
+
+        with open(args.index_mapping, 'r') as f:
+            mapping = json.load(f)
+        for key in mapping:
+            self._indexid2docid[mapping[key]] = key
+            self._docid2indexid[key] = mapping[key]
 
     def knn_query(self, query, k=1):
         q_input_ids, q_segment_ids, q_input_mask = self.tokenize(query)
         query_embedding = self._model.calculate_embedding(q_input_ids, q_segment_ids, q_input_mask, doc=False)
-        labels, distances = self._index.knn_query(query=query_embedding, k=k)
+        labels, distances = self._index.knn_query(query=query_embedding.detach().numpy(), k=k)
         return labels, distances
+
+    def knn_query_inference(self, q_input_ids, q_segment_ids, q_input_mask, k=100):
+        query_embedding = self._model.calculate_embedding(q_input_ids, q_segment_ids, q_input_mask, doc=False)
+        labels, distances = self._index.knn_query(query=query_embedding.detach().numpy(), k=k)
+        distances = distances.tolist()
+        labels = labels.tolist()
+        print(len(labels))
+        print(len(labels[0]))
+        document_labels = [[self._indexid2docid[labels[j][i]] for i in range(len(labels[j]))] for j in range(len(labels))]
+        print(document_labels)
+        document_embeddings = torch.tensor([self._index.get_items(np.asarray(document_labels[i]))
+                                            for i in range(len(document_labels))])
+        print(document_embeddings.shape)
+        return document_labels, document_embeddings, distances, query_embedding
 
     def tokenize(self, query):
         tokens = self._tokenizer.tokenize(query)

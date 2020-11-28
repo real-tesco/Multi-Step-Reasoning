@@ -2,6 +2,7 @@ import argparse
 import os
 import logging
 import torch
+import msr
 
 logger = logging.getLogger()
 
@@ -36,6 +37,8 @@ def get_args():
     parser.add_argument('-margin', type=float, default=0.5, help='value for the margin to use in triplet loss')
 
     # file options
+    parser.add_argument('-index_file', type=str, default='./data/msmarco_knn_index_M_84_efc_100.bin')
+    parser.add_argument('-index_mapping', type=str, default='./data/indexes/mapping_docid2indexid.json')
     parser.add_argument('-base_dir', type=str, help='base directory of training/evaluation files')
     parser.add_argument('-query_file', type=str, default='train.msmarco_queries_normed.npy', help='name of query file')
     parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy', help='name of qid file')

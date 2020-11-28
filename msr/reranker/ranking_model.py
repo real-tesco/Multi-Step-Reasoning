@@ -52,3 +52,11 @@ class NeuralRanker(nn.Module):
             return scores_positive, scores_negative
 
         return scores_positive
+
+    def rerank_documents(self, queries, documents):
+        # per query K documents need to be reranked
+        print("shape of documents: ", documents.shape)
+        print("shape of documents: ", documents.transpose(2, 0, 1).shape)
+        positives = queries * documents.transpose(2, 0, 1)
+
+

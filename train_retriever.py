@@ -241,7 +241,7 @@ def main(args):
             mode='dev',
             query_max_len=args.max_query_len,
             doc_max_len=args.max_doc_len,
-            max_input=args.max_input,
+            max_input=args.max_input
         )
 
         logger.info("creating loaders...")

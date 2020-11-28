@@ -218,8 +218,10 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
                             '%m/%d/%Y %I:%M:%S %p')
+    file_handler = logging.FileHandler('./train_retriever.log', mode='w', encoding='utf-8')
     console = logging.StreamHandler()
     console.setFormatter(fmt)
     logger.addHandler(console)
+    logger.addHandler(file_handler)
 
     main(args)
