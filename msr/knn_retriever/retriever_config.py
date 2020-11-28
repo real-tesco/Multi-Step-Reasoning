@@ -39,10 +39,6 @@ def get_args():
     # file options
     parser.add_argument('-index_file', type=str, default='./data/msmarco_knn_index_M_84_efc_100.bin')
     parser.add_argument('-index_mapping', type=str, default='./data/indexes/mapping_docid2indexid.json')
-    parser.add_argument('-base_dir', type=str, help='base directory of training/evaluation files')
-    parser.add_argument('-query_file', type=str, default='train.msmarco_queries_normed.npy', help='name of query file')
-    parser.add_argument('-qid_file', type=str, default='train.msmarco_qids.npy', help='name of qid file')
-    parser.add_argument('-qrels_file', type=str, default='qrels.train.tsv', help='name of qrels file')
     parser.add_argument('-pid2docid', type=str, default='passage_to_doc_id_150.json',
                         help='name of passage to doc file')
     parser.add_argument('-pid_folder', type=str, default='msmarco_passage_encodings/', help='name of pids file')
@@ -50,14 +46,7 @@ def get_args():
                         help='name of folder with msmarco passage embeddings')
     parser.add_argument('-num_passage_files', type=int, default=20,
                         help='number of passage files and indices in folder')
-    parser.add_argument('-triples_file', type=str, default='train.triples_msmarco.npy',
-                        help='name of triples file with training data')
-    parser.add_argument('-triple_ids_file', type=str, default='train.triples.idx_msmarco.npy')
-    parser.add_argument('-training_folder', type=str, default='train/', help='folder with chunks of training triples')
     parser.add_argument('-num_training_files', type=int, default=10, help='number of chunks of training triples')
-    parser.add_argument('-model_file', type=str, default='knn_index', help='Model file to store checkpoint')
-    parser.add_argument('-out_dir', type=str, default='', help='Model file to store checkpoint')
-    parser.add_argument('-trec_eval', type=str, default='', help='path to the trec eval file')
 
     # Index options
     parser.add_argument('-efc', type=int, default=300, help='efc parameter of hnswlib to create knn index')
@@ -84,20 +73,4 @@ def get_args():
     parser.add_argument('-res', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     args = parser.parse_args()
 
-    args.query_file = os.path.join(args.base_dir, args.query_file)
-    args.pid2docid = os.path.join(args.base_dir, args.pid2docid)
-    args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
-    args.qid_file = os.path.join(args.base_dir, args.qid_file)
-    args.passage_folder = os.path.join(args.base_dir, args.passage_folder)
-    args.pid_folder = os.path.join(args.base_dir, args.pid_folder)
-    args.triples_file = os.path.join(args.base_dir, args.triples_file)
-    args.triple_ids_file = os.path.join(args.base_dir, args.triple_ids_file)
-    args.training_folder = os.path.join(args.base_dir, args.training_folder)
-    args.model_file = os.path.join(args.out_dir, args.model_file)
-    args.dev_queries = os.path.join(args.base_dir, args.dev_queries)
-    args.dev_qids = os.path.join(args.base_dir, args.dev_qids)
-    args.out_file = os.path.join(args.out_dir, args.out_file)
-    args.hnsw_index = os.path.join(args.out_dir, args.hnsw_index)
-    args.trec_eval = os.path.join(args.base_dir, args.trec_eval)
-    args.state_dict = None
     return args
