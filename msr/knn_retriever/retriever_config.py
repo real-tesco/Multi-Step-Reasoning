@@ -64,10 +64,10 @@ def get_args():
     parser.add_argument('-train_data', action=msr.utils.DictOrStr, default='./data/train_toy.jsonl')
     parser.add_argument('-index', type='bool', default=True, help='create knn index with transformed passages')
 
-    parser.add_argument('-dev_queries', type=str, default='dev.msmarco_queries_normedf32.npy',
+    parser.add_argument('-dev_queries', type=str, default='./data/embedings/marco_dev_query_embeddings_0.npy',
                         help='dev query file .npy')
-    parser.add_argument('-dev_qids', type=str, default='dev.msmarco_qids.npy', help='dev qids file .npy')
-    parser.add_argument('-out_file', type=str, default='results.tsv',
+    parser.add_argument('-dev_qids', type=str, default='./data/embeddings/marco_dev_query_embeddings_indices_0.npy', help='dev qids file .npy')
+    parser.add_argument('-out_file', type=str, default='./results/results.tsv',
                         help='result file for the evaluation of the index')
     parser.add_argument('-dev_data', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     parser.add_argument('-res', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
