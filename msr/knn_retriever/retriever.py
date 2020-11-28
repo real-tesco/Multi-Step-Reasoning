@@ -15,7 +15,7 @@ class KnnIndex:
     def __init__(self, args, model):
         self._args = args
         self._seq_max_len = args.max_doc_len
-        self._query_max_len = args.query_max_len
+        self._query_max_len = args.max_query_len
         self._index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
         self._tokenizer = AutoTokenizer.from_pretrained(args.vocab)
         self._model = model
