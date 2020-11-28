@@ -46,10 +46,10 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
         mes = metric.get_metric(args.qrels, args.res, args.metric)
     logger.info(f"Evaluation done: {args.metric}={mes}")
 
+
 def main():
     # setting args
     parser = argparse.ArgumentParser()
-    parser.add_argument()
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
     parser.add_argument('-dev', action=msr.utils.DictOrStr, default='./data/dev_toy.jsonl')
