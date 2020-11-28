@@ -72,7 +72,7 @@ def get_args():
     # run options
     parser.add_argument('-test', type='bool', default=True, help='test the index for self-recall and query recall')
     parser.add_argument('-train', type='bool', default=True, help='train document transformer')
-    parser.add_argument('-train', action=msr.utils.DictOrStr, default='./data/train_toy.jsonl')
+    parser.add_argument('-train_data', action=msr.utils.DictOrStr, default='./data/train_toy.jsonl')
     parser.add_argument('-index', type='bool', default=True, help='create knn index with transformed passages')
 
     parser.add_argument('-dev_queries', type=str, default='dev.msmarco_queries_normedf32.npy',
