@@ -99,7 +99,7 @@ def main():
     device = device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # starting inference
-    inference(knn_index, ranking_model, dev_loader, device)
+    inference(args, knn_index, ranking_model, dev_loader, device)
 
 
 if __name__ == '__main__':
