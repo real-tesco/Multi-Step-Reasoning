@@ -52,7 +52,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
-    parser.add_argument('-dev', action=msr.utils.DictOrStr, default='./data/dev_toy.jsonl')
+    parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/dev_toy.jsonl')
     parser.add_argument('-max_query_len', type=int, default=64)
     parser.add_argument('-max_doc_len', type=int, default=512)
     parser.add_argument('-qrels', type=str, default='./data/qrels_toy')
