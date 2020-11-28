@@ -80,7 +80,8 @@ def get_args():
     parser.add_argument('-dev_qids', type=str, default='dev.msmarco_qids.npy', help='dev qids file .npy')
     parser.add_argument('-out_file', type=str, default='results.tsv',
                         help='result file for the evaluation of the index')
-
+    parser.add_argument('-dev_data', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
+    parser.add_argument('-res', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     args = parser.parse_args()
 
     args.query_file = os.path.join(args.base_dir, args.query_file)
