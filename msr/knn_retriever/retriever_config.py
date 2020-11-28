@@ -21,7 +21,7 @@ def get_args():
                         help='hidden dimension of paragraphs, used for knn index.')
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
-    parser.add_argument('-pretrained', type=str, default='knn_index.max', help='checkpoint file to load checkpoint')
+    parser.add_argument('-pretrain', type=str, default='bert-base-uncased', help='checkpoint file to load checkpoint')
     parser.add_argument('-checkpoint', type='bool', default=False, help='Wether to use a checkpoint or not')
     parser.add_argument('-model_name', type=str, default='knn_index', help='Model name to load from/save as checkpoint')
     parser.add_argument('-max_query_len', type=int, default=64)
