@@ -10,6 +10,7 @@ from msr.knn_retriever.retriever_config import get_args as get_knn_args
 from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
+from tqdm import tqdm
 
 import logging
 
@@ -18,7 +19,7 @@ logger = logging.getLogger()
 
 def inference(args, knn_index, ranking_model, dev_loader, device):
     rst_dict = {}
-    for idx, dev_batch in enumerate(dev_loader):
+    for idx, dev_batch in tqdm(enumerate(dev_loader)):
         if dev_batch is None:
             continue
         query_id, doc_id, label = dev_batch['query_id'], dev_batch['doc_id'], dev_batch['label']
