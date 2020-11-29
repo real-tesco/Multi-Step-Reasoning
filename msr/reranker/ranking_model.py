@@ -58,7 +58,6 @@ class NeuralRanker(nn.Module):
         shape = documents.shape
         print("shape of documents: ", documents.shape)
         print("shape of queries: ", queries.shape)
-        print("shape of documents: ", documents.view(shape[2], shape[0], shape[1]).shape)
         inputs = []
         for i in range(shape[1]):
             inputs.append((queries * documents[:, i, :]).tolist())
@@ -67,7 +66,7 @@ class NeuralRanker(nn.Module):
 
         scores = self.forward(inputs)
         print("shape of output: ", scores.shape)
-        scores = scores.reshape(shape[1], shape[2]).transpose()
+        scores = scores.reshape(shape[1], shape[0]).transpose()
         print("true shape")
         return scores
 
