@@ -36,7 +36,7 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
             else:
                 rst_dict[q_id] = [(b_s, d_id, l)]
 
-        if idx+1 % args.print_every == 0:
+        if (idx+1) % args.print_every == 0:
             logger.info(f"{idx+1} / {len(dev_loader)}")
 
     msr.utils.save_trec(args.res, rst_dict)
