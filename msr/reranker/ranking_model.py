@@ -62,10 +62,13 @@ class NeuralRanker(nn.Module):
         inputs = []
         for i in range(shape[1]):
             inputs.append((queries * documents[:, i, :]).tolist())
-        inputs = torch.tensor(inputs).to(device)
+        inputs = torch.tensor(inputs).reshape(shape[0]*shape[1], shape[2]).to(device)
         print("shape input: ", inputs.shape)
+
         scores = self.forward(inputs)
         print("shape of output: ", scores.shape)
+        scores = scores.reshape(shape[1], shape[2]).transpose()
+        print("true shape")
         return scores
 
 
