@@ -36,7 +36,7 @@ class KnnIndex:
 
     def knn_query_inference(self, q_input_ids, q_segment_ids, q_input_mask, k=100):
         query_embedding = self._model.calculate_embedding(q_input_ids, q_segment_ids, q_input_mask, doc=False)
-        labels, distances = self._index.knn_query(query=query_embedding.detach().cpu().numpy(), k=k)
+        labels, distances = self._index.knn_query(query_embedding.detach().cpu().numpy(), k=k)
         distances = distances.tolist()
         labels = labels.tolist()
         print(len(labels))
