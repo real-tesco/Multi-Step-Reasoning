@@ -45,7 +45,8 @@ class KnnIndex:
         print(len(document_labels))
         print(len(document_labels[0]))
         labels = np.asarray(labels)
-        document_embeddings = torch.tensor(self._index.get_items(labels))
+        print(labels.shape)
+        document_embeddings = self._index.get_items(labels)
         print(document_embeddings.shape)
         return document_labels, document_embeddings, distances, query_embedding
 
