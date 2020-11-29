@@ -39,16 +39,15 @@ class KnnIndex:
         labels, distances = self._index.knn_query(query_embedding.detach().cpu().numpy(), k=k)
         distances = distances.tolist()
         labels = labels.tolist()
-        print(len(labels))
-        print(len(labels[0]))
         document_labels = [[self._indexid2docid[labels[j][i]] for i in range(len(labels[j]))] for j in range(len(labels))]
-        print(len(document_labels))
-        print(len(document_labels[0]))
         labels = np.asarray(labels)
         print(labels.shape)
-        document_embeddings = self._index.get_items(labels)
+        labels_shape = labels.shape
+        document_embeddings = self._index.get_items(labels.flatten())
         print(document_embeddings.shape)
         print(document_embeddings[0])
+        document_embeddings = document_embeddings.reshape((labels_shape[0], labels_shape[1]))
+        print(document_embeddings.shape)
         return document_labels, document_embeddings, distances, query_embedding
 
     def tokenize(self, query):
