@@ -67,7 +67,7 @@ class NeuralRanker(nn.Module):
         scores = self.forward(inputs)
         print("shape of output: ", scores.shape)
         scores = scores.reshape(shape[1], shape[0]).transpose()
-        print("true shape")
+        print("true shape: ", scores.shape)
         return scores
 
 
