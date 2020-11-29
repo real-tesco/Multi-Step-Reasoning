@@ -10,8 +10,6 @@ from msr.knn_retriever.retriever_config import get_args as get_knn_args
 from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
-from tqdm import tqdm
-
 import logging
 
 logger = logging.getLogger()
@@ -19,7 +17,7 @@ logger = logging.getLogger()
 
 def inference(args, knn_index, ranking_model, dev_loader, device):
     rst_dict = {}
-    for idx, dev_batch in tqdm(enumerate(dev_loader)):
+    for idx, dev_batch in enumerate(dev_loader):
         if dev_batch is None:
             continue
         query_id, doc_id, label = dev_batch['query_id'], dev_batch['doc_id'], dev_batch['label']
@@ -37,6 +35,9 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
                 rst_dict[q_id].append((b_s, d_id, l))
             else:
                 rst_dict[q_id] = [(b_s, d_id, l)]
+
+        if idx+1 % args.print_every == 0:
+            logger.info(f"{idx+1} / {len(dev_loader)}")
 
     msr.utils.save_trec(args.res, rst_dict)
     if args.metric.split('_')[0] == 'mrr':
@@ -61,6 +62,7 @@ def main():
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
     parser.add_argument('-batch_size', type=int, default='32')
     parser.add_argument('-max_input', type=int, default=1280000)
+    parser.add_argument('-print_every', type=int, default=25)
     args = parser.parse_args()
 
     # DataLoaders for dev
