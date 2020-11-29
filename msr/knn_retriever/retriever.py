@@ -43,7 +43,7 @@ class KnnIndex:
         labels = np.asarray(labels)
         print(labels.shape)
         labels_shape = labels.shape
-        document_embeddings = self._index.get_items(labels.flatten())
+        document_embeddings = torch.tensor(self._index.get_items(labels.flatten()))
         print(document_embeddings.shape)
         print(document_embeddings[0])
         document_embeddings = document_embeddings.reshape((labels_shape[0], labels_shape[1]))
