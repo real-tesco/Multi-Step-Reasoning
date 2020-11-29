@@ -24,11 +24,9 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
         query_id, doc_id, label = dev_batch['query_id'], dev_batch['doc_id'], dev_batch['label']
         document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
             dev_batch['q_input_ids'].to(device),
-            dev_batch['d_input_ids'].to(device),
             dev_batch['q_input_mask'].to(device),
             dev_batch['q_segment_ids'].to(device),
-            dev_batch['d_input_mask'].to(device),
-            dev_batch['d_segment_ids'].to(device))
+            k=100)
 
         batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings)
 
