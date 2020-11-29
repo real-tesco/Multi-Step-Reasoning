@@ -20,7 +20,7 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
     for idx, dev_batch in enumerate(dev_loader):
         if dev_batch is None:
             continue
-        query_id, doc_id, label = dev_batch['query_id'], dev_batch['doc_id'], dev_batch['label']
+        query_id = dev_batch['query_id']
         document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
             dev_batch['q_input_ids'].to(device),
             dev_batch['q_input_mask'].to(device),
@@ -29,6 +29,7 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
 
         batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
 
+        # TODO Refactor here
         batch_score = batch_score.detach().cpu().tolist()
         for (q_id, d_id, b_s, l) in zip(query_id, doc_id, batch_score, label):
             if q_id in rst_dict:
@@ -71,7 +72,7 @@ def main():
     dev_dataset = BertDataset(
         dataset=args.dev_data,
         tokenizer=tokenizer,
-        mode='dev',
+        mode='inference',
         query_max_len=args.max_query_len,
         doc_max_len=args.max_doc_len,
         max_input=args.max_input

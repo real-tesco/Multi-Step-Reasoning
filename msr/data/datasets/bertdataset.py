@@ -131,6 +131,13 @@ class BertDataset(Dataset):
             input_mask = torch.tensor([item['d_input_mask'] for item in batch])
             return {'doc_id': doc_id, 'd_input_ids': input_ids, 'd_segment_ids': segment_ids,
                     'd_input_mask': input_mask}
+        elif self._mode == 'inference':
+            query_id = [item['query_id'] for item in batch]
+            input_ids = torch.tensor([item['input_ids'] for item in batch])
+            segment_ids = torch.tensor([item['segment_ids'] for item in batch])
+            input_mask = torch.tensor([item['input_mask'] for item in batch])
+            return {'query_id': query_id, 'q_input_ids': input_ids, 'q_segment_ids': segment_ids,
+                    'q_input_mask': input_mask}
         else:
             raise ValueError('Mode must be `train`, `dev`, `test` or `embed`.')
 
@@ -193,6 +200,23 @@ class BertDataset(Dataset):
         assert len(segment_ids) == self._seq_max_len
         return input_ids, segment_ids, input_mask
 
+    def pack_bert_features_q_only(self, q_tokens: List[str]):
+        input_tokens = [self._tokenizer.cls_token] + q_tokens + [self._tokenizer.sep_token]
+        input_ids = self._tokenizer.convert_tokens_to_ids(input_tokens)
+        segment_ids = [1] * len(input_ids)
+        input_mask = [1] * len(input_ids)
+
+        padding_len = self._query_max_len - len(input_ids)
+
+        input_ids = input_ids + [self._tokenizer.pad_token_id] * padding_len
+        input_mask = input_mask + [0] * padding_len
+        segment_ids = segment_ids + [0] * padding_len
+
+        assert len(input_ids) == self._seq_max_len
+        assert len(input_mask) == self._seq_max_len
+        assert len(segment_ids) == self._seq_max_len
+        return input_ids, segment_ids, input_mask
+
     def __getitem__(self, index: int) -> Dict[str, Any]:
         example = self._examples[index]
         if self._id:
@@ -225,10 +249,14 @@ class BertDataset(Dataset):
                     'input_ids': input_ids, 'input_mask': input_mask, 'segment_ids': segment_ids}
         elif self._mode == 'embed':
             doc_tokens = self._tokenizer.tokenize(example['doc'])[:self._seq_max_len-2]
-
             tokenized = self.pack_bert_features_doc_only(doc_tokens)
             return {'doc_id': example['doc_id'], 'd_input_ids': tokenized[0], 'd_segment_ids': tokenized[1],
                     'd_input_mask': tokenized[2]}
+        elif self._mode == 'inference':
+            query_tokens = self._tokenizer.tokenize(example['query'])[:self._query_max_len-2]
+            input_ids, input_mask, segment_ids = self.pack_bert_features_q_only(query_tokens)
+            return {'query_id': example['query_id'],
+                    'input_ids': input_ids, 'input_mask': input_mask, 'segment_ids': segment_ids}
         else:
             raise ValueError('Mode must be `train`, `dev`, `test` or `embed`.')
 
