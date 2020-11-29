@@ -74,4 +74,6 @@ class KnnIndex:
         # check if works, else pid needs to be N dim np array
         return self._index.get_items(pid)
 
+    def set_device(self, device):
+        self._model.to(device)
 
