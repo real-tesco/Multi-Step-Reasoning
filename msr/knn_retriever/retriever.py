@@ -48,6 +48,7 @@ class KnnIndex:
         print(labels.shape)
         document_embeddings = self._index.get_items(labels)
         print(document_embeddings.shape)
+        print(document_embeddings[0])
         return document_labels, document_embeddings, distances, query_embedding
 
     def tokenize(self, query):
