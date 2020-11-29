@@ -53,7 +53,7 @@ class NeuralRanker(nn.Module):
 
         return scores_positive
 
-    def rerank_documents(self, queries, documents):
+    def rerank_documents(self, queries, documents, device):
         # per query K documents need to be reranked
         shape = documents.shape
         print("shape of documents: ", documents.shape)
@@ -62,7 +62,7 @@ class NeuralRanker(nn.Module):
         inputs = []
         for i in range(shape[1]):
             inputs.append((queries * documents[:, i, :]).tolist())
-        inputs = torch.tensor(inputs)
+        inputs = torch.tensor(inputs).to(device)
         print("shape input: ", inputs.shape)
         scores = self.forward(inputs)
         print("shape of output: ", scores.shape)

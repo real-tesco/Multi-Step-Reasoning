@@ -28,7 +28,7 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
             dev_batch['q_segment_ids'].to(device),
             k=100)
 
-        batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device))
+        batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
 
         batch_score = batch_score.detach().cpu().tolist()
         for (q_id, d_id, b_s, l) in zip(query_id, doc_id, batch_score, label):
