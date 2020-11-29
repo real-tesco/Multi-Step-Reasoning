@@ -17,7 +17,7 @@ def get_args():
 
     # retriever model options
     parser.add_argument('-dim_input', type=int, default=768, help="dimension of the embeddings for knn index")
-    parser.add_argument('-dim_hidden', type=int, default=300,
+    parser.add_argument('-dim_hidden', type=int, default=768,
                         help='hidden dimension of paragraphs, used for knn index.')
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
