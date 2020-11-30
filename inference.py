@@ -114,7 +114,7 @@ def main():
     knn_index.set_ef(index_args.efc)
     knn_index.set_device(device)
 
-    if args.reformulattion_mode:
+    if args.reformulation_mode:
         logger.info('Loading Reformulator...')
         reformulator = QueryReformulator(args.reformulattion_mode)
     else:
