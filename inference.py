@@ -1,7 +1,6 @@
 import argparse
 import torch
 import msr
-from msr.metrics.metric import Metric
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
 from transformers import AutoTokenizer
@@ -15,7 +14,7 @@ import logging
 logger = logging.getLogger()
 
 
-def inference(args, knn_index, ranking_model, dev_loader, device):
+def inference(args, knn_index, ranking_model, dev_loader, metric, device):
     rst_dict = {}
     for idx, dev_batch in enumerate(dev_loader):
         if dev_batch is None:
@@ -40,9 +39,9 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
     msr.utils.save_trec_inference(args.res, rst_dict)
     if args.metric.split('_')[0] == 'mrr':
         print(args.qrels)
-        mes = Metric.get_mrr(args.qrels, args.res, args.metric)
+        mes = metric.get_mrr(args.qrels, args.res, args.metric)
     else:
-        mes = Metric.get_metric(args.qrels, args.res, args.metric)
+        mes = metric.get_metric(args.qrels, args.res, args.metric)
     logger.info(f"Evaluation done: {args.metric}={mes}")
 
 
@@ -100,9 +99,12 @@ def main():
     knn_index.set_device(device)
     ranking_model.to(device)
 
+    #set metric
+    metric = msr.metrics.Metric()
+
     # starting inference
     logger.info("Starting inference...")
-    inference(args, knn_index, ranking_model, dev_loader, device)
+    inference(args, knn_index, ranking_model, dev_loader, metric, device)
 
 
 if __name__ == '__main__':
