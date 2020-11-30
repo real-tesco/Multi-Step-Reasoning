@@ -212,9 +212,9 @@ class BertDataset(Dataset):
         input_mask = input_mask + [0] * padding_len
         segment_ids = segment_ids + [0] * padding_len
 
-        assert len(input_ids) == self._seq_max_len
-        assert len(input_mask) == self._seq_max_len
-        assert len(segment_ids) == self._seq_max_len
+        assert len(input_ids) == self._query_max_len
+        assert len(input_mask) == self._query_max_len
+        assert len(segment_ids) == self._query_max_len
         return input_ids, segment_ids, input_mask
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
@@ -258,7 +258,7 @@ class BertDataset(Dataset):
             return {'query_id': example['query_id'],
                     'input_ids': input_ids, 'input_mask': input_mask, 'segment_ids': segment_ids}
         else:
-            raise ValueError('Mode must be `train`, `dev`, `test` or `embed`.')
+            raise ValueError('Mode must be `train`, `dev`, `test`, `embed`, or `inference`.')
 
     def __len__(self) -> int:
         return self._count
