@@ -32,9 +32,10 @@ def inference(args, knn_index, ranking_model, dev_loader, metric, device):
             dev_batch['q_input_mask'].to(device),
             dev_batch['q_segment_ids'].to(device),
             k=100)
-
-        batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
-
+        if args.full_ranking:
+            batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
+        else:
+            batch_score = distances
         # TODO Refactor here
         batch_score = batch_score.detach().cpu().tolist()
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
@@ -67,6 +68,7 @@ def main():
     parser.add_argument('-max_input', type=int, default=1280000)
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-train', type='bool', default=False)
+    parser.add_argument('-full_ranking', type='bool', default=True)
     args = parser.parse_args()
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
@@ -85,6 +87,9 @@ def main():
     )
     dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
 
+    # set device
+    device = device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     # Loading models
     #    1. Load Retriever
     logger.info("Loading Retriever...")
@@ -96,18 +101,20 @@ def main():
     logger.info("Load Index File and set ef")
     knn_index.load_index()
     knn_index.set_ef(index_args.efc)
-
-    #   2. Load Ranker
-    logger.info("Loading Ranker...")
-    #ranker_args = get_ranker_args(parser)
-    ranking_model = NeuralRanker(ranker_args)
-    checkpoint = torch.load(args.ranker_checkpoint)
-    ranking_model.load_state_dict(checkpoint)
-
-    # set device
-    device = device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     knn_index.set_device(device)
-    ranking_model.to(device)
+
+    if args.full_ranking:
+        #   2. Load Ranker
+        logger.info("Loading Ranker...")
+        #ranker_args = get_ranker_args(parser)
+        ranking_model = NeuralRanker(ranker_args)
+        checkpoint = torch.load(args.ranker_checkpoint)
+        ranking_model.load_state_dict(checkpoint)
+        ranking_model.to(device)
+    else:
+        ranking_model = None
+
+
 
     #set metric
     metric = msr.metrics.Metric()

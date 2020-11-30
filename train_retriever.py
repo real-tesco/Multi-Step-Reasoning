@@ -323,7 +323,6 @@ if __name__ == '__main__':
     parser.add_argument('-index', type='bool', default=False)
     parser.add_argument('-docs_per_chunk', type=int, default=200000)
     parser.add_argument('-out_dir', type=str, default='./results')
-
     parser.add_argument('-start_chunk', type=int, default=0)
 
     args = get_args(parser)
