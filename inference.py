@@ -53,7 +53,7 @@ def main():
     parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/dev_toy.jsonl')
     parser.add_argument('-max_query_len', type=int, default=64)
     parser.add_argument('-max_doc_len', type=int, default=512)
-    parser.add_argument('-qrels', type=str, default='./data/qrels_toy')
+    parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
     # parser.add_argument('-vocab', type=str, default='bert-base-uncased')
     parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
     parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
