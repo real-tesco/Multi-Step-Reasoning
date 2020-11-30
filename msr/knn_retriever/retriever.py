@@ -29,7 +29,10 @@ class KnnIndex:
             self._docid2indexid[key] = mapping[key]
 
     def knn_query_embedded(self, query_embedding, k=100):
-        labels, distances = self._index.knn_query(query_embedding.detach().numpy(), k=k)
+        query = query_embedding.detach().numpy()
+        print(query.shape)
+        print(query_embedding.shape)
+        labels, distances = self._index.knn_query(query, k=k)
         distances = distances.tolist()
         labels = labels.tolist()
         document_labels = [[self._indexid2docid[labels[j][i]] for i in range(len(labels[j]))] for j in

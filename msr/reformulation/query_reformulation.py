@@ -13,8 +13,10 @@ class QueryReformulator:
             return self.replace_with_avg(args)
 
     def replace_with_document(self, document_vectors):
-        return document_vectors[0]
+        print(document_vectors.shape)
+        print(document_vectors[:, 5].shape)
+        return document_vectors[:, :5]
 
     def replace_with_avg(self, document_vectors):
-        rst = torch.mean(document_vectors[:5], dim=0)
+        rst = torch.mean(document_vectors[:, :5], dim=1)
         return rst
