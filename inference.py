@@ -38,7 +38,6 @@ def inference(args, knn_index, ranking_model, dev_loader, metric, device):
 
     msr.utils.save_trec_inference(args.res, rst_dict)
     if args.metric.split('_')[0] == 'mrr':
-        print(args.qrels)
         mes = metric.get_mrr(args.qrels, args.res, args.metric)
     else:
         mes = metric.get_metric(args.qrels, args.res, args.metric)
