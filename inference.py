@@ -60,7 +60,7 @@ def main():
     parser.add_argument('-max_doc_len', type=int, default=512)
     parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
     # parser.add_argument('-vocab', type=str, default='bert-base-uncased')
-    parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
+    # parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
     parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
     parser.add_argument('-batch_size', type=int, default='32')
@@ -84,10 +84,10 @@ def main():
     # Loading models
     #    1. Load Retriever
     logger.info("Loading Retriever...")
-    two_tower_bert = TwoTowerBert(args.pretrain)
+    index_args = get_knn_args(parser)
+    two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
     two_tower_bert.load_state_dict(checkpoint)
-    index_args = get_knn_args(parser)
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File")
     knn_index.load_index()
