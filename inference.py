@@ -20,7 +20,7 @@ def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
-def inference(args, knn_index, ranking_model, dev_loader, metric, device):
+def inference(args, knn_index, ranking_model, dev_loader, metric, device, k=100):
     rst_dict = {}
     timer = Timer()
     for idx, dev_batch in enumerate(dev_loader):
@@ -31,7 +31,7 @@ def inference(args, knn_index, ranking_model, dev_loader, metric, device):
             dev_batch['q_input_ids'].to(device),
             dev_batch['q_input_mask'].to(device),
             dev_batch['q_segment_ids'].to(device),
-            k=100)
+            k=k)
         if args.full_ranking:
             batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
             batch_score = batch_score.detach().cpu().tolist()
@@ -69,6 +69,8 @@ def main():
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-train', type='bool', default=False)
     parser.add_argument('-full_ranking', type='bool', default=True)
+    parser.add_argument('-k', type=int, default=100)
+
     args = parser.parse_args()
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
@@ -122,7 +124,7 @@ def main():
 
     # starting inference
     logger.info("Starting inference...")
-    inference(args, knn_index, ranking_model, dev_loader, metric, device)
+    inference(args, knn_index, ranking_model, dev_loader, metric, device, args.k)
 
 
 if __name__ == '__main__':
