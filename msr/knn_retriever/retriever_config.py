@@ -23,6 +23,8 @@ def get_args(parser=None):
     parser.add_argument('-efc', type=int, default=100)
     parser.add_argument('-similarity', type=str, default='ip')
     parser.add_argument('-dim_hidden', type=int, default=768)
+    parser.add_argument('-index_mapping', type=str, default='mapping_docid2indexid.json')
+
     args = parser.parse_args()
 
     return args
