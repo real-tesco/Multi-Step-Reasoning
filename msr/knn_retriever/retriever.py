@@ -28,11 +28,16 @@ class KnnIndex:
             self._indexid2docid[mapping[key]] = key
             self._docid2indexid[key] = mapping[key]
 
-    def knn_query(self, query, k=1):
-        q_input_ids, q_segment_ids, q_input_mask = self.tokenize(query)
-        query_embedding = self._model.calculate_embedding(q_input_ids, q_segment_ids, q_input_mask, doc=False)
+    def knn_query_embedded(self, query_embedding, k=100):
         labels, distances = self._index.knn_query(query=query_embedding.detach().numpy(), k=k)
-        return labels, distances
+        distances = distances.tolist()
+        labels = labels.tolist()
+        document_labels = [[self._indexid2docid[labels[j][i]] for i in range(len(labels[j]))] for j in
+                           range(len(labels))]
+        labels = np.asarray(labels)
+        document_embeddings = torch.tensor(self._index.get_items(labels.flatten()))
+        document_embeddings = document_embeddings.reshape(labels.shape[0], labels.shape[1], self._args.dim_hidden)
+        return document_labels, document_embeddings, distances, query_embedding
 
     def knn_query_inference(self, q_input_ids, q_segment_ids, q_input_mask, k=100):
         query_embedding = self._model.calculate_embedding(q_input_ids, q_segment_ids, q_input_mask, doc=False)

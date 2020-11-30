@@ -10,6 +10,7 @@ from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
 from msr.utils import Timer
+from msr.reformulation.query_reformulation import QueryReformulator
 import logging
 
 
@@ -20,7 +21,7 @@ def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
-def inference(args, knn_index, ranking_model, dev_loader, metric, device, k=100):
+def inference(args, knn_index, ranking_model, reformulator, dev_loader, metric, device, k=100):
     rst_dict = {}
     timer = Timer()
     for idx, dev_batch in enumerate(dev_loader):
@@ -32,11 +33,18 @@ def inference(args, knn_index, ranking_model, dev_loader, metric, device, k=100)
             dev_batch['q_input_mask'].to(device),
             dev_batch['q_segment_ids'].to(device),
             k=k)
+
+        if args.reformulation_mode:
+            new_queries = reformulator(document_embeddings)
+            document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(new_queries, k=k)
+
         if args.full_ranking:
             batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
             batch_score = batch_score.detach().cpu().tolist()
         else:
             batch_score = distances
+
+
 
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
             rst_dict[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
@@ -69,6 +77,7 @@ def main():
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-train', type='bool', default=False)
     parser.add_argument('-full_ranking', type='bool', default=True)
+    parser.add_argument('-reformulation_mode', type=str, default=None, options={None, 'top1', 'top5'})
     parser.add_argument('-k', type=int, default=100)
 
     args = parser.parse_args()
@@ -105,6 +114,13 @@ def main():
     knn_index.set_ef(index_args.efc)
     knn_index.set_device(device)
 
+    if args.reformulattion_mode:
+        logger.info('Loading Reformulator...')
+        reformulator = QueryReformulator(args.reformulattion_mode)
+    else:
+        reformulator = None
+    # loading weights etc ...
+
     if args.full_ranking:
         #   2. Load Ranker
         logger.info("Loading Ranker...")
@@ -114,7 +130,7 @@ def main():
         ranking_model.load_state_dict(checkpoint)
         ranking_model.to(device)
     else:
-        logger.info("No ranker is used, only eval retrieval part...")
+        logger.info("No ranker is used...")
         ranking_model = None
 
 
@@ -124,7 +140,7 @@ def main():
 
     # starting inference
     logger.info("Starting inference...")
-    inference(args, knn_index, ranking_model, dev_loader, metric, device, args.k)
+    inference(args, knn_index, ranking_model, reformulator, dev_loader, metric, device, args.k)
 
 
 if __name__ == '__main__':
