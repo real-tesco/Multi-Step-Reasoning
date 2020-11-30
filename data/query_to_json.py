@@ -8,14 +8,12 @@ def main():
     parser.add_argument('-output', type=str)
     args = parser.parse_args()
 
-    qs = {}
     f = open(args.output, 'w')
     with open(args.input_queries, 'r') as r:
         for line in r:
             line = line.strip().split('\t')
-            qs[line[0]] = line[1]
             f.write(json.dumps(
-                {'query_id': line[0], 'query': line[2]}) + '\n')
+                {'query_id': line[0], 'query': line[1]}) + '\n')
         f.close()
 
 
