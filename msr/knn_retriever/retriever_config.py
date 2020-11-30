@@ -71,6 +71,7 @@ def get_args():
                         help='result file for the evaluation of the index')
     parser.add_argument('-dev_data', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     parser.add_argument('-res', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
+    parser.add_argument('-max_input', type=int, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     args = parser.parse_args()
 
     return args

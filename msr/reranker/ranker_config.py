@@ -78,6 +78,7 @@ def get_args():
     parser.add_argument('-out_file', type=str, default='./results/ranking_results.tsv',
                         help='result file for the evaluation of the index')
     parser.add_argument('-dev_data', type=str, default='', help='WORKAROUND')
+    parser.add_argument('-max_input', type=int, help='WORKAROUND')
     args = parser.parse_args()
 
     '''
