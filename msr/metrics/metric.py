@@ -25,6 +25,7 @@ class Metric():
         qrel = {}
         with open(qrels, 'r') as f_qrel:
             for line in f_qrel:
+                print(line.strip().split())
                 qid, _, did, label = line.strip().split()
                 if qid not in qrel:
                     qrel[qid] = {}
