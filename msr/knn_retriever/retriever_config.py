@@ -11,9 +11,10 @@ def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.register('type', 'bool', str2bool)
+def get_args(parser=None):
+    if parser is None:
+        parser = argparse.ArgumentParser()
+        parser.register('type', 'bool', str2bool)
 
     # retriever model options
     parser.add_argument('-dim_input', type=int, default=768, help="dimension of the embeddings for knn index")
@@ -69,10 +70,10 @@ def get_args():
     parser.add_argument('-dev_qids', type=str, default='./data/embeddings/marco_dev_query_embeddings_indices_0.npy', help='dev qids file .npy')
     parser.add_argument('-out_file', type=str, default='./results/results.tsv',
                         help='result file for the evaluation of the index')
-    parser.add_argument('-dev_data', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
-    parser.add_argument('-res', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
-    parser.add_argument('-max_input', type=int, default='', help='WORKAROUND BECAUSE PARSER ERROR')
-    parser.add_argument('-qrels', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
+    #parser.add_argument('-dev_data', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
+    #parser.add_argument('-res', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
+    #parser.add_argument('-max_input', type=int, default='', help='WORKAROUND BECAUSE PARSER ERROR')
+    #parser.add_argument('-qrels', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     args = parser.parse_args()
 
     return args

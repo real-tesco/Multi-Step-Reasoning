@@ -11,7 +11,12 @@ from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
 import logging
 
+
 logger = logging.getLogger()
+
+
+def str2bool(v):
+    return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
 def inference(args, knn_index, ranking_model, dev_loader, metric, device):
@@ -47,6 +52,7 @@ def inference(args, knn_index, ranking_model, dev_loader, metric, device):
 def main():
     # setting args
     parser = argparse.ArgumentParser()
+    parser.register('type', 'bool', str2bool)
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
     parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
@@ -81,14 +87,14 @@ def main():
     two_tower_bert = TwoTowerBert(args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
     two_tower_bert.load_state_dict(checkpoint)
-    index_args = get_knn_args()
+    index_args = get_knn_args(parser)
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File")
     knn_index.load_index()
 
     #   2. Load Ranker
     logger.info("Loading Ranker...")
-    ranker_args = get_ranker_args()
+    ranker_args = get_ranker_args(parser)
     ranking_model = NeuralRanker(ranker_args)
     checkpoint = torch.load(args.ranker_checkpoint)
     ranking_model.load_state_dict(checkpoint)
