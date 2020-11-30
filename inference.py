@@ -9,6 +9,7 @@ from msr.knn_retriever.retriever_config import get_args as get_knn_args
 from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
+from msr.utils import Timer
 import logging
 
 
@@ -21,6 +22,7 @@ def str2bool(v):
 
 def inference(args, knn_index, ranking_model, dev_loader, metric, device):
     rst_dict = {}
+    timer = Timer()
     for idx, dev_batch in enumerate(dev_loader):
         if dev_batch is None:
             continue
@@ -40,13 +42,15 @@ def inference(args, knn_index, ranking_model, dev_loader, metric, device):
 
         if (idx+1) % args.print_every == 0:
             logger.info(f"{idx+1} / {len(dev_loader)}")
-
+    timer.stop()
     msr.utils.save_trec_inference(args.res, rst_dict)
     if args.metric.split('_')[0] == 'mrr':
         mes = metric.get_mrr(args.qrels, args.res, args.metric)
     else:
         mes = metric.get_metric(args.qrels, args.res, args.metric)
     logger.info(f"Evaluation done: {args.metric}={mes}")
+    logger.info(f"Time needed for {len(dev_loader) * args.batch_size}: {timer.time()}")
+    logger.info(f"Time needed per query: {timer.time() / (len(dev_loader) * args.batch_size)}")
 
 
 def main():
