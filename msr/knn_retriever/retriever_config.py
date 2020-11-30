@@ -17,13 +17,14 @@ def get_args(parser=None):
         parser.register('type', 'bool', str2bool)
 
     parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
-    parser.add_argument('-max_query_len', type=int, default=20)
-    parser.add_argument('-max_doc_len', type=int, default=150)
+    parser.add_argument('-max_query_len', type=int, default=64)
+    parser.add_argument('-max_doc_len', type=int, default=512)
     parser.add_argument('-M', type=int, default=64)
     parser.add_argument('-efc', type=int, default=100)
     parser.add_argument('-similarity', type=str, default='ip')
     parser.add_argument('-dim_hidden', type=int, default=768)
     parser.add_argument('-index_mapping', type=str, default='./data/indexes/mapping_docid2indexid.json')
+    parser.add_argument('-index_file', type=str, default='./data/indexes/msmarco_knn_index_M_84_efc_500.bin')
 
     args = parser.parse_args()
 
