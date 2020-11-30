@@ -89,8 +89,9 @@ def main():
     checkpoint = torch.load(args.two_tower_checkpoint)
     two_tower_bert.load_state_dict(checkpoint)
     knn_index = KnnIndex(index_args, two_tower_bert)
-    logger.info("Load Index File")
+    logger.info("Load Index File and set ef")
     knn_index.load_index()
+    knn_index.set_ef(index_args.efc)
 
     #   2. Load Ranker
     logger.info("Loading Ranker...")

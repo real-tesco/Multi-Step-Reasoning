@@ -67,6 +67,9 @@ class KnnIndex:
         logger.info('Loading KNN index...')
         self._index.load_index(self._args.index_file)
 
+    def set_ef(self, ef):
+        self._index.set_ef(ef=ef)
+
     def get_document(self, pid):
         # check if works, else pid needs to be N dim np array
         return self._index.get_items(pid)
