@@ -72,7 +72,7 @@ def get_args():
     parser.add_argument('-dev_data', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     parser.add_argument('-res', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     parser.add_argument('-max_input', type=int, default='', help='WORKAROUND BECAUSE PARSER ERROR')
-    parser.add_argument('-qrels', type=int, default='', help='WORKAROUND BECAUSE PARSER ERROR')
+    parser.add_argument('-qrels', type=str, default='', help='WORKAROUND BECAUSE PARSER ERROR')
     args = parser.parse_args()
 
     return args
