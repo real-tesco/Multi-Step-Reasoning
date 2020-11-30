@@ -67,10 +67,12 @@ def main():
     parser.add_argument('-max_input', type=int, default=1280000)
     parser.add_argument('-print_every', type=int, default=25)
     args = parser.parse_args()
+    index_args = get_knn_args(parser)
+    ranker_args = get_ranker_args(parser)
 
     # DataLoaders for dev
     logger.info("Loading dev data...")
-    tokenizer = AutoTokenizer.from_pretrained(args.pretrain)
+    tokenizer = AutoTokenizer.from_pretrained(index_args.pretrain)
     dev_dataset = BertDataset(
         dataset=args.dev_data,
         tokenizer=tokenizer,
@@ -84,7 +86,7 @@ def main():
     # Loading models
     #    1. Load Retriever
     logger.info("Loading Retriever...")
-    index_args = get_knn_args(parser)
+    #index_args = get_knn_args(parser)
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
     two_tower_bert.load_state_dict(checkpoint)
@@ -94,7 +96,7 @@ def main():
 
     #   2. Load Ranker
     logger.info("Loading Ranker...")
-    ranker_args = get_ranker_args(parser)
+    #ranker_args = get_ranker_args(parser)
     ranking_model = NeuralRanker(ranker_args)
     checkpoint = torch.load(args.ranker_checkpoint)
     ranking_model.load_state_dict(checkpoint)
