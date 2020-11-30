@@ -116,7 +116,7 @@ def main():
 
     if args.reformulation_mode:
         logger.info('Loading Reformulator...')
-        reformulator = QueryReformulator(args.reformulattion_mode)
+        reformulator = QueryReformulator(args.reformulation_mode)
     else:
         reformulator = None
     # loading weights etc ...
