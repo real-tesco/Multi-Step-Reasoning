@@ -112,6 +112,7 @@ def main():
         ranking_model.load_state_dict(checkpoint)
         ranking_model.to(device)
     else:
+        logger.info("No ranker is used, only eval retrieval part...")
         ranking_model = None
 
 
