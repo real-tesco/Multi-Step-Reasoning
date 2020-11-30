@@ -56,7 +56,7 @@ def main():
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
     parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
-    parser.add_argument('-max_query_len', type=int, default=64)
+    # parser.add_argument('-max_query_len', type=int, default=64)
     parser.add_argument('-max_doc_len', type=int, default=512)
     parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
     # parser.add_argument('-vocab', type=str, default='bert-base-uncased')
@@ -77,8 +77,8 @@ def main():
         dataset=args.dev_data,
         tokenizer=tokenizer,
         mode='inference',
-        query_max_len=args.max_query_len,
-        doc_max_len=args.max_doc_len,
+        query_max_len=index_args.max_query_len,
+        doc_max_len=index_args.max_doc_len,
         max_input=args.max_input
     )
     dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
