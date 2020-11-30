@@ -28,7 +28,7 @@ def save_trec_inference(rst_file, rst_dict):
     with open(rst_file, 'w') as writer:
         for q_id, scores in rst_dict.items():
             print('scores:', scores)
-            res = sorted(scores, key=lambda x: x[0], reverse=True)
+            res = sorted(scores, key=lambda x: x[1], reverse=True)
             print('res: ', res)
             for rank, value in enumerate(res):
                 writer.write(q_id+' Q0 '+str(value[1])+' '+str(rank+1)+' '+str(value[0])+' twotower\n')

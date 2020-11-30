@@ -32,9 +32,6 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
         # TODO Refactor here
         batch_score = batch_score.detach().cpu().tolist()
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-            print("d-id: ", d_id)
-            print("bs: ", b_s)
-            print("zip: ", zip(d_id, b_s))
             rst_dict[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
 
         if (idx+1) % args.print_every == 0:
