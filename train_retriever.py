@@ -1,6 +1,7 @@
 import os
 
 import argparse
+from msr.knn_retriever.retriever_config import get_args
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import torch
 import msr as msr
@@ -304,13 +305,10 @@ if __name__ == '__main__':
     parser.add_argument('-dev', action=msr.utils.DictOrStr, default='./data/dev_toy.jsonl')
     parser.add_argument('-qrels', type=str, default='./data/qrels_toy')
     parser.add_argument('-vocab', type=str, default='bert-base-uncased')
-    parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
     parser.add_argument('-checkpoint', type=str, default=None)
     parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
     parser.add_argument('-n_kernels', type=int, default=21)
-    parser.add_argument('-max_query_len', type=int, default=20)
-    parser.add_argument('-max_doc_len', type=int, default=150)
     parser.add_argument('-epoch', type=int, default=1)
     parser.add_argument('-batch_size', type=int, default=8)
     parser.add_argument('-lr', type=float, default=2e-5)
@@ -325,13 +323,10 @@ if __name__ == '__main__':
     parser.add_argument('-index', type='bool', default=False)
     parser.add_argument('-docs_per_chunk', type=int, default=200000)
     parser.add_argument('-out_dir', type=str, default='./results')
-    parser.add_argument('-M', type=int, default=64)
-    parser.add_argument('-efc', type=int, default=100)
-    parser.add_argument('-similarity', type=str, default='ip')
-    parser.add_argument('-dim_hidden', type=int, default=768)
+
     parser.add_argument('-start_chunk', type=int, default=0)
 
-    args = parser.parse_args()
+    args = get_args(parser)
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
