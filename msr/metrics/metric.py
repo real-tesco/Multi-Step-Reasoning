@@ -21,11 +21,12 @@ class Metric():
 
     def get_mrr(self, qrels: str, trec: str, metric: str = 'mrr_cut_10') -> float:
         k = int(metric.split('_')[-1])
-
+        print('qrels:', qrels)
+        print('trec: :', trec)
         qrel = {}
         with open(qrels, 'r') as f_qrel:
             for line in f_qrel:
-                print(line.strip().split())
+                print(line)
                 qid, _, did, label = line.strip().split()
                 if qid not in qrel:
                     qrel[qid] = {}
