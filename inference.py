@@ -1,7 +1,7 @@
 import argparse
 import torch
 import msr
-import msr.metrics.metric as metric
+from msr.metrics.metric import Metric
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
 from transformers import AutoTokenizer
@@ -42,9 +42,9 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
 
     msr.utils.save_trec(args.res, rst_dict)
     if args.metric.split('_')[0] == 'mrr':
-        mes = metric.get_mrr(args.qrels, args.res, args.metric)
+        mes = Metric.get_mrr(args.qrels, args.res, args.metric)
     else:
-        mes = metric.get_metric(args.qrels, args.res, args.metric)
+        mes = Metric.get_metric(args.qrels, args.res, args.metric)
     logger.info(f"Evaluation done: {args.metric}={mes}")
 
 
