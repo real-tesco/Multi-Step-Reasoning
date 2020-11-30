@@ -37,7 +37,7 @@ def inference(args, knn_index, ranking_model, dev_loader, device):
         if (idx+1) % args.print_every == 0:
             logger.info(f"{idx+1} / {len(dev_loader)}")
 
-    msr.utils.save_trec(args.res, rst_dict)
+    msr.utils.save_trec_inference(args.res, rst_dict)
     if args.metric.split('_')[0] == 'mrr':
         mes = Metric.get_mrr(args.qrels, args.res, args.metric)
     else:
