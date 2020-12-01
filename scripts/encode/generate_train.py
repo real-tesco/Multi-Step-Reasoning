@@ -172,6 +172,7 @@ def generate_pairs(args):
                 negatives = args.top100_not_in_qrels[topicid][:args.bm25_top_k]
                 for i in range(0, args.negative_samples):
                     choice = negatives.pop(random.randrange(0, len(negatives)))
+                    logger.info(f"choice: {choice} topicid: {topicid}")
                     out.write("{} {} {}\n".format(topicid, choice, 0))
                     stats["kept"] += 1
 
