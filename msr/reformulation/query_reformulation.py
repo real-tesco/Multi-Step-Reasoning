@@ -7,17 +7,14 @@ class QueryReformulator:
 
     def __call__(self, *args, **kwargs):
         if self._mode == 'top1':
-            print(args)
-            print(*args)
             return self.replace_with_document(*args)
         elif self._mode == 'top5':
             return self.replace_with_avg(args)
 
     def replace_with_document(self, document_vectors):
-        print(type(document_vectors))
-        print(document_vectors.shape)
-        print(document_vectors[:, 5].shape)
-        return document_vectors[:, :5]
+        print("doc vectors[:, 0] shape: ", document_vectors[:, 0].shape)
+        print("doc vectors[:, 0,:] shape: ", document_vectors[:, 0, :].shape)
+        return document_vectors[:, 0]
 
     def replace_with_avg(self, document_vectors):
         rst = torch.mean(document_vectors[:, :5], dim=1)

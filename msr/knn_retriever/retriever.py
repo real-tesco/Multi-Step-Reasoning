@@ -30,8 +30,8 @@ class KnnIndex:
 
     def knn_query_embedded(self, query_embedding, k=100):
         query = query_embedding.detach().numpy()
-        print(query.shape)
-        print(query_embedding.shape)
+        print("q shape:", query.shape)
+        print("q type:", type(query))
         labels, distances = self._index.knn_query(query, k=k)
         distances = distances.tolist()
         #labels = labels.tolist()
