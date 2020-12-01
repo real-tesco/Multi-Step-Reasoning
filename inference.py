@@ -44,8 +44,6 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, metric, 
         else:
             batch_score = distances
 
-
-
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
             rst_dict[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
 
@@ -133,9 +131,7 @@ def main():
         logger.info("No ranker is used...")
         ranking_model = None
 
-
-
-    #set metric
+    # set metric
     metric = msr.metrics.Metric()
 
     # starting inference
