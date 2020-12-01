@@ -13,7 +13,8 @@ import numpy as np
 import json
 import pyserini
 from pyserini.search import SimpleSearcher
-import logging
+import loggin
+from tqdm import tqdm
 
 logger = logging.getLogger()
 
@@ -149,7 +150,7 @@ def generate_pairs(args):
     docs = args.docids
     stats = {"skipped": 0, "kept": 0}
     with open(args.triples_name, 'w', encoding="utf8") as out:
-        for idx, topicid in enumerate(qrel):
+        for idx, topicid in tqdm(enumerate(qrel)):
             out.write("{} {} {}\n".format(topicid, random.choice(qrel[topicid]), 1))
             stats["kept"] += 1
 
@@ -164,21 +165,12 @@ def generate_pairs(args):
 
             # negative sampling of top bm25_top_k docs
             if args.use_top_bm25_samples:
-                negatives = []
-                with open(args.doc_train_100_file, 'rt', encoding='utf8') as top100f:
-                    for line in top100f:
-                        [topicid_100, _, unjudged_docid, _, _, _] = line.split()
-                        if topicid_100 == topicid:
-                            if unjudged_docid not in qrel[topicid]:
-                                negatives.append(unjudged_docid)
-                                if len(negatives) == args.bm25_top_k:
-                                    for _ in range(0, args.negative_samples):
-                                        choice = negatives.pop(random.randrange(0, len(negatives)))
-                                        out.write("{} {} {}\n".format(topicid, choice, 0))
-                                        stats["kept"] += 1
-                                    break
-                        else:
-                            continue
+                negatives = args.top100_not_in_qrels[topicid][:args.bm25_top_k]
+                for i in range(0, args.negative_samples):
+                    choice = negatives.pop(random.randrange(0, len(negatives)))
+                    out.write("{} {} {}\n".format(topicid, choice, 0))
+                    stats["kept"] += 1
+
     return stats
 
 
@@ -229,6 +221,18 @@ def generate_train(args):
         searcher.set_bm25(3.44, 0.87)
         searcher.set_rm3(10, 10, 0.5)
         args.searcher = searcher
+
+    if args.use_top_bm25_samples:
+        top100_not_in_qrels = {}
+        with open(args.doc_train_100_file, 'rt', encoding='utf8') as top100f:
+            for line in top100f:
+                [topicid, _, unjudged_docid, _, _, _] = line.split()
+                if unjudged_docid not in qrel[topicid]:
+                    if topicid in top100_not_in_qrels:
+                        top100_not_in_qrels[topicid].append(unjudged_docid)
+                    else:
+                        top100_not_in_qrels[topicid] = [unjudged_docid]
+        args.top100_not_in_qrels = top100_not_in_qrels
 
     if args.pairs:
         stats = generate_pairs(args)
