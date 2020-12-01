@@ -183,9 +183,10 @@ def generate_pairs(args):
 
 
 def generate_train(args):
-    logger.info("Opening docid2pid...")
-    with open(args.docid2pid, 'r') as f:
-        docid2pid = json.load(f)
+    # if use passages for document approximation
+    #logger.info("Opening docid2pid...")
+    #with open(args.docid2pid, 'r') as f:
+    #    docid2pid = json.load(f)
 
     # For each topicid, the list of positive docids is qrel[topicid]
     logger.info("Loading qrel file...")
