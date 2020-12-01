@@ -9,7 +9,7 @@ class QueryReformulator:
         if self._mode == 'top1':
             return self.replace_with_document(*args)
         elif self._mode == 'top5':
-            return self.replace_with_avg(args)
+            return self.replace_with_avg(*args)
 
     def replace_with_document(self, document_vectors):
         return document_vectors[:, 0]
