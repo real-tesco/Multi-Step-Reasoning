@@ -30,6 +30,9 @@ class KnnIndex:
 
     def knn_query_text(self, query_text, k=100):
         input_ids, segment_ids, input_mask = self.tokenize(query_text)
+        print(input_ids.shape)
+        print(segment_ids.shape)
+        print(input_mask.shape)
         query_embedding = self._model.calculate_embedding(input_ids, segment_ids, input_mask, doc=False)
         labels, distances = self._index.knn_query(query_embedding.detach().cpu().numpy(), k=k)
         distances = distances.tolist()
