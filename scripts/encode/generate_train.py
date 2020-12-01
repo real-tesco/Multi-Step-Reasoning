@@ -13,7 +13,7 @@ import numpy as np
 import json
 import pyserini
 from pyserini.search import SimpleSearcher
-import loggin
+import logging
 from tqdm import tqdm
 
 logger = logging.getLogger()
