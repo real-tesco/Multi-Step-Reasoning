@@ -222,12 +222,13 @@ def generate_train(args):
     args.queries = queries
     args.qrel = qrel
     # args.docid2pid = docid2pid
-    logger.info("Opened files")
-    logger.info(f"Loading anserini index from path {args.anserini_index}...")
-    searcher = SimpleSearcher(args.anserini_index)
-    searcher.set_bm25(3.44, 0.87)
-    searcher.set_rm3(10, 10, 0.5)
-    args.searcher = searcher
+    if args.anserini_index is not None:
+        logger.info("Opened files")
+        logger.info(f"Loading anserini index from path {args.anserini_index}...")
+        searcher = SimpleSearcher(args.anserini_index)
+        searcher.set_bm25(3.44, 0.87)
+        searcher.set_rm3(10, 10, 0.5)
+        args.searcher = searcher
 
     if args.pairs:
         stats = generate_pairs(args)
@@ -255,7 +256,7 @@ if __name__ == '__main__':
     parser.add_argument('-qrels_file', type=str, default='msmarco-doctrain-qrels.tsv')
     parser.add_argument('-triples_name', type=str, default='msmarco_train_triples.tsv')
     parser.add_argument('-doc_train_100_file', type=str, default="msmarco-doctrain-top100")
-    parser.add_argument('-anserini_index', type=str, default='indexes/msmarco_passaged_150_anserini/')
+    parser.add_argument('-anserini_index', type=str, default=None)#'indexes/msmarco_passaged_150_anserini/')
     parser.add_argument('-query_file', type=str, default='msmarco-doctrain-queries.tsv')
     parser.add_argument('-doc_lookup', type=str, default='msmarco-docs-lookup.tsv')
     parser.add_argument('-random_sample', type='bool', default=True,
