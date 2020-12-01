@@ -181,7 +181,7 @@ def generate_pairs(args):
                     stats["kept"] += 1
 
             if args.use_knn_index_generation:
-                labels, distances = index.knn_query_inference(index.tokenize(args.queries[topicid]))
+                labels, distances = index.knn_query_inference(*index.tokenize(args.queries[topicid]))
                 print(labels.shape)
                 negatives = []
                 search = args.topk
