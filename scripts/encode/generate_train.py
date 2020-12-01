@@ -221,7 +221,7 @@ def generate_train(args):
     args.docids = docids
     args.queries = queries
     args.qrel = qrel
-    args.docid2pid = docid2pid
+    # args.docid2pid = docid2pid
     logger.info("Opened files")
     logger.info(f"Loading anserini index from path {args.anserini_index}...")
     searcher = SimpleSearcher(args.anserini_index)
