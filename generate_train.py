@@ -183,14 +183,12 @@ def generate_pairs(args):
 
             if args.use_knn_index_generation:
                 labels, _, _, _ = index.knn_query_text(query_text=queries[topicid])
-                print(len(labels[0]))
                 labels = labels[0]
                 negatives = []
                 search = args.topk
                 while len(negatives) < args.topk:
                     negatives = [labels[i] for i in range(search) if labels[i] not in qrel[topicid]]
                     search += 1
-                print(negatives)
                 for i in range(0, args.negative_samples):
                     choice = negatives.pop(random.randrange(0, len(negatives)))
                     if choice not in qrel[topicid]:
