@@ -152,7 +152,7 @@ def split_training(args):
 def generate_pairs(args):
     qrel = args.qrel
     docs = args.docids
-    index = args.index
+    index = args.knn_index
     index2docid = args.index2docid
     stats = defaultdict(int)
     with open(args.triples_name, 'w', encoding="utf8") as out:
@@ -344,7 +344,7 @@ if __name__ == '__main__':
         args.anserini_index = os.path.join(args.base_dir, args.anserini_index)
     if args.use_knn_index_generation is not None:
         args.use_knn_index_generation = os.path.join(args.base_dir, args.use_knn_index_generation)
-        args.docid2indexid = os.path.join(args.base_dir, args.docid2indexid)
+        args.index_mapping = os.path.join(args.base_dir, args.index_mapping)
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
