@@ -97,7 +97,7 @@ def generate_triples(args):
                 #logger.info("skipped another one")
                 continue
             best_pid = -1
-            for i in range(0, min(args.top_k, len(hits))):
+            for i in range(0, min(args.topk, len(hits))):
                 if hits[i].docid in positive_pids:
                     best_pid = hits[i].docid
                     stats['best_pid_in_bm25'] += 1
@@ -175,7 +175,7 @@ def generate_pairs(args):
                 if topicid not in args.top100_not_in_qrels:
                     stats["skipped_not_in_top100"] += 1
                     continue
-                negatives = args.top100_not_in_qrels[topicid][:args.top_k]
+                negatives = args.top100_not_in_qrels[topicid][:args.topk]
                 for i in range(0, args.negative_samples):
                     choice = negatives.pop(random.randrange(0, len(negatives)))
                     out.write("{} {} {}\n".format(topicid, choice, 0))
@@ -317,7 +317,7 @@ if __name__ == '__main__':
     parser.add_argument('-out_dir', type=str, help='output directory')
     parser.add_argument('-negative_samples', type=int, default=2, help='how many negative examples per type')
     parser.add_argument('-pairs', type='bool', default=True, help='create pairs or triples')
-    parser.add_argument('-top_k', type=int, default=3, help='check if correct passage is under top k of bm25, '
+    parser.add_argument('-topk', type=int, default=3, help='check if correct passage is under top k of bm25, '
                                                                   'else take first passage if passages used')
     parser.add_argument('-use_top_bm25_samples', type='bool', default=True, help='also sample from args.bm25_top_k '
                                                                                  'best docs per query')
