@@ -183,7 +183,8 @@ def generate_pairs(args):
 
             if args.use_knn_index_generation:
                 labels, _, _, _ = index.knn_query_text(query_text=queries[topicid])
-                print(len(labels))
+                print(len(labels[0]))
+                labels = labels[0]
                 negatives = []
                 search = args.topk
                 while len(negatives) < args.topk:
