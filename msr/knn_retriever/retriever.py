@@ -28,6 +28,10 @@ class KnnIndex:
             self._indexid2docid[mapping[key]] = key
             self._docid2indexid[key] = mapping[key]
 
+    def knn_query_text(self, query_text, k=100):
+        input_ids, segment_ids, input_mask = self.tokenize(query_text)
+        return self.knn_query_inference(input_ids, segment_ids, input_mask)
+
     def knn_query_embedded(self, query_embedding, k=100):
         query = query_embedding.detach().numpy()
         labels, distances = self._index.knn_query(query, k=k)
@@ -67,7 +71,7 @@ class KnnIndex:
         assert len(input_ids) == self._seq_max_len
         assert len(input_mask) == self._seq_max_len
         assert len(segment_ids) == self._seq_max_len
-        return input_ids, segment_ids, input_mask
+        return torch.tensor(input_ids), torch.tensor(segment_ids), torch.tensor(input_mask)
 
     def load_index(self):
         logger.info('Loading KNN index...')

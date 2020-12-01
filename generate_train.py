@@ -152,6 +152,7 @@ def split_training(args):
 def generate_pairs(args):
     qrel = args.qrel
     docs = args.docids
+    queries = args.queries
     index = args.index
     stats = defaultdict(int)
 
@@ -181,8 +182,8 @@ def generate_pairs(args):
                     stats["kept"] += 1
 
             if args.use_knn_index_generation:
-                labels, distances = index.knn_query_inference(*index.tokenize(args.queries[topicid]))
-                print(labels.shape)
+                labels, _, _, _ = index.knn_query_text(query_text=queries[topicid])
+                print(len(labels))
                 negatives = []
                 search = args.topk
                 while len(negatives) < args.topk:
