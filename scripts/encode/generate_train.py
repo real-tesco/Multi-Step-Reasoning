@@ -148,7 +148,7 @@ def split_training(args):
 def generate_pairs(args):
     qrel = args.qrel
     docs = args.docids
-    stats = {"skipped": 0, "kept": 0}
+    stats = defaultdict(int)
     with open(args.triples_name, 'w', encoding="utf8") as out:
         for idx, topicid in tqdm(enumerate(qrel)):
             out.write("{} {} {}\n".format(topicid, random.choice(qrel[topicid]), 1))
@@ -158,13 +158,17 @@ def generate_pairs(args):
                 # random choice
                 negative = random.choice(docs)
                 if negative in qrel[topicid]:
-                    stats["skipped"] += 1
+                    stats["skipped_rnd_neg"] += 1
                     continue
                 out.write("{} {} {}\n".format(topicid, negative, 0))
                 stats["kept"] += 1
 
             # negative sampling of top bm25_top_k docs
             if args.use_top_bm25_samples:
+                if topicid not in args.top100_not_in_qrels:
+                    stats["skipped_not_in_top100"] += 1
+                    logger.info(f"skipped topicid: {topicid}")
+                    continue
                 negatives = args.top100_not_in_qrels[topicid][:args.bm25_top_k]
                 for i in range(0, args.negative_samples):
                     choice = negatives.pop(random.randrange(0, len(negatives)))
@@ -223,6 +227,7 @@ def generate_train(args):
         args.searcher = searcher
 
     if args.use_top_bm25_samples:
+        logger.info("loading top 100 not in qrels per query ")
         top100_not_in_qrels = {}
         with open(args.doc_train_100_file, 'rt', encoding='utf8') as top100f:
             for line in top100f:
@@ -240,7 +245,7 @@ def generate_train(args):
         stats = generate_triples(args)
 
     for key, val in stats.items():
-        logger.info(f"{key}\t{val}")
+        logger.info(f"{key}: \t{val}")
 
 
 def main(args):
