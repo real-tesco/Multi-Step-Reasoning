@@ -194,7 +194,6 @@ def generate_pairs(args):
                         out.write("{} {} {}\n".format(topicid, choice, 0))
                         stats["kept"] += 1
 
-
     return stats
 
 
