@@ -152,13 +152,33 @@ def generate_pairs(args):
         for idx, topicid in enumerate(qrel):
             out.write("{} {} {}\n".format(topicid, random.choice(qrel[topicid]), 1))
             stats["kept"] += 1
+
             for i in range(0, args.negative_samples):
+                # random choice
                 negative = random.choice(docs)
                 if negative in qrel[topicid]:
                     stats["skipped"] += 1
                     continue
                 out.write("{} {} {}\n".format(topicid, negative, 0))
                 stats["kept"] += 1
+
+            # negative sampling of top bm25_top_k docs
+            if args.use_top_bm25_samples:
+                negatives = []
+                with open(args.doc_train_100_file, 'rt', encoding='utf8') as top100f:
+                    for line in top100f:
+                        [topicid_100, _, unjudged_docid, _, _, _] = line.split()
+                        if topicid_100 == topicid:
+                            if unjudged_docid not in qrel[topicid]:
+                                negatives.append(unjudged_docid)
+                                if len(negatives) == args.bm25_top_k:
+                                    for _ in range(0, args.negative_samples):
+                                        choice = negatives.pop(random.randrange(0, len(negatives)))
+                                        out.write("{} {} {}\n".format(topicid, choice, 0))
+                                        stats["kept"] += 1
+                                    break
+                        else:
+                            continue
     return stats
 
 
@@ -204,7 +224,7 @@ def generate_train(args):
     logger.info("Opened files")
     logger.info(f"Loading anserini index from path {args.anserini_index}...")
     searcher = SimpleSearcher(args.anserini_index)
-    searcher.set_bm25(0.9, 0.4)
+    searcher.set_bm25(3.44, 0.87)
     searcher.set_rm3(10, 10, 0.5)
     args.searcher = searcher
 
@@ -250,10 +270,12 @@ if __name__ == '__main__':
                         help='all encoded passages in npy')
     parser.add_argument('-passages_indices', type=str, default='input/msmarco_indices.npy')
     parser.add_argument('-out_dir', type=str, help='output directory')
-    parser.add_argument('-negative_samples', type=int, default=5, help='output directory')
+    parser.add_argument('-negative_samples', type=int, default=2, help='how many negative examples per type')
     parser.add_argument('-pairs', type='bool', default=True, help='create pairs or triples')
-    parser.add_argument('-bm25_top_k', type=int, default=15, help='check if correct passage is under top k of bm25, '
-                                                                  'else take first passage')
+    parser.add_argument('-bm25_top_k', type=int, default=3, help='check if correct passage is under top k of bm25, '
+                                                                  'else take first passage if passages used')
+    parser.add_argument('-use_top_bm25_samples', type='bool', default=True, help='also sample from args.bm25_top_k '
+                                                                                 'best docs per query')
 
     args = parser.parse_args()
 
