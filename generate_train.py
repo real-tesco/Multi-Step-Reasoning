@@ -181,7 +181,8 @@ def generate_pairs(args):
                     stats["kept"] += 1
 
             if args.use_knn_index_generation:
-                labels, distances = index.knn_query(args.queries[topicid])
+                labels, distances = index.knn_query_inference(index.tokenize(args.queries[topicid]))
+                print(labels.shape)
                 negatives = []
                 search = args.topk
                 while len(negatives) < args.topk:
@@ -327,6 +328,8 @@ if __name__ == '__main__':
     parser.add_argument('-efc', type=int, default=100)
     parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
     parser.add_argument('-two_tower_checkpoint', type=str)
+    parser.add_argument('-max_doc_len', type=int, default=64, help='64 if queries are used else max doc len eg 512')
+    parser.add_argument('-max_query_len', type=int, default=64, help='64 if queries are used else max doc len eg 512')
 
     args = parser.parse_args()
 
