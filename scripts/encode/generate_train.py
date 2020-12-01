@@ -285,13 +285,14 @@ if __name__ == '__main__':
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
     args.doc_train_100_file = os.path.join(args.base_dir, args.doc_train_100_file)
     args.triples_name = os.path.join(args.out_dir, args.triples_name)
-    args.anserini_index = os.path.join(args.base_dir, args.anserini_index)
     args.query_file = os.path.join(args.base_dir, args.query_file)
     args.doc_lookup = os.path.join(args.base_dir, args.doc_lookup)
     args.passages = os.path.join(args.base_dir, args.passages)
     args.passages_indices = os.path.join(args.base_dir, args.passages_indices)
     args.queries_indices = os.path.join(args.base_dir, args.queries_indices)
     args.queries = os.path.join(args.base_dir, args.queries)
+    if args.anserini_index is not None:
+        args.anserini_index = os.path.join(args.base_dir, args.anserini_index)
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
