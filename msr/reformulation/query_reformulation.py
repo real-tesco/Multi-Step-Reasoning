@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 
-
 class QueryReformulator:
     def __init__(self, mode: str):
         self._mode = mode
@@ -13,6 +12,7 @@ class QueryReformulator:
             return self.replace_with_avg(args)
 
     def replace_with_document(self, document_vectors):
+        print(type(document_vectors))
         print(document_vectors.shape)
         print(document_vectors[:, 5].shape)
         return document_vectors[:, :5]
