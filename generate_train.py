@@ -152,9 +152,9 @@ def split_training(args):
 def generate_pairs(args):
     qrel = args.qrel
     docs = args.docids
-    index = args.knn_index
-    index2docid = args.index2docid
+    index = args.index
     stats = defaultdict(int)
+
     with open(args.triples_name, 'w', encoding="utf8") as out:
         for idx, topicid in tqdm(enumerate(qrel)):
             out.write("{} {} {}\n".format(topicid, random.choice(qrel[topicid]), 1))
