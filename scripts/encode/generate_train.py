@@ -167,12 +167,10 @@ def generate_pairs(args):
             if args.use_top_bm25_samples:
                 if topicid not in args.top100_not_in_qrels:
                     stats["skipped_not_in_top100"] += 1
-                    logger.info(f"skipped topicid: {topicid}")
                     continue
                 negatives = args.top100_not_in_qrels[topicid][:args.bm25_top_k]
                 for i in range(0, args.negative_samples):
                     choice = negatives.pop(random.randrange(0, len(negatives)))
-                    logger.info(f"choice: {choice} topicid: {topicid}")
                     out.write("{} {} {}\n".format(topicid, choice, 0))
                     stats["kept"] += 1
 
