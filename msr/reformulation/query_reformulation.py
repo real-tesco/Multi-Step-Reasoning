@@ -7,7 +7,9 @@ class QueryReformulator:
 
     def __call__(self, *args, **kwargs):
         if self._mode == 'top1':
-            return self.replace_with_document(args)
+            print(args)
+            print(*args)
+            return self.replace_with_document(*args)
         elif self._mode == 'top5':
             return self.replace_with_avg(args)
 
