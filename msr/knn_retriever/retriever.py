@@ -30,7 +30,7 @@ class KnnIndex:
 
     def knn_query_text(self, query_text, k=100):
         input_ids, segment_ids, input_mask = self.tokenize(query_text)
-        return self.knn_query_inference(torch.tensor([input_ids]), torch.tensor([segment_ids])S, torch.tensor([input_mask]), k=k)
+        return self.knn_query_inference(torch.tensor([input_ids]), torch.tensor([segment_ids]), torch.tensor([input_mask]), k=k)
 
     def knn_query_embedded(self, query_embedding, k=100):
         query = query_embedding.detach().numpy()
