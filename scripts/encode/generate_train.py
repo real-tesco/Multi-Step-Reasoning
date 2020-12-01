@@ -15,6 +15,10 @@ import pyserini
 from pyserini.search import SimpleSearcher
 import logging
 from tqdm import tqdm
+import hnswlib
+from msr.knn_retriever.retriever import KnnIndex
+import torch
+from msr.knn_retriever.two_tower_bert import TwoTowerBert
 
 logger = logging.getLogger()
 
@@ -93,7 +97,7 @@ def generate_triples(args):
                 #logger.info("skipped another one")
                 continue
             best_pid = -1
-            for i in range(0, min(args.bm25_top_k, len(hits))):
+            for i in range(0, min(args.top_k, len(hits))):
                 if hits[i].docid in positive_pids:
                     best_pid = hits[i].docid
                     stats['best_pid_in_bm25'] += 1
@@ -148,6 +152,8 @@ def split_training(args):
 def generate_pairs(args):
     qrel = args.qrel
     docs = args.docids
+    index = args.index
+    index2docid = args.index2docid
     stats = defaultdict(int)
     with open(args.triples_name, 'w', encoding="utf8") as out:
         for idx, topicid in tqdm(enumerate(qrel)):
@@ -168,11 +174,26 @@ def generate_pairs(args):
                 if topicid not in args.top100_not_in_qrels:
                     stats["skipped_not_in_top100"] += 1
                     continue
-                negatives = args.top100_not_in_qrels[topicid][:args.bm25_top_k]
+                negatives = args.top100_not_in_qrels[topicid][:args.top_k]
                 for i in range(0, args.negative_samples):
                     choice = negatives.pop(random.randrange(0, len(negatives)))
                     out.write("{} {} {}\n".format(topicid, choice, 0))
                     stats["kept"] += 1
+
+            if args.use_knn_index_generation:
+                labels, distances = index.knn_query(args.queries[topicid])
+                negatives = []
+                search = args.topk
+                while len(negatives) < args.topk:
+                    negatives = [labels[i] for i in range(search) if labels[i] not in qrel[topicid]]
+                    search += 1
+                print(negatives)
+                for i in range(0, args.negative_samples):
+                    choice = negatives.pop(random.randrange(0, len(negatives)))
+                    if choice not in qrel[topicid]:
+                        out.write("{} {} {}\n".format(topicid, choice, 0))
+                        stats["kept"] += 1
+
 
     return stats
 
@@ -238,6 +259,19 @@ def generate_train(args):
                         top100_not_in_qrels[topicid] = [unjudged_docid]
         args.top100_not_in_qrels = top100_not_in_qrels
 
+    if args.use_knn_index_generation:
+        logger.info(f"Loading Two Tower from {args.use_knn_index_generation}")
+        args.index_file = args.use_knn_index_generation
+        two_tower_bert = TwoTowerBert(args.pretrain)
+        checkpoint = torch.load(args.two_tower_checkpoint)
+        two_tower_bert.load_state_dict(checkpoint)
+        knn_index = KnnIndex(args, two_tower_bert)
+        logger.info("Load Index File and set ef")
+        knn_index.load_index()
+        knn_index.set_ef(args.efc)
+
+        args.index = knn_index
+
     if args.pairs:
         stats = generate_pairs(args)
     else:
@@ -282,10 +316,18 @@ if __name__ == '__main__':
     parser.add_argument('-out_dir', type=str, help='output directory')
     parser.add_argument('-negative_samples', type=int, default=2, help='how many negative examples per type')
     parser.add_argument('-pairs', type='bool', default=True, help='create pairs or triples')
-    parser.add_argument('-bm25_top_k', type=int, default=3, help='check if correct passage is under top k of bm25, '
+    parser.add_argument('-top_k', type=int, default=3, help='check if correct passage is under top k of bm25, '
                                                                   'else take first passage if passages used')
     parser.add_argument('-use_top_bm25_samples', type='bool', default=True, help='also sample from args.bm25_top_k '
                                                                                  'best docs per query')
+    parser.add_argument('-use_knn_index_generation', type=str, default=None, help='use hnswlib index to choose hard'
+                                                                                     'examples')
+    parser.add_argument('-index_mapping', type=str, default='indexes/mapping_docid2indexid.json')
+    parser.add_argument('-similarity', type=str, default='ip')
+    parser.add_argument('-dim_hidden', type=int, default=768)
+    parser.add_argument('-efc', type=int, default=100)
+    parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
+    parser.add_argument('-two_tower_checkpoint', type=str)
 
     args = parser.parse_args()
 
@@ -301,6 +343,9 @@ if __name__ == '__main__':
     args.queries = os.path.join(args.base_dir, args.queries)
     if args.anserini_index is not None:
         args.anserini_index = os.path.join(args.base_dir, args.anserini_index)
+    if args.use_knn_index_generation is not None:
+        args.use_knn_index_generation = os.path.join(args.base_dir, args.use_knn_index_generation)
+        args.docid2indexid = os.path.join(args.base_dir, args.docid2indexid)
 
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
