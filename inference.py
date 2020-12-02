@@ -97,7 +97,7 @@ def main():
     dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
 
     # set device
-    device = device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Loading models
     #    1. Load Retriever

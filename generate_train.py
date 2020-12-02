@@ -150,6 +150,7 @@ def split_training(args):
 
 
 def generate_pairs(args):
+    device = args.device
     qrel = args.qrel
     docs = args.docids
     queries = args.queries
@@ -260,6 +261,10 @@ def generate_train(args):
                         top100_not_in_qrels[topicid] = [unjudged_docid]
         args.top100_not_in_qrels = top100_not_in_qrels
 
+    args.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if args.device == 'cuda':
+        logger.info("using cuda if torch model is used")
+
     if args.use_knn_index_generation:
         logger.info(f"Loading Two Tower from {args.use_knn_index_generation}")
         args.index_file = args.use_knn_index_generation
@@ -270,8 +275,10 @@ def generate_train(args):
         logger.info("Load Index File and set ef")
         knn_index.load_index()
         knn_index.set_ef(args.efc)
+        knn_index.set_device(args.device)
 
         args.index = knn_index
+
 
     if args.pairs:
         stats = generate_pairs(args)
