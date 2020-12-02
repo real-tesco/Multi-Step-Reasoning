@@ -28,9 +28,9 @@ class KnnIndex:
             self._indexid2docid[mapping[key]] = key
             self._docid2indexid[key] = mapping[key]
 
-    def knn_query_text(self, query_text, k=100):
+    def knn_query_text(self, query_text, device, k=100):
         input_ids, segment_ids, input_mask = self.tokenize(query_text)
-        return self.knn_query_inference(input_ids, segment_ids, input_mask, k=100)
+        return self.knn_query_inference(input_ids.to(device), segment_ids.to(device), input_mask.to(device), k=100)
 
     def knn_query_embedded(self, query_embedding, k=100):
         query = query_embedding.detach().numpy()
