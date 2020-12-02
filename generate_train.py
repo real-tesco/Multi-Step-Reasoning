@@ -262,7 +262,7 @@ def generate_train(args):
         args.top100_not_in_qrels = top100_not_in_qrels
 
     args.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if args.device == 'cuda':
+    if torch.cuda.device_count() > 0:
         logger.info("using cuda if torch model is used")
 
     if args.use_knn_index_generation:
