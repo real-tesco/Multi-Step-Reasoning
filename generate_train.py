@@ -182,6 +182,7 @@ def generate_pairs(args):
                     stats["kept"] += 1
 
             if args.use_knn_index_generation:
+
                 labels, _, _, _ = index.knn_query_text(query_text=queries[topicid])
                 labels = labels[0]
                 negatives = []

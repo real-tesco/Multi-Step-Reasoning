@@ -56,7 +56,7 @@ class KnnIndex:
         return document_labels, document_embeddings, distances, query_embedding
 
     def tokenize(self, query):
-        tokens = self._tokenizer.tokenize(query)
+        tokens = self._tokenizer.tokenize(query)[:self._seq_max_len-2]
         input_tokens = [self._tokenizer.cls_token] + tokens + [self._tokenizer.sep_token]
         input_ids = self._tokenizer.convert_tokens_to_ids(input_tokens)
         segment_ids = [1] * len(input_ids)
