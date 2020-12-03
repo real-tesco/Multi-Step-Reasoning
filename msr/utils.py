@@ -38,9 +38,8 @@ def save_trec(rst_file, rst_dict):
         for q_id, scores in rst_dict.items():
             res = sorted(scores, key=lambda x: x[0], reverse=True)
             for rank, value in enumerate(res):
-                writer.write(q_id+' Q0 '+str(value[1])+' '+str(rank+1)+' '+str(value[0][0])+' twotower\n')
+                writer.write(q_id+' Q0 '+str(value[1])+' '+str(rank+1)+' '+str(value[0])+' twotower_embed\n')
     return
-
 
 
 def get_mrr(qrels: str, trec: str, metric: str = 'mrr_cut_10') -> float:
