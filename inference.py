@@ -52,7 +52,7 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, metric, 
                 new_queries, k=k)
 
             # rerank
-            if args.full_ranking:
+            if args.use_ranker_in_next_round:
                 batch_score = ranking_model.rerank_documents(query_embeddings.to(device),
                                                              document_embeddings.to(device), device)
                 batch_score = batch_score.detach().cpu().tolist()
@@ -92,6 +92,7 @@ def main():
     parser.add_argument('-full_ranking', type='bool', default=True)
     parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5'])
     parser.add_argument('-k', type=int, default=100)
+    parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
 
     args = parser.parse_args()
     index_args = get_knn_args(parser)
