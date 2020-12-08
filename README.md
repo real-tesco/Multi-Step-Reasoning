@@ -1,7 +1,7 @@
 # Multi Step Query Modelling for Long Document Retrieval
 
 
-*Acknowledgement*: This codebase started from the awesome [Dr.QA repository](https://github.com/facebookresearch/DrQA) created and maintained by [Adam Fisch](https://people.csail.mit.edu/fisch/). Thanks Adam!
+*Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning).
 
 ## Setup
 The requirements are in the [requirements file](requirements.txt). In my env, I also needed to set PYTHONPATH (as in the [setup.sh](setup.sh))
@@ -11,7 +11,7 @@ source setup.sh
 ```
 
 ## Data
-We are making the pre-processed data and paragraph vectors available so that is is easier to get started. They can downloaded from [here](http://iesl.cs.umass.edu/downloads/multi-step-reasoning-iclr19/data.tar.gz). (41GB compressed, 56GB decompressed; user/pass: guest/guest). If you need the pretrained paragraph encoder used to generate the vectors, feel free to get in touch with me.
+I am making the pre-processed data and paragraph vectors available so that is is easier to get started. They can downloaded from [here](http://iesl.cs.umass.edu/downloads/multi-step-reasoning-iclr19/data.tar.gz). (41GB compressed, 56GB decompressed; user/pass: guest/guest). If you need the pretrained paragraph encoder used to generate the vectors, feel free to get in touch with me.
 After un-taring, you will find a directory corresponding to each dataset. Each directory further contains:
 ```
 data/ -- Processed data (*.pkl files)
@@ -19,6 +19,9 @@ paragraph_vectors/ -- Saved paragraph vectors of context for each dataset used f
 vocab/ -- int2str mapping
 embeddings/ -- Saved lookup table for faster initialization. The embeddings are essentially saved fast-text embeddings.
 ```
+
+If you want to generate your own data here are the steps you have to make and the files you can use.
+
 
 ## Paragraph encoder
 If you want to train new paragraph embeddings instead of using the ones we used, please refer to this [readme](paragraph_encoder/README.md)
@@ -57,8 +60,7 @@ data_dir -- path to dataset that you downloaded
 model_dir -- path to pretrained model that you downloaded
 out_dir -- directory for logging
 ```
-## To-do
-- [ ] Integrate with code for SGTree
+
 ## Citation
 ```
 @inproceedings{

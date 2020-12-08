@@ -12,6 +12,7 @@ from msr.reranker.ranker_config import get_args as get_ranker_args
 from msr.utils import Timer
 from msr.reformulation.query_reformulation import QueryReformulator
 import logging
+import numpy as np
 
 
 logger = logging.getLogger()
@@ -34,15 +35,30 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, metric, 
             dev_batch['q_segment_ids'].to(device),
             k=k)
 
-        if args.reformulation_mode:
-            new_queries = reformulator(document_embeddings)
-            document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(new_queries, k=k)
-
         if args.full_ranking:
             batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
             batch_score = batch_score.detach().cpu().tolist()
         else:
             batch_score = distances
+
+        if args.reformulation_mode:
+            # sort doc embeddings according score and reformulate
+            _, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
+            print("indices shape: ", scores_sorted_indices.shape)
+            sorted_docs = document_embeddings[torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices]
+            print("docs shape: ", sorted_docs.shape)
+            # document_embeddings = torch.sort(document_embeddings, dim=2)
+            new_queries = reformulator(sorted_docs)
+            # retrieve new set of candidate documents
+            document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
+                new_queries, k=k)
+            # rerank
+            if args.full_ranking:
+                batch_score = ranking_model.rerank_documents(query_embeddings.to(device),
+                                                             document_embeddings.to(device), device)
+                batch_score = batch_score.detach().cpu().tolist()
+            else:
+                batch_score = distances
 
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
             rst_dict[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
