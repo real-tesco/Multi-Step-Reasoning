@@ -135,7 +135,7 @@ def main():
         reformulator = None
     # loading weights etc ...
 
-    if args.full_ranking:
+    if args.full_ranking or args.use_ranker_in_next_round:
         #   2. Load Ranker
         logger.info("Loading Ranker...")
         #ranker_args = get_ranker_args(parser)
