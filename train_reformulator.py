@@ -38,25 +38,17 @@ def get_relevant_embeddings(qids, qrels, knn_index):
 def eval_pipeline(args, knn_index, ranking_model, reformulator, loss, dev_loader, device):
     logger.info("Evaluating trec metrics for dev set...")
     rst_dict = {}
-    rst_dict_first_step = {}
     for step, dev_batch in enumerate(dev_loader):
         # TODO: msmarco dataset refactoring
         query_id = dev_batch['query_id']
         with torch.no_grad():
 
             document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
-                dev_batch['query'].to(device))
+                dev_batch['query'])
 
             batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device),
                                                          device)
             batch_score = batch_score.detach().cpu().tolist()
-
-            # save intermediate result for comparison
-            for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-                if q_id in rst_dict_first_step:
-                    rst_dict_first_step[q_id].append((b_s, d_id))
-                else:
-                    rst_dict_first_step[q_id] = [(b_s, d_id)]
 
             # sort doc embeddings according score and reformulate
             _, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
@@ -82,7 +74,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, loss, dev_loader
         if (step + 1) % args.print_every == 0:
             print(f"-- eval: {step + 1}/{len(dev_loader)} --")
 
-    return rst_dict, rst_dict_first_step
+    return rst_dict
 
 
 def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, train_loader, dev_loader, qrels, metric, device, k=100):
@@ -110,7 +102,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
             # new_queries should match document representation of relevant document
             target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device).float()
             print("docs 1s: ", (target_embeddings >= 1.).sum())
-            print("docs 0s: ", (target_embeddings <= 1.).sum())
+            print("docs 0s: ", (target_embeddings <= 0.).sum())
             print("query 1s: ", (new_queries >= 1.).sum())
             print("query 0s: ", (new_queries <= 0.).sum())
             batch_loss = loss_fn(new_queries, target_embeddings)
