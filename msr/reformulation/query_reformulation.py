@@ -35,7 +35,10 @@ class NeuralReformulator(nn.Module):
         if len(query_embedding.shape) == 1:
             inputs = torch.cat([torch.unsqueeze(query_embedding, dim=0).t(), document_embeddings[:self.top_k].t()], dim=1).flatten()
         else:
-            inputs = torch.cat([torch.unsqueeze(query_embedding, dim=2), document_embeddings[:, self.top_k].transpose(1,2)], dim=2).flatten(start_dim=1)
+            q_emb = torch.unsqueeze(query_embedding, dim=2)
+            d_emb = document_embeddings[:, self.top_k].transpose(1,2)
+            inputs = torch.cat([q_emb, d_emb], dim=2)
+            inputs = inputs.flatten(start_dim=1)
         print(inputs.shape)
         x = self.input(inputs)
         x = self.activation(self.h1(x))
