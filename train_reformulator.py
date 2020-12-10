@@ -147,7 +147,8 @@ def main():
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
     parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
     parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
-    parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
+    parser.add_argument('-train_qrels', type=str, default='./data/msmarco-doctrain-qrels.tsv')
+    parser.add_argument('-res', type=str, default='./results/reformulator.trec')
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
     parser.add_argument('-batch_size', type=int, default='32')
     parser.add_argument('-max_input', type=int, default=1280000)
@@ -164,6 +165,13 @@ def main():
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
     parser.add_argument('-model_name', type=str, default='./checkpoints/reformulator.bin')
     parser.add_argument('-dataset', type=str, default='./data/reformulator_training_data.tsv')
+    parser.add_argument('-query_embedding_format', type=str, default='./data/embeddings/embeddings_random_examples/'
+                                                                     'marco_train_query_embeddings_{}.npy')
+    parser.add_argument('-query_ids_format', type=str,
+                        default='./data/embeddings/embeddings_random_examples/'
+                                'marco_train_query_embeddings_indices_{}.npy')
+    parser.add_argument('-dev_query_embedding_file', type=str, default='./data/marco_dev_query_embeddings_0.npy')
+    parser.add_argument('-dev_query_ids_file', type=str, default='./data/marco_dev_query_embeddings_indices_0.npy')
 
     args = parser.parse_args()
     index_args = get_knn_args(parser)
