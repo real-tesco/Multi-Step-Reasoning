@@ -213,7 +213,7 @@ def main():
 
     # Load qrels for target document embedding
     qrels = {}
-    with open(args.qrels, "r") as f:
+    with open(args.train_qrels, "r") as f:
         for line in f:
             qid, _, did, label = line.strip().split()
             if int(label) > 0:
