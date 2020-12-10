@@ -31,7 +31,7 @@ def get_relevant_embeddings(qids, qrels, knn_index):
             targets.append(knn_index.get_document(did))
         else:
             print(f"qid: {qid} is not in qrels...")
-    print(qrels.items())
+    #print(qrels.items())
     return torch.tensor(targets)
 
 

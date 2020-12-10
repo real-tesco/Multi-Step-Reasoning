@@ -39,7 +39,7 @@ class NeuralReformulator(nn.Module):
             d_emb = document_embeddings[:, :self.top_k].transpose(1, 2)
             inputs = torch.cat([q_emb, d_emb], dim=2)
             inputs = inputs.flatten(start_dim=1)
-        print(inputs.shape)
+        #print(inputs.shape)
         x = self.input(inputs)
         x = self.activation(self.h1(x))
         x = self.activation(self.output(x))
