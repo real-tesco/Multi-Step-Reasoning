@@ -35,7 +35,7 @@ def get_relevant_embeddings(qids, qrels, knn_index):
     return torch.tensor(targets)
 
 
-def eval_pipeline(args, knn_index, ranking_model, reformulator, loss, dev_loader, device):
+def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, device):
     logger.info("Evaluating trec metrics for dev set...")
     rst_dict = {}
     for step, dev_batch in enumerate(dev_loader):
@@ -66,10 +66,10 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, loss, dev_loader
             batch_score = batch_score.detach().cpu().tolist()
 
             for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-                if q_id in rst_dict:
-                    rst_dict[q_id].append((b_s, d_id))
-                else:
-                    rst_dict[q_id] = [(b_s, d_id)]
+                if q_id not in rst_dict:
+                    rst_dict[q_id] = []
+                for d, s in (zip(d_id, b_s)):
+                    rst_dict[q_id].append((s, d))
         if (step + 1) % args.print_every == 0:
             print(f"-- eval: {step + 1}/{len(dev_loader)} --")
 
@@ -119,7 +119,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
             if (idx + 1) % args.eval_every == 0:
                 with torch.no_grad():
                     rst_dict = eval_pipeline(args, knn_index, ranking_model, reformulator,
-                                                                  loss_fn, dev_loader, device)
+                                             dev_loader, device)
                     msr.utils.save_trec(args.res, rst_dict)
                     if args.metric.split('_')[0] == 'mrr':
                         mrr = metric.get_mrr(args.qrels, args.res, args.metric)
