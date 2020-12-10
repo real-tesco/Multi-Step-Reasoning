@@ -62,7 +62,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, loss, dev_loader
             _, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
             sorted_docs = document_embeddings[
                 torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices]
-            new_queries = reformulator(query_embeddings, sorted_docs)
+            new_queries = reformulator(query_embeddings.long(), sorted_docs.long())
 
             # do another run with the reformulated queries
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
