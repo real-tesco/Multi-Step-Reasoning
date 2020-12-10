@@ -33,6 +33,7 @@ class RankingDataset(Dataset):
             tmp_docs = torch.cat(tmp_docs, dim=0)
 
             self._docs = {idx: embed for idx, embed in zip(tmp_docids, tmp_docs)}
+            logger.info(f"len of docs: {len(self._docs)}")
 
         tmp_query_ids = []
         tmp_query_ids.extend(np.load(x) for x in query_ids_files)
@@ -42,10 +43,11 @@ class RankingDataset(Dataset):
         tmp_queries = torch.cat(tmp_queries, dim=0)
 
         self._queries = {idx: embed for idx, embed in zip(tmp_query_ids, tmp_queries)}
+        logger.info(f"len of queries: {len(self._queries)}")
 
         #del tmp_queries, tmp_query_ids, tmp_docs, tmp_docids
 
-        logger.info(f"len of docs: {len(self._docs)} | len of queries: {len(self._queries)}")
+
 
         self._dataset = dataset
 
