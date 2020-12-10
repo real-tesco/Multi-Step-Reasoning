@@ -182,6 +182,7 @@ def main():
                                 'marco_train_query_embeddings_indices_{}.npy')
     parser.add_argument('-dev_query_embedding_file', type=str, default='./data/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-dev_query_ids_file', type=str, default='./data/marco_dev_query_embeddings_indices_0.npy')
+    parser.add_argument('-dev_file', type=str, default='./data/msmarco-docdev-queries.tsv')
     parser.add_argument('-num_query_files', type=int, default=1)
 
     args = parser.parse_args()
@@ -209,7 +210,7 @@ def main():
     dev_query_ids_list = [args.dev_query_ids_file]
 
     dev_dataset = RankingDataset(doc_embedding_list, doc_ids_list, dev_query_embedding_list, dev_query_ids_list,
-                                   dataset=args.dataset, mode='dev', model='reformulator')
+                                   dataset=args.dev_file, mode='dev', model='reformulator')
     dev_loader = msr.data.dataloader.DataLoader(
         dev_dataset,
         batch_size=args.batch_size,
