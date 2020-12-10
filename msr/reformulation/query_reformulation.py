@@ -31,8 +31,15 @@ class NeuralReformulator(nn.Module):
         self.output = nn.Linear(hidden_size2, embedding_size)
         self.activation = nn.SiLU()
 
+    def build_new_queries(self, query_embeddings, document_embeddings):
+        for i in range (query_embeddings.shape[0]):
+
+
     def forward(self, query_embedding, document_embeddings):
-        inputs = torch.cat([torch.unsqueeze(query_embedding, dim=0).t(), document_embeddings[self.top_k].t()], dim=1).flatten()
+        if len(query_embedding.shape) == 1:
+            inputs = torch.cat([torch.unsqueeze(query_embedding, dim=0).t(), document_embeddings[:self.top_k].t()], dim=1).flatten()
+        else:
+            inputs = torch.cat([torch.unsqueeze(query_embedding, dim=2), document_embeddings[:, self.top_k].transpose(1,2)], dim=2).flatten(start_dim=1)
         print(inputs.shape)
         x = self.input(inputs)
         x = self.activation(self.h1(x))
