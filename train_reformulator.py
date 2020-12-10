@@ -216,10 +216,12 @@ def main():
         for line in f:
             qid, _, did, label = line.strip().split()
             if int(label) > 0:
+                print(qid)
+                print(type(qid))
                 if qid in qrels:
-                    qrels[int(qid)].append(did)
+                    qrels[qid].append(did)
                 else:
-                    qrels[int(qid)] = [did]
+                    qrels[qid] = [did]
 
     # set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
