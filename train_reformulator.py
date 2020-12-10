@@ -54,7 +54,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, loss, dev_loader
             _, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
             sorted_docs = document_embeddings[
                 torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices]
-            new_queries = reformulator(query_embeddings, sorted_docs)
+            new_queries = reformulator(query_embeddings.to(device), sorted_docs.to(device))
 
             # do another run with the reformulated queries
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
@@ -101,10 +101,10 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
 
             # new_queries should match document representation of relevant document
             target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device).float()
-            print("docs 1s: ", (target_embeddings >= 1.).sum())
-            print("docs 0s: ", (target_embeddings <= 0.).sum())
-            print("query 1s: ", (new_queries >= 1.).sum())
-            print("query 0s: ", (new_queries <= 0.).sum())
+            #print("docs 1s: ", (target_embeddings >= 1.).sum())
+            #print("docs 0s: ", (target_embeddings <= 0.).sum())
+            #print("query 1s: ", (new_queries >= 1.).sum())
+            #print("query 0s: ", (new_queries <= 0.).sum())
             batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()
