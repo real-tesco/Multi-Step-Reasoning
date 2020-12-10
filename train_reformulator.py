@@ -93,6 +93,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
     for epoch in range(0, args.epochs):
         for idx, train_batch in enumerate(train_loader):
             if train_batch is None:
+                print("None batch...")
                 continue
             query_id = train_batch['query_id']
             document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
@@ -108,6 +109,10 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
 
             # new_queries should match document representation of relevant document
             target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device).float()
+            print("docs 1s: ", (target_embeddings >= 1.).sum())
+            print("docs 0s: ", (target_embeddings <= 1.).sum())
+            print("query 1s: ", (new_queries >= 1.).sum())
+            print("query 0s: ", (new_queries <= 0.).sum())
             batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()

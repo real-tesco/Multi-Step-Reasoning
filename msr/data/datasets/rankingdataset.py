@@ -88,7 +88,7 @@ class RankingDataset(Dataset):
                 return {'query_id': query_id, 'doc_id': doc_id, 'label': label, 'retrieval_score': retrieval_score,
                         'query': self._queries[query_id], 'doc': self._docs[doc_id]}
             elif self._model == 'reformulator':
-                qid = example['query_id']
+                qid = example[0]
                 return {'query_id': qid, 'query': self._queries[qid]}
 
     def collate(self, batch):
