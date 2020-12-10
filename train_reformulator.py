@@ -107,7 +107,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
             new_queries = reformulator(query_embeddings.to(device), sorted_docs.to(device))
 
             # new_queries should match document representation of relevant document
-            target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index)
+            target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device)
             batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()
@@ -157,6 +157,7 @@ def main():
     parser.add_argument('-batch_size', type=int, default='32')
     parser.add_argument('-max_input', type=int, default=1280000)
     parser.add_argument('-print_every', type=int, default=25)
+    parser.add_argument('-eval_every', type=int, default=100)
     parser.add_argument('-train', type='bool', default=False)
     parser.add_argument('-full_ranking', type='bool', default=True)
     parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5'])
