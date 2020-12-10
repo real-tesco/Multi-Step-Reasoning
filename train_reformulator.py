@@ -26,6 +26,8 @@ def str2bool(v):
 def get_relevant_embeddings(qids, qrels, knn_index):
     targets = []
     for qid in qids:
+        print(qid)
+        print(type(qid))
         assert qid in qrels
         did = random.choice(qrels[qid])
         targets.append(knn_index.get_document(did))
@@ -215,9 +217,9 @@ def main():
             qid, _, did, label = line.strip().split()
             if int(label) > 0:
                 if qid in qrels:
-                    qrels[qid].append(did)
+                    qrels[int(qid)].append(did)
                 else:
-                    qrels[qid] = [did]
+                    qrels[int(qid)] = [did]
 
     # set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
