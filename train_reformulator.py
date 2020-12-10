@@ -87,7 +87,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
     mrr = 0.0
     best_mrr = 0.0
     para_loss = utils.AverageMeter()
-    for epoch in range(0, args.epoch):
+    for epoch in range(0, args.epochs):
         for idx, train_batch in enumerate(train_loader):
             if train_batch is None:
                 continue
