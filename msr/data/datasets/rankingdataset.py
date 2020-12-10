@@ -16,20 +16,23 @@ class RankingDataset(Dataset):
         query_embedding_files: List,
         query_ids_files: List,
         dataset: str,
-        mode: str = 'train'
+        mode: str = 'train',
+        model: str = 'reformulator'
             ) -> None:
         self._mode = mode
+        self._model = model
 
-        # Load documents and convert to tensors
-        tmp_docids = []
-        tmp_docids.extend(np.load(x) for x in doc_ids_files)
-        tmp_docids = np.concatenate(tmp_docids, axis=0)
+        if model == 'ranker':
+            # Load documents and convert to tensors
+            tmp_docids = []
+            tmp_docids.extend(np.load(x) for x in doc_ids_files)
+            tmp_docids = np.concatenate(tmp_docids, axis=0)
 
-        tmp_docs = []
-        tmp_docs.extend(torch.tensor(np.load(x)) for x in doc_embedding_files)
-        tmp_docs = torch.cat(tmp_docs, dim=0)
+            tmp_docs = []
+            tmp_docs.extend(torch.tensor(np.load(x)) for x in doc_embedding_files)
+            tmp_docs = torch.cat(tmp_docs, dim=0)
 
-        self._docs = {idx: embed for idx, embed in zip(tmp_docids, tmp_docs)}
+            self._docs = {idx: embed for idx, embed in zip(tmp_docids, tmp_docs)}
 
         tmp_query_ids = []
         tmp_query_ids.extend(np.load(x) for x in query_ids_files)
@@ -68,33 +71,50 @@ class RankingDataset(Dataset):
     def __getitem__(self, idx):
         example = self._examples[idx]
         if self._mode == 'train':
-            return {'query': self._queries[example[0]],
-                    'positive_doc': self._docs[example[1]],
-                    'negative_doc': self._docs[example[2]]}
+            if self._model == 'ranker':
+                return {'query': self._queries[example[0]],
+                        'positive_doc': self._docs[example[1]],
+                        'negative_doc': self._docs[example[2]]}
+            elif self._model == 'reformulator':
+                return {'query': self._queries[example[0]], 'query_id': example[0]}
         elif self._mode == 'dev':
-            query_id = example['query_id']
-            doc_id = example['doc_id']
-            retrieval_score = example['retrieval_score']
-            label = example['label']
-            return {'query_id': query_id, 'doc_id': doc_id, 'label': label, 'retrieval_score': retrieval_score,
-                    'query': self._queries[query_id], 'doc': self._docs[doc_id]}
+            if self._model == 'ranker':
+                query_id = example['query_id']
+                doc_id = example['doc_id']
+                retrieval_score = example['retrieval_score']
+                label = example['label']
+                return {'query_id': query_id, 'doc_id': doc_id, 'label': label, 'retrieval_score': retrieval_score,
+                        'query': self._queries[query_id], 'doc': self._docs[doc_id]}
+            elif self._model == 'reformulator':
+                qid = example['query_id']
+                return {'query_id': qid, 'query': self._queries[qid]}
 
     def collate(self, batch):
         if self._mode == 'train':
-            #logger.info(f'COLLATE batch: {batch} | query: {[item["query"][:10] for item in batch]}')
-            queries = torch.stack([item['query'] for item in batch])
-            positive_docs = torch.stack([item['positive_doc'] for item in batch])
-            negative_docs = torch.stack([item['negative_doc'] for item in batch])
-            return {'query': queries, 'positive_doc': positive_docs, 'negative_doc': negative_docs}
+            if self._model == 'ranker':
+                #logger.info(f'COLLATE batch: {batch} | query: {[item["query"][:10] for item in batch]}')
+                queries = torch.stack([item['query'] for item in batch])
+                positive_docs = torch.stack([item['positive_doc'] for item in batch])
+                negative_docs = torch.stack([item['negative_doc'] for item in batch])
+                return {'query': queries, 'positive_doc': positive_docs, 'negative_doc': negative_docs}
+            elif self._model == 'reformulator':
+                queries = torch.stack([item['query'] for item in batch])
+                qids = [item['query_id'] for item in batch]
+                return {'query_id': qids, 'query': queries}
         elif self._mode == 'dev':
-            query_id = [item['query_id'] for item in batch]
-            doc_id = [item['doc_id']for item in batch]
-            retrieval_score = [item['retrieval_score'] for item in batch]
-            labels = [item['label'] for item in batch]
-            queries = torch.stack([item['query'] for item in batch])
-            docs = torch.stack([item['doc'] for item in batch])
-            return {'query_id': query_id, 'doc_id': doc_id, 'label': labels, 'retrieval_score': retrieval_score,
-                    'doc': docs, 'query': queries}
+            if self._model == 'ranker':
+                query_id = [item['query_id'] for item in batch]
+                doc_id = [item['doc_id']for item in batch]
+                retrieval_score = [item['retrieval_score'] for item in batch]
+                labels = [item['label'] for item in batch]
+                queries = torch.stack([item['query'] for item in batch])
+                docs = torch.stack([item['doc'] for item in batch])
+                return {'query_id': query_id, 'doc_id': doc_id, 'label': labels, 'retrieval_score': retrieval_score,
+                        'doc': docs, 'query': queries}
+            elif self._model == 'reformulator':
+                query_id = [item['query_id'] for item in batch]
+                queries = torch.stack([item['query'] for item in batch])
+                return {'query_id': query_id, 'query': queries}
 
     def __len__(self):
         return self._count

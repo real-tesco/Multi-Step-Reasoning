@@ -1,5 +1,7 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
+
 
 class QueryReformulator:
     def __init__(self, mode: str):
@@ -17,3 +19,22 @@ class QueryReformulator:
     def replace_with_avg(self, document_vectors):
         rst = torch.mean(document_vectors[:, :5], dim=1)
         return rst
+
+
+class NeuralReformulator(nn.Module):
+    def __init__(self, top_k, embedding_size, hidden_size1, hidden_size2):
+        self.top_k = top_k
+        self.embedding_size = embedding_size
+        self.input = nn.Linear((top_k+1)*embedding_size, hidden_size1)
+        self.h1 = nn.Linear(hidden_size1, hidden_size2)
+        self.output = nn.Linear(hidden_size2, embedding_size)
+        self.activation = nn.SiLU()
+
+    def forward(self, query_embedding, document_embeddings):
+        inputs = torch.cat([torch.unsqueeze(query_embedding, dim=0).t(), document_embeddings[self.top_k].t()], dim=1).flatten()
+        print(inputs.shape)
+        x = self.input(inputs)
+        x = self.activation(self.h1(x))
+        x = self.activation(self.output(x))
+        return x
+

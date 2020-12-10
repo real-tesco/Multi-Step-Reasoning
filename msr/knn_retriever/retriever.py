@@ -80,9 +80,10 @@ class KnnIndex:
     def set_ef(self, ef):
         self._index.set_ef(ef=ef)
 
-    def get_document(self, pid):
+    def get_document(self, did):
         # check if works, else pid needs to be N dim np array
-        return self._index.get_items(pid)
+        did = [self._docid2indexid[did]]
+        return self._index.get_items(did)[0]
 
     def set_device(self, device):
         self._model.to(device)

@@ -24,8 +24,8 @@ global_timer = utils.Timer()
 stats = {'timer': global_timer, 'epoch': 0, 'recall': 0.0}
 
 
-def make_dataloader(doc_list, docid_list, query_list, query_id_list, triples, mode='train'):
-    dataset = RankingDataset(doc_list, docid_list, query_list, query_id_list, triples, mode=mode)
+def make_dataloader(doc_list, docid_list, query_list, query_id_list, triples, mode='train', model='ranker'):
+    dataset = RankingDataset(doc_list, docid_list, query_list, query_id_list, triples, mode=mode, model=model)
     loader = msr.data.dataloader.DataLoader(
         dataset,
         batch_size=args.batch_size if mode == 'train' else args.batch_size * 8,
@@ -184,7 +184,7 @@ def main(args):
     query_ids_list = (args.query_ids_format.format(i) for i in range(0, args.num_query_files))
 
     train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.triples,
-                                   mode='train')
+                                   mode='train', model='ranker')
 
     logger.info("Loading dev data...")
     doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
