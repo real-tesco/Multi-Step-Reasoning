@@ -26,11 +26,12 @@ def str2bool(v):
 def get_relevant_embeddings(qids, qrels, knn_index):
     targets = []
     for qid in qids:
-        print(qid)
-        print(type(qid))
-        assert qid in qrels
-        did = random.choice(qrels[qid])
-        targets.append(knn_index.get_document(did))
+        if qid in qrels:
+            did = random.choice(qrels[qid])
+            targets.append(knn_index.get_document(did))
+        else:
+            print(f"qid: {qid} is not in qrels...")
+    print(qrels.items())
     return torch.tensor(targets)
 
 
@@ -216,8 +217,6 @@ def main():
         for line in f:
             qid, _, did, label = line.strip().split()
             if int(label) > 0:
-                print(qid)
-                print(type(qid))
                 if qid in qrels:
                     qrels[qid].append(did)
                 else:
