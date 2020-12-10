@@ -23,6 +23,7 @@ class QueryReformulator:
 
 class NeuralReformulator(nn.Module):
     def __init__(self, top_k, embedding_size, hidden_size1, hidden_size2):
+        super(NeuralReformulator, self).__init__()
         self.top_k = top_k
         self.embedding_size = embedding_size
         self.input = nn.Linear((top_k+1)*embedding_size, hidden_size1)
