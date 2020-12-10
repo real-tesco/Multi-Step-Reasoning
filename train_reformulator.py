@@ -91,7 +91,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
         for idx, train_batch in enumerate(train_loader):
             if train_batch is None:
                 continue
-            query_id, doc_id, rel_label = train_batch['query_id']
+            query_id = train_batch['query_id']
             document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
                 train_batch['query'].to(device))
 
