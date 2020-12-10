@@ -107,8 +107,8 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
             new_queries = reformulator(query_embeddings.to(device), sorted_docs.to(device))
 
             # new_queries should match document representation of relevant document
-            target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device)
-            batch_loss = loss_fn(new_queries, target_embeddings.long())
+            target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device).float()
+            batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()
             batch_loss.backward()
