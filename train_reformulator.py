@@ -65,7 +65,6 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, loss, dev_loader
                                                          device)
             batch_score = batch_score.detach().cpu().tolist()
 
-            batch_score = batch_score.detach().cpu().tolist()
             for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
                 if q_id in rst_dict:
                     rst_dict[q_id].append((b_s, d_id))
