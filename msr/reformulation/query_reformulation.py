@@ -29,7 +29,7 @@ class NeuralReformulator(nn.Module):
         self.input = nn.Linear((top_k+1)*embedding_size, hidden_size1)
         self.h1 = nn.Linear(hidden_size1, hidden_size2)
         self.output = nn.Linear(hidden_size2, embedding_size)
-        self.activation = nn.SiLU()
+        self.activation = nn.Sigmoid()
 
     def forward(self, query_embedding, document_embeddings):
         if len(query_embedding.shape) == 1:
@@ -43,5 +43,6 @@ class NeuralReformulator(nn.Module):
         x = self.input(inputs)
         x = self.activation(self.h1(x))
         x = self.activation(self.output(x))
+
         return x
 
