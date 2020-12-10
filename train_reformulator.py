@@ -266,7 +266,7 @@ def main():
         pass
 
     # set loss_fn
-    loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.BCELoss()
     loss_fn.to(device)
 
     # set metric
