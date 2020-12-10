@@ -173,7 +173,7 @@ def main():
                                 'marco_train_query_embeddings_indices_{}.npy')
     parser.add_argument('-dev_query_embedding_file', type=str, default='./data/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-dev_query_ids_file', type=str, default='./data/marco_dev_query_embeddings_indices_0.npy')
-    parser.add_argument('-num_query_files', type=int, default=0)
+    parser.add_argument('-num_query_files', type=int, default=1)
 
     args = parser.parse_args()
     index_args = get_knn_args(parser)
