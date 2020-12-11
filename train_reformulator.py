@@ -71,7 +71,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
                 for d, s in (zip(d_id, b_s)):
                     rst_dict[q_id].append((s, d))
         if (step + 1) % args.print_every == 0:
-            print(f"-- eval: {step + 1}/{len(dev_loader)} --")
+            logger.info(f"-- eval: {step + 1}/{len(dev_loader)} --")
 
     return rst_dict
 
@@ -104,6 +104,10 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
             #print("docs 0s: ", (target_embeddings <= 0.).sum())
             #print("query 1s: ", (new_queries >= 1.).sum())
             #print("query 0s: ", (new_queries <= 0.).sum())
+
+            # push into [0,1] range for BCE with logits
+            target_embeddings = target_embeddings + target_embeddings.min() * (-1)
+            new_queries = new_queries + new_queries.min() * (-1)
             batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()
@@ -205,7 +209,7 @@ def main():
     dev_loader = msr.data.dataloader.DataLoader(
         dev_dataset,
         batch_size=args.batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=8
     )
 
@@ -255,7 +259,6 @@ def main():
                                   weight_decay=args.weight_decay)
         elif args.optimizer == 'adamax':
             optimizer = optim.Adamax(parameters,
-                                     lr=args.lr,
                                      weight_decay=args.weight_decay)
         else:
             raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
