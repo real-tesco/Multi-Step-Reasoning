@@ -106,8 +106,8 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
             #print("query 0s: ", (new_queries <= 0.).sum())
 
             # push into [0,1] range for BCE with logits
-            target_embeddings = target_embeddings + target_embeddings.min() * (-1)
-            new_queries = new_queries + new_queries.min() * (-1)
+            #target_embeddings = target_embeddings + target_embeddings.min() * (-1)
+            #new_queries = new_queries + new_queries.min() * (-1)
             batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()
