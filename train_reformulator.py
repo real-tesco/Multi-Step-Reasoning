@@ -1,6 +1,7 @@
 import argparse
 import torch
 import torch.optim as optim
+from torch.nn import Softmax
 import msr
 from msr.data.dataloader import DataLoader
 from msr.data.datasets.rankingdataset import RankingDataset
@@ -21,6 +22,16 @@ logger = logging.getLogger()
 
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
+
+
+def cross_entropy(prediction, target):
+    soft = Softmax(dim=1)
+    prediction = soft(prediction)
+    target = soft(target)
+    m = prediction.shape[0]
+    log_likelihood = - (torch.log(prediction) * target)
+    loss = log_likelihood / m
+    return loss
 
 
 def get_relevant_embeddings(qids, qrels, knn_index):
@@ -76,7 +87,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
     return rst_dict
 
 
-def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, train_loader, dev_loader, qrels, metric, device, k=100):
+def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader, dev_loader, qrels, metric, device, k=100):
 
     mrr = 0.0
     best_mrr = 0.0
@@ -105,11 +116,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, trai
             #print("query 1s: ", (new_queries >= 1.).sum())
             #print("query 0s: ", (new_queries <= 0.).sum())
 
-            # push into [0,1] range for BCE with logits
-            sm = torch.nn.Softmax(dim=-1)
-            target_embeddings = sm(target_embeddings)
-            new_queries = sm(new_queries)
-            batch_loss = loss_fn(new_queries, target_embeddings)
+            batch_loss = cross_entropy(new_queries, target_embeddings)
 
             optimizer.zero_grad()
             batch_loss.backward()
@@ -267,15 +274,15 @@ def main():
         pass
 
     # set loss_fn
-    loss_fn = torch.nn.BCELoss()
-    loss_fn.to(device)
+    #loss_fn = torch.nn.CrossEntropyLoss()
+    #loss_fn.to(device)
 
     # set metric
     metric = msr.metrics.Metric()
 
     # starting inference
     logger.info("Starting training...")
-    train(args, knn_index, ranking_model, reformulator, optimizer, loss_fn, train_loader, dev_loader, qrels, metric, device, args.k)
+    train(args, knn_index, ranking_model, reformulator, optimizer, train_loader, dev_loader, qrels, metric, device, args.k)
 
 
 if __name__ == '__main__':

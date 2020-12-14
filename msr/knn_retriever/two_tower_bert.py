@@ -36,8 +36,8 @@ class TwoTowerBert(nn.Module):
         query = query[0][:, 0, :]  # CLS Token
         document = document[0][:, 0, :]
 
-        document = document - document.min()
-        query = query - query.min()
+        #document = document - document.min()
+        #query = query - query.min()
         document = F.normalize(document, p=2, dim=1)
         query = F.normalize(query, p=2, dim=1)
 
