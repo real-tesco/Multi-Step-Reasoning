@@ -34,9 +34,10 @@ class TwoTowerBert(nn.Module):
         #print(query[0].shape)  # [4, 64, 768]
         #print(query[1].shape)  # [4, 768]  #CLS token with linear layer and tanh activation
         query = query[0][:, 0, :]  # CLS Token
-
         document = document[0][:, 0, :]
 
+        document = document - document.min()
+        query = query - query.min()
         document = F.normalize(document, p=2, dim=1)
         query = F.normalize(query, p=2, dim=1)
 
