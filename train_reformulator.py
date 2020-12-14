@@ -30,7 +30,7 @@ def cross_entropy(prediction, target):
     target = soft(target)
     m = prediction.shape[0]
     log_likelihood = - (torch.log(prediction) * target)
-    loss = log_likelihood / m
+    loss = log_likelihood.sum() / m
     return loss
 
 
