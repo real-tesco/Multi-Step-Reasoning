@@ -42,7 +42,7 @@ def get_relevant_embeddings(qids, qrels, knn_index):
         else:
             print(f"qid: {qid} is not in qrels...")
     #print(qrels.items())
-    return torch.tensor(targets)
+    return torch.FloatTensor(targets)
 
 
 def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, device):
@@ -109,7 +109,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
             new_queries = reformulator(query_embeddings.to(device), sorted_docs.to(device))
 
             # new_queries should match document representation of relevant document
-            target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device).float()
+            target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device)
             #print("docs 1s: ", (target_embeddings >= 1.).sum())
             #print("docs 0s: ", (target_embeddings <= 0.).sum())
             #print("query 1s: ", (new_queries >= 1.).sum())
