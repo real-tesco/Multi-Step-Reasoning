@@ -1,7 +1,7 @@
 import argparse
 import torch
 import torch.optim as optim
-from torch.nn import Softmax
+from torch.nn.functional import softmax
 import msr
 from msr.data.dataloader import DataLoader
 from msr.data.datasets.rankingdataset import RankingDataset
@@ -25,9 +25,8 @@ def str2bool(v):
 
 
 def cross_entropy(prediction, target):
-    soft = Softmax(dim=1)
-    prediction = soft(prediction)
-    target = soft(target)
+    prediction = softmax(prediction, dim=1)
+    target = softmax(target, dim=1)
     m = prediction.shape[0]
     log_likelihood = - (torch.log(prediction) * target)
     loss = log_likelihood.sum() / m

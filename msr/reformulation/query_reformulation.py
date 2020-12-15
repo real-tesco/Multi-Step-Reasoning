@@ -27,8 +27,8 @@ class NeuralReformulator(nn.Module):
         self.top_k = top_k
         self.embedding_size = embedding_size
         self.input = nn.Linear((top_k+1)*embedding_size, hidden_size1)
-        self.h1 = nn.Linear(hidden_size1, hidden_size2)
-        self.output = nn.Linear(hidden_size2, embedding_size)
+        # self.h1 = nn.Linear(hidden_size1, hidden_size2)
+        self.output = nn.Linear(hidden_size1, embedding_size)
         self.activation = nn.Sigmoid()
 
     def forward(self, query_embedding, document_embeddings):
@@ -39,10 +39,15 @@ class NeuralReformulator(nn.Module):
             d_emb = document_embeddings[:, :self.top_k].transpose(1, 2)
             inputs = torch.cat([q_emb, d_emb], dim=2)
             inputs = inputs.flatten(start_dim=1)
-        #print(inputs.shape)
-        x = self.input(inputs)
-        x = self.activation(self.h1(x))
-        x = self.activation(self.output(x))
 
+        #print(inputs.shape)
+        x = self.activation(self.input(inputs))
+        # x = self.activation(self.h1(x))
+        x = self.output(x)
+
+        if len(query_embedding.shape) == 1:
+            x = F.normalize(x, p=2, dim=0)
+        else:
+            x = F.normalize(x, p=2, dim=1)
         return x
 
