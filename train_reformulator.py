@@ -25,7 +25,7 @@ def str2bool(v):
 
 
 def inner_product(prediction, target):
-    return (prediction * target).sum(dim=1)
+    return (prediction * target).sum(dim=1).mean()
 
 
 # other choice would be inner product
