@@ -110,10 +110,14 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
             batch_score = batch_score.detach().cpu().tolist()
 
             # sort doc embeddings according score and reformulate
-            _, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
+            scores_sorted, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
             sorted_docs = document_embeddings[torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices]
-            new_queries = reformulator(query_embeddings.to(device), sorted_docs.to(device))
-
+            if args.reformulation_type == 'neural':
+                new_queries = reformulator(query_embeddings.to(device), sorted_docs.to(device))
+            elif args.reformulation_type == 'weighted_avg':
+                new_queries = reformulator(sorted_docs.to(device), torch.tensor(batch_score))
+            else:
+                return
             # new_queries should match document representation of relevant document
             target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device)
             #print("docs 1s: ", (target_embeddings >= 1.).sum())
