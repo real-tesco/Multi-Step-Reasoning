@@ -115,7 +115,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
             if args.reformulation_type == 'neural':
                 new_queries = reformulator(query_embeddings.to(device), sorted_docs.to(device))
             elif args.reformulation_type == 'weighted_avg':
-                new_queries = reformulator(sorted_docs.to(device), torch.tensor(batch_score))
+                new_queries = reformulator(sorted_docs.to(device), torch.tensor(batch_score).to(device))
             else:
                 return
             # new_queries should match document representation of relevant document
