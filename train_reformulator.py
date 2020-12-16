@@ -156,7 +156,8 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
                         best_epoch = epoch
                         logger.info('New best mes = {:2.4f}'.format(best_mrr))
                         torch.save(reformulator.state_dict(), args.model_name)
-
+        # Eval run and print
+        _ = metric.eval_run(args.qrels, args.res + '.best')
 
 
 def load_neural_reformulator(args):

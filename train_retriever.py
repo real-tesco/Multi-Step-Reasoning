@@ -91,6 +91,7 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                         torch.save(model.module.state_dict(), args.save)
                     else:
                         torch.save(model.state_dict(), args.save)
+        mes = metric.eval_run(args.qrels, args.res + '.best')
 
 
 def save_embeddings(args, model, doc_loader, device):

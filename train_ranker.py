@@ -135,9 +135,6 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                         mes = metric.get_mrr(args.qrels, args.res, args.metric)
                     else:
                         mes = metric.get_metric(args.qrels, args.res, args.metric)
-                    ndcg = metric.get_metric(args.qrels, args.res, "ndcg_cut_100")
-                    if ndcg > best_ndcg:
-                        best_ndcg = ndcg
                     if mes > best_mes:
                         msr.utils.save_trec(args.res + '.best', rst_dict)
                         best_mes = mes
@@ -146,6 +143,7 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                         logger.info('New best mes = {:2.4f}'.format(best_mes))
                         logger.info('checkpointing  model at {}.ckpt'.format(args.model_name))
                         torch.save(ranking_model.state_dict(), args.model_name + ".ckpt")
+        _ = metric.eval_run(args.qrels, args.res + '.best')
 
 
 def eval_ranker(args, model,  dev_loader, device):

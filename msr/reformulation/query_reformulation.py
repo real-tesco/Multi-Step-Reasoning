@@ -84,4 +84,5 @@ class NeuralReformulator(nn.Module):
 class TransformerReformulator(nn.Module):
     def __init__(self, topk):
         self.topk = topk
+        #self.transformer =
 

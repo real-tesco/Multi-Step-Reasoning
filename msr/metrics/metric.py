@@ -19,7 +19,7 @@ class Metric():
             mes[measure] = pytrec_eval.compute_aggregated_measure(measure, [query_measures[measure] for query_measures in results.values()])
         return mes[metric]
 
-    def get_mrr(self, qrels: str, trec: str, metric: str = 'mrr_cut_10') -> float:
+    def get_mrr(self, qrels: str, trec: str, metric: str = 'mrr_cut_100') -> float:
         k = int(metric.split('_')[-1])
 
         qrel = {}
@@ -48,3 +48,24 @@ class Metric():
             mrr += rr
         mrr /= len(run)
         return mrr
+
+    def eval_run(self, qrels: str, trec: str) -> Dict[str, float]:
+        query_measure_to_check = ['ndcg', 'map', 'P_10', 'recall_5', 'recall_10', 'recall_30', 'recall_100']
+        with open(qrels, 'r') as f_qrel:
+            qrel = pytrec_eval.parse_qrel(f_qrel)
+        with open(trec, 'r') as f_run:
+            run = pytrec_eval.parse_run(f_run)
+
+        evaluator = pytrec_eval.RelevanceEvaluator(qrel, pytrec_eval.supported_measures)
+        results = evaluator.evaluate(run)
+        for query_id, query_measures in sorted(results.items()):
+            pass
+        mes = {}
+        for measure in sorted(query_measure_to_check):
+            mes[measure] = pytrec_eval.compute_aggregated_measure(measure, [query_measures[measure] for query_measures in results.values()])
+        mrr = self.get_mrr(qrels, trec)
+        mes['mrr'] = mrr
+        for key in mes:
+            print("Evaluation Result: ")
+            print("{}: {:.4f}".format(key, mes[key]))
+        return mes
