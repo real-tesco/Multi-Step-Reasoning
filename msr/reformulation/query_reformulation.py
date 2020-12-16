@@ -6,6 +6,8 @@ import torch.nn.functional as F
 class QueryReformulator:
     def __init__(self, mode: str):
         self._mode = mode
+        if mode == 'weighted_avg':
+            self.layer = ProjectionLayer(dim_input=768, dim_output=768, mode='single')
 
     def __call__(self, *args, **kwargs):
         if self._mode == 'top1':
@@ -24,8 +26,26 @@ class QueryReformulator:
 
     def replace_with_weighted_avg(self, document_vectors, distances, topk):
         scores = torch.ones_like(distances) - distances
-        rst = (document_vectors[:, :topk] * scores[:, :topk].unsqueeze(dim=-1)).sum(dim=1) / topk
+        rst = self.layer.forward((document_vectors[:, :topk] * scores[:, :topk].unsqueeze(dim=-1)).sum(dim=1) / topk)
         return rst
+
+
+class ProjectionLayer(nn.Module):
+    def __init__(self, dim_input, dim_output=768, mode='ip'):
+        super(ProjectionLayer, self).__init__()
+        self._mode = mode
+        self._layer = nn.Linear(dim_input, dim_output)
+
+    # input as inner product, as concatenated, single vector input
+    def forward(self, query_embedding, document_embedding=None):
+        # inner product
+        if self._mode == 'ip':
+            inputs = query_embedding * document_embedding
+        elif self._mode == 'cat':
+            inputs = torch.cat([query_embedding, document_embedding])
+        else:
+            inputs = query_embedding
+        return self._layer(inputs)
 
 
 class NeuralReformulator(nn.Module):

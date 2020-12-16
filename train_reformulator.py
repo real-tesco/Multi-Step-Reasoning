@@ -12,7 +12,7 @@ from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
 import msr.utils as utils
-from msr.reformulation.query_reformulation import NeuralReformulator
+from msr.reformulation.query_reformulation import NeuralReformulator, QueryReformulator
 import logging
 import random
 
@@ -153,11 +153,52 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
                         torch.save(reformulator.state_dict(), args.model_name)
 
 
+def load_neural_reformulator(args):
+    reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_hidden, args.hidden1, args.hidden2)
+    parameters = reformulator.parameters()
+    optimizer = None
+    if parameters is not None:
+        if args.optimizer == 'sgd':
+            optimizer = optim.SGD(parameters, args.lr,
+                                  momentum=args.momentum,
+                                  weight_decay=args.weight_decay)
+        elif args.optimizer == 'adamax':
+            optimizer = optim.Adamax(parameters,
+                                     weight_decay=args.weight_decay)
+        else:
+            raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
+    else:
+        logger.info("Optimizer is None...")
+    return reformulator, optimizer
+
+
+def load_weighted_avg_reformulator(args):
+    reformulator = QueryReformulator(mode='weighted_avg')
+    parameters = reformulator.layer.parameters()
+    optimizer = None
+    if parameters is not None:
+        if args.optimizer == 'sgd':
+            optimizer = optim.SGD(parameters, args.lr,
+                                  momentum=args.momentum,
+                                  weight_decay=args.weight_decay)
+        elif args.optimizer == 'adamax':
+            optimizer = optim.Adamax(parameters,
+                                     weight_decay=args.weight_decay)
+        else:
+            raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
+    else:
+        logger.info("Optimizer is None...")
+    return reformulator, optimizer
+
+
 def main():
     # setting args
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
 
+    parser.add_argument('-reformulation_type',
+                        type=str, default='neural', choices=['neural', 'weighted_avg', 'lstm', 'transformer'],
+                        help='type of reformulator to train')
     parser.add_argument('-top_k_reformulator', type=int, default=5)
     parser.add_argument('-hidden1', type=int, default=1000)
     parser.add_argument('-hidden2', type=int, default=768)
@@ -201,6 +242,7 @@ def main():
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
     ranker_args.train = False
+    args.dim_hidden = index_args.dim_hidden
 
     logger.info("Loading train data...")
     doc_embedding_list = []
@@ -265,21 +307,13 @@ def main():
 
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
-    reformulator = NeuralReformulator(args.top_k_reformulator, index_args.dim_hidden, args.hidden1, args.hidden2)
-    parameters = reformulator.parameters()
-    optimizer = None
-    if parameters is not None:
-        if args.optimizer == 'sgd':
-            optimizer = optim.SGD(parameters, args.lr,
-                                  momentum=args.momentum,
-                                  weight_decay=args.weight_decay)
-        elif args.optimizer == 'adamax':
-            optimizer = optim.Adamax(parameters,
-                                     weight_decay=args.weight_decay)
-        else:
-            raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
+    if args.reformulation_type == 'neural':
+        reformulator, optimizer = load_neural_reformulator(args)
+    elif args.reformulation_type == 'weighted_avg':
+        reformulator, optimizer = load_weighted_avg_reformulator(args)
     else:
-        logger.info("Optimizer is None...")
+        return
+
     reformulator.to(device)
 
     # set loss_fn
