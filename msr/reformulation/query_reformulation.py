@@ -12,12 +12,19 @@ class QueryReformulator:
             return self.replace_with_document(*args)
         elif self._mode == 'top5':
             return self.replace_with_avg(*args)
+        elif self._mode == 'weighted_avg':
+            return self.replace_with_weighted_avg(*args)
 
     def replace_with_document(self, document_vectors):
         return document_vectors[:, 0]
 
     def replace_with_avg(self, document_vectors):
         rst = torch.mean(document_vectors[:, :5], dim=1)
+        return rst
+
+    def replace_with_weighted_avg(self, document_vectors, distances, topk):
+        scores = torch.ones_like(distances) - distances
+        rst = (document_vectors[:, :topk] * scores[:, :topk].unsqueeze(dim=-1)).sum(dim=1) / topk
         return rst
 
 
@@ -50,4 +57,9 @@ class NeuralReformulator(nn.Module):
         else:
             x = F.normalize(x, p=2, dim=1)
         return x
+
+
+class TransformerReformulator(nn.Module):
+    def __init__(self, topk):
+        self.topk = topk
 
