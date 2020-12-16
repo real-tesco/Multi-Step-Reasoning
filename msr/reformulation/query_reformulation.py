@@ -4,10 +4,12 @@ import torch.nn.functional as F
 
 
 class QueryReformulator:
-    def __init__(self, mode: str):
+    def __init__(self, mode: str, topk=None):
         self._mode = mode
         if mode == 'weighted_avg':
             self.layer = ProjectionLayer(dim_input=768, dim_output=768, mode='single')
+        if topk is not None:
+            self.topk = topk
 
     def __call__(self, *args, **kwargs):
         if self._mode == 'top1':
@@ -21,12 +23,12 @@ class QueryReformulator:
         return document_vectors[:, 0]
 
     def replace_with_avg(self, document_vectors):
-        rst = torch.mean(document_vectors[:, :5], dim=1)
+        rst = torch.mean(document_vectors[:, :self.topk], dim=1)
         return rst
 
-    def replace_with_weighted_avg(self, document_vectors, distances, topk):
+    def replace_with_weighted_avg(self, document_vectors, distances):
         scores = torch.ones_like(distances) - distances
-        rst = self.layer.forward((document_vectors[:, :topk] * scores[:, :topk].unsqueeze(dim=-1)).sum(dim=1) / topk)
+        rst = self.layer.forward((document_vectors[:, :self.topk] * scores[:, :self.topk].unsqueeze(dim=-1)).sum(dim=1) / self.topk)
         return rst
 
 

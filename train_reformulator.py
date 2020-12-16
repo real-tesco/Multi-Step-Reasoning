@@ -173,7 +173,7 @@ def load_neural_reformulator(args):
 
 
 def load_weighted_avg_reformulator(args):
-    reformulator = QueryReformulator(mode='weighted_avg')
+    reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
     parameters = reformulator.layer.parameters()
     optimizer = None
     if parameters is not None:
