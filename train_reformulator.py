@@ -25,7 +25,8 @@ def str2bool(v):
 
 
 def inner_product(prediction, target):
-    return (prediction * target).sum(dim=1).mean()
+    dot_prod = (prediction * target).sum(dim=1)
+    return torch.log(torch.Sigmoid(dot_prod)).mean()
 
 
 # other choice would be inner product
@@ -155,6 +156,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
                         best_epoch = epoch
                         logger.info('New best mes = {:2.4f}'.format(best_mrr))
                         torch.save(reformulator.state_dict(), args.model_name)
+
 
 
 def load_neural_reformulator(args):
