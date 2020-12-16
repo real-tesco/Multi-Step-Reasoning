@@ -24,6 +24,11 @@ def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
+def inner_product(prediction, target):
+    return (prediction * target).sum(dim=1)
+
+
+# other choice would be inner product
 def cross_entropy(prediction, target):
     prediction = softmax(prediction, dim=1)
     target = softmax(target, dim=1)
@@ -90,6 +95,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
 
     mrr = 0.0
     best_mrr = 0.0
+    best_epoch = 0
     para_loss = utils.AverageMeter()
     for epoch in range(0, args.epochs):
         for idx, train_batch in enumerate(train_loader):
@@ -115,16 +121,19 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
             #print("query 1s: ", (new_queries >= 1.).sum())
             #print("query 0s: ", (new_queries <= 0.).sum())
 
-            batch_loss = cross_entropy(new_queries, target_embeddings)
+            # batch_loss = cross_entropy(new_queries, target_embeddings)
+            batch_loss = inner_product(new_queries, target_embeddings)
 
             optimizer.zero_grad()
             batch_loss.backward()
+            torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
             optimizer.step()
             para_loss.update(batch_loss.data.item())
 
             if (idx + 1) % args.print_every == 0:
                 logger.info('Epoch={} | iter={}/{} | avg loss={:2.4f} | last mrr={:2.5f} | '
-                            'best mrr={:2.5f}'.format(epoch, idx + 1, len(train_loader), para_loss.avg, mrr, best_mrr))
+                            'best mrr={:2.5f} ({})'.format(epoch, idx + 1, len(train_loader), para_loss.avg, mrr,
+                                                           best_mrr, best_epoch))
                 para_loss.reset()
 
             if (idx + 1) % args.eval_every == 0:
@@ -139,6 +148,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
                     if mrr > best_mrr:
                         msr.utils.save_trec(args.res + '.best', rst_dict)
                         best_mrr = mrr
+                        best_epoch = epoch
                         logger.info('New best mes = {:2.4f}'.format(best_mrr))
                         torch.save(reformulator.state_dict(), args.model_name)
 
@@ -256,7 +266,6 @@ def main():
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
     reformulator = NeuralReformulator(args.top_k_reformulator, index_args.dim_hidden, args.hidden1, args.hidden2)
-    reformulator.to(device)
     parameters = reformulator.parameters()
     optimizer = None
     if parameters is not None:
@@ -270,7 +279,8 @@ def main():
         else:
             raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
     else:
-        pass
+        logger.info("Optimizer is None...")
+    reformulator.to(device)
 
     # set loss_fn
     #loss_fn = torch.nn.CrossEntropyLoss()
