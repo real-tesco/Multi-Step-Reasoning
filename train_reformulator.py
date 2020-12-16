@@ -26,7 +26,7 @@ def str2bool(v):
 
 def inner_product(prediction, target):
     dot_prod = (prediction * target).sum(dim=1)
-    return torch.sigmoid(dot_prod).mean()
+    return (1 - torch.sigmoid(dot_prod)).mean()
 
 
 # other choice would be inner product
