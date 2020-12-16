@@ -309,12 +309,14 @@ def main():
     logger.info('Loading Reformulator...')
     if args.reformulation_type == 'neural':
         reformulator, optimizer = load_neural_reformulator(args)
+        reformulator.to(device)
     elif args.reformulation_type == 'weighted_avg':
         reformulator, optimizer = load_weighted_avg_reformulator(args)
+        reformulator.layer.to(device)
     else:
         return
 
-    reformulator.to(device)
+
 
     # set loss_fn
     #loss_fn = torch.nn.CrossEntropyLoss()
