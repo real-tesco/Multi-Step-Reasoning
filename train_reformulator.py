@@ -205,6 +205,7 @@ def load_weighted_avg_reformulator(args):
 
 
 def load_transformer_reformulator(args):
+    logger.info("Loading Transformer Reformulator..")
     reformulator = TransformerReformulator(args.top_k_reformulator, args.num_encoder_layers, args.num_decoder_layers,
                                            args.dim_feedforward)
     parameters = reformulator.parameters()
@@ -336,14 +337,15 @@ def main():
     logger.info("Load Index File and set ef")
     knn_index.load_index()
     knn_index.set_ef(index_args.efc)
-    knn_index.set_device(device)
+    # Transformer to big if all is on GPU
+    # knn_index.set_device(device)
 
     #   2. Load Ranker
     logger.info("Loading Ranker...")
     ranking_model = NeuralRanker(ranker_args)
     checkpoint = torch.load(args.ranker_checkpoint)
     ranking_model.load_state_dict(checkpoint)
-    ranking_model.to(device)
+    # ranking_model.to(device)
 
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
