@@ -112,16 +112,17 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
 
             # sort doc embeddings according score and reformulate
             scores_sorted, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
-            sorted_docs = document_embeddings[torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices]
+            sorted_docs = document_embeddings[
+                torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
 
             # load relevant documents for current queries
             # new_queries should match document representation of relevant document
             target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device)
 
             if args.reformulation_type == 'neural':
-                new_queries = reformulator(query_embeddings.to(device), sorted_docs.to(device))
+                new_queries = reformulator(query_embeddings.to(device), sorted_docs)
             elif args.reformulation_type == 'weighted_avg':
-                new_queries = reformulator(sorted_docs.to(device), torch.tensor(batch_score).to(device))
+                new_queries = reformulator(sorted_docs, torch.tensor(batch_score).to(device))
             elif args.reformulation_type == 'transformer':
                 new_queries = reformulator(sorted_docs, target_embeddings)
             else:
@@ -358,7 +359,7 @@ def main():
         reformulator.layer.to(device)
     elif args.reformulation_type == 'transformer':
         reformulator, optimizer = load_transformer_reformulator(args)
-        reformulator.set_device(device)
+        reformulator.to(device)
         # logger.info(reformulator)
         if torch.cuda.device_count() > 1:
             logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
