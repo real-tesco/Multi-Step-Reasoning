@@ -238,7 +238,7 @@ def main():
     parser.add_argument('-nhead', type=int, default=4)
     parser.add_argument('-num_encoder_layers', type=int, default=1)
     parser.add_argument('-num_decoder_layers', type=int, default=1)
-    parser.add_argument('-dim_feedforward', type=int, default=3072)
+    parser.add_argument('-dim_feedforward', type=int, default=2048)
 
     # neural reformulator args
     parser.add_argument('-hidden1', type=int, default=1000)
