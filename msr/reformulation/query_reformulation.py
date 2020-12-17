@@ -98,8 +98,8 @@ class TransformerReformulator(nn.Module):
         # needs to be transposed to match expected dimensions
         source = source[:, :self.topk].transpose(0, 1)
         target = target.unsqueeze(dim=0)
-        source = self.pos_enc(source * torch.sqrt(self.d_model))
-        target = self.pos_enc(target * torch.sqrt(self.d_model))
+        source = self.pos_enc(source * math.sqrt(self.d_model))
+        target = self.pos_enc(target * math.sqrt(self.d_model))
         return self.transformer(source, target)
 
     def calc_embedding(self, source):
