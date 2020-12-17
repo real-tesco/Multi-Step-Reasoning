@@ -100,5 +100,5 @@ class TransformerReformulator(nn.Module):
 
     def calc_embedding(self, source):
         source = source[:, :self.topk].transpose(0, 1)
-        output = self.transformer.encoder(source)
-        return output
+        output = self.transformer.encoder(source).squeeze(dim=0)
+        return F.normalize(output, p=2, dim=1)
