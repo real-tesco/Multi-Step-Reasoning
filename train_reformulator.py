@@ -358,7 +358,7 @@ def main():
         reformulator.layer.to(device)
     elif args.reformulation_type == 'transformer':
         reformulator, optimizer = load_transformer_reformulator(args)
-        reformulator.to(device)
+        reformulator.set_device(device)
         # logger.info(reformulator)
         if torch.cuda.device_count() > 1:
             logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')

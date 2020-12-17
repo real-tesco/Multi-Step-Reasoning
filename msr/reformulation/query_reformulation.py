@@ -107,6 +107,10 @@ class TransformerReformulator(nn.Module):
         output = self.transformer.encoder(source).squeeze(dim=0)
         return F.normalize(output, p=2, dim=1)
 
+    def set_device(self, device):
+        self.to(device)
+        self.pos_enc.to(device)
+
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model=768, dropout=0.1, max_len=10):
