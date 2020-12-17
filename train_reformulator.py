@@ -205,7 +205,7 @@ def load_weighted_avg_reformulator(args):
 
 
 def load_transformer_reformulator(args):
-    reformulator = TransformerReformulator(args.tok_k_reformulator, args.num_encoder_layers, args.num_decoder_layers,
+    reformulator = TransformerReformulator(args.top_k_reformulator, args.num_encoder_layers, args.num_decoder_layers,
                                            args.dim_feedforward)
     parameters = reformulator.parameters()
     optimizer = None
