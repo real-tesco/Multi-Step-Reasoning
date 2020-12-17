@@ -84,10 +84,12 @@ class NeuralReformulator(nn.Module):
 class TransformerReformulator(nn.Module):
     def __init__(self, topk, nhead=4, num_encoder_layers=1, num_decoder_layers=1, dim_feedforward=3072):
         super(TransformerReformulator, self).__init__()
+        self.d_model = 768
         self.topk = topk
         self.transformer = torch.nn.Transformer(d_model=768, nhead=nhead, num_encoder_layers=num_encoder_layers,
                                                 num_decoder_layers=num_decoder_layers,
                                                 dim_feedforward=dim_feedforward)
+        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk)
 
     # source is sequence of doc embeddings, target is correct embedding
     def forward(self, source, target):
@@ -96,9 +98,29 @@ class TransformerReformulator(nn.Module):
         # needs to be transposed to match expected dimensions
         source = source[:, :self.topk].transpose(0, 1)
         target = target.unsqueeze(dim=0)
+        source = self.pos_enc(source * torch.sqrt(self.d_model))
+        target = self.pos_enc(target * torch.sqrt(self.d_model))
         return self.transformer(source, target)
 
     def calc_embedding(self, source):
         source = source[:, :self.topk].transpose(0, 1)
         output = self.transformer.encoder(source).squeeze(dim=0)
         return F.normalize(output, p=2, dim=1)
+
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model=768, dropout=0.1, max_len=10):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-torch.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0).transpose(0, 1)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + self.pe[:x.size(0), :]
+        return self.dropout(x)
