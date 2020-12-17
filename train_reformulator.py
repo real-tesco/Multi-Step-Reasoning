@@ -206,8 +206,8 @@ def load_weighted_avg_reformulator(args):
 
 def load_transformer_reformulator(args):
     logger.info("Loading Transformer Reformulator..")
-    reformulator = TransformerReformulator(args.top_k_reformulator, args.num_encoder_layers, args.num_decoder_layers,
-                                           args.dim_feedforward)
+    reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
+                                           args.num_decoder_layers, args.dim_feedforward)
     parameters = reformulator.parameters()
     optimizer = None
 
@@ -358,11 +358,12 @@ def main():
         reformulator.layer.to(device)
     elif args.reformulation_type == 'transformer':
         reformulator, optimizer = load_transformer_reformulator(args)
-        logger.info(reformulator)
-        #if torch.cuda.device_count() > 1:
-        #    logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
-        #    reformulator = torch.nn.DataParallel(reformulator)
         reformulator.to(device)
+        # logger.info(reformulator)
+        if torch.cuda.device_count() > 1:
+            logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
+            reformulator = torch.nn.DataParallel(reformulator)
+
     else:
         return
 
