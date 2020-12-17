@@ -325,8 +325,8 @@ def main():
                     qrels[qid] = [did]
 
     # set device
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = torch.device('cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device = torch.device('cpu')
 
     # Loading models
     #    1. Load Retriever
@@ -339,14 +339,14 @@ def main():
     knn_index.load_index()
     knn_index.set_ef(index_args.efc)
     # Transformer to big if all is on GPU
-    # knn_index.set_device(device)
+    knn_index.set_device(device)
 
     #   2. Load Ranker
     logger.info("Loading Ranker...")
     ranking_model = NeuralRanker(ranker_args)
     checkpoint = torch.load(args.ranker_checkpoint)
     ranking_model.load_state_dict(checkpoint)
-    # ranking_model.to(device)
+    ranking_model.to(device)
 
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
@@ -361,7 +361,7 @@ def main():
         #if torch.cuda.device_count() > 1:
         #    logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
         #    reformulator = torch.nn.DataParallel(reformulator)
-        # reformulator.to(device)
+        reformulator.to(device)
     else:
         return
 
