@@ -77,6 +77,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
                 new_queries = reformulator(sorted_docs, torch.tensor(batch_score).to(device))
             elif args.reformulation_type == 'transformer':
                 new_queries = reformulator.calc_embedding(sorted_docs)
+                print(new_queries.shape)
             else:
                 return
 
