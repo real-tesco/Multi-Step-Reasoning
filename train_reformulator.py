@@ -128,17 +128,11 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
             else:
                 return
 
-            #print("docs 1s: ", (target_embeddings >= 1.).sum())
-            #print("docs 0s: ", (target_embeddings <= 0.).sum())
-            #print("query 1s: ", (new_queries >= 1.).sum())
-            #print("query 0s: ", (new_queries <= 0.).sum())
-
             # batch_loss = cross_entropy(new_queries, target_embeddings)
             batch_loss = inner_product(new_queries, target_embeddings)
 
             optimizer.zero_grad()
             batch_loss.backward()
-            torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
             optimizer.step()
             para_loss.update(batch_loss.data.item())
 
