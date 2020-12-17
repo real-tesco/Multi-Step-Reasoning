@@ -82,7 +82,23 @@ class NeuralReformulator(nn.Module):
 
 
 class TransformerReformulator(nn.Module):
-    def __init__(self, topk):
+    def __init__(self, topk, nhead=4, num_encoder_layers=1, num_decoder_layers=1, dim_feedforward=3072):
+        super(TransformerReformulator, self).__init__()
         self.topk = topk
-        #self.transformer =
+        self.transformer = torch.nn.Transformer(d_model=768, nhead=nhead, num_encoder_layers=num_encoder_layers,
+                                                num_decoder_layers=num_decoder_layers,
+                                                dim_feedforward=dim_feedforward)
 
+    # source is sequence of doc embeddings, target is correct embedding
+    def forward(self, source, target):
+        # source: (S, N, E) S is source sequence length here=topk, N=batchsize, E=feature number here 768
+        # target: (T, N, E) T is target sequence length here=1, N and E same values as source N, E
+        # needs to be transposed to match expected dimensions
+        source = source[:, :self.topk].transpose(0, 1)
+        target = target.unsqueeze(dim=0)
+        return self.transformer(source, target)
+
+    def calc_embedding(self, source):
+        source = source[:, :self.topk].transpose(0, 1)
+        output = self.transformer.encoder(source)
+        return output

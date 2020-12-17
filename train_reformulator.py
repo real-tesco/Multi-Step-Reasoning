@@ -12,7 +12,7 @@ from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
 import msr.utils as utils
-from msr.reformulation.query_reformulation import NeuralReformulator, QueryReformulator
+from msr.reformulation.query_reformulation import NeuralReformulator, QueryReformulator, TransformerReformulator
 import logging
 import random
 
@@ -198,6 +198,25 @@ def load_weighted_avg_reformulator(args):
     return reformulator, optimizer
 
 
+def load_transformer_reformulator(args):
+    reformulator = TransformerReformulator(args.tok_k_reformulator, args.num_encoder_layers, args.num_decoder_layers,
+                                           args.dim_feedforward)
+    parameters = reformulator.parameters()
+    optimizer = None
+
+    if parameters is not None:
+        if args.optimizer == 'sgd':
+            optimizer = optim.SGD(parameters, args.lr,
+                                  momentum=args.momentum,
+                                  weight_decay=args.weight_decay)
+        elif args.optimizer == 'adamax':
+            optimizer = optim.Adamax(parameters,
+                                     weight_decay=args.weight_decay)
+        else:
+            raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
+    return reformulator, optimizer
+
+
 def main():
     # setting args
     parser = argparse.ArgumentParser()
@@ -207,6 +226,14 @@ def main():
                         type=str, default='neural', choices=['neural', 'weighted_avg', 'lstm', 'transformer'],
                         help='type of reformulator to train')
     parser.add_argument('-top_k_reformulator', type=int, default=5)
+
+    # transformer reformulator args
+    parser.add_argument('-nhead', type=int, default=4)
+    parser.add_argument('-num_encoder_layers', type=int, default=1)
+    parser.add_argument('-num_decoder_layers', type=int, default=1)
+    parser.add_argument('-dim_feedforward', type=int, default=3072)
+
+    # neural reformulator args
     parser.add_argument('-hidden1', type=int, default=1000)
     parser.add_argument('-hidden2', type=int, default=768)
 
@@ -320,10 +347,11 @@ def main():
     elif args.reformulation_type == 'weighted_avg':
         reformulator, optimizer = load_weighted_avg_reformulator(args)
         reformulator.layer.to(device)
+    elif args.reformulation_type == 'transformer':
+        reformulator, optimizer = load_transformer_reformulator(args)
+        reformulator.to(device)
     else:
         return
-
-
 
     # set loss_fn
     #loss_fn = torch.nn.CrossEntropyLoss()
