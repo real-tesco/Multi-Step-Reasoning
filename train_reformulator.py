@@ -325,7 +325,8 @@ def main():
                     qrels[qid] = [did]
 
     # set device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
 
     # Loading models
     #    1. Load Retriever
