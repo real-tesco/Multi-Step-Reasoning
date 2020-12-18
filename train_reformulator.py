@@ -53,7 +53,10 @@ def get_relevant_embeddings(qids, qrels, knn_index):
 
 def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, device):
     logger.info("Evaluating trec metrics for dev set...")
-    reformulator.eval()
+    if args.reformulation_type == 'weighted_avg':
+        reformulator.layer.eval()
+    else:
+        reformulator.eval()
     rst_dict = {}
     for step, dev_batch in enumerate(dev_loader):
         # TODO: msmarco dataset refactoring
