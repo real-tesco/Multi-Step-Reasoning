@@ -30,8 +30,8 @@ class QueryReformulator:
         rst = torch.mean(document_vectors[:, :self.topk], dim=1)
         return rst
 
-    def replace_with_weighted_avg(self, document_vectors, distances):
-        scores = torch.ones_like(distances) - distances
+    def replace_with_weighted_avg(self, document_vectors, scores):
+        #scores = torch.ones_like(distances) - distances
         rst = self.layer.forward((document_vectors[:, :self.topk] * scores[:, :self.topk].unsqueeze(dim=-1)).sum(dim=1) / self.topk)
         return rst
 
