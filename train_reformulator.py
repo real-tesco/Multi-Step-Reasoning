@@ -210,7 +210,7 @@ def load_weighted_avg_reformulator(args):
 def load_transformer_reformulator(args):
     logger.info("Loading Transformer Reformulator..")
     reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
-                                           args.num_decoder_layers, args.dim_feedforward)
+                                           args.dim_feedforward)
     parameters = reformulator.parameters()
     optimizer = None
 
