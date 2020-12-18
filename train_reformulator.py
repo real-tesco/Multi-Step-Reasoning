@@ -103,7 +103,10 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
 
 
 def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader, dev_loader, qrels, metric, device, k=100):
-    reformulator.train()
+    if args.reformulation_type == 'weighted_avg':
+        reformulator.layer.train()
+    else:
+        reformulator.train()
     mrr = 0.0
     best_mrr = 0.0
     best_epoch = 0
