@@ -61,7 +61,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
 
             document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
                 dev_batch['query'])
-            query_embeddings.to(device)
+            query_embeddings = query_embeddings.to(device)
 
             batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device),
                                                          device)
