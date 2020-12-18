@@ -104,7 +104,7 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                 continue
             scores_p, scores_n = ranking_model.score_documents(ex['query'].to(device),
                                                                ex['positive_doc'].to(device),
-                                                               ex['negative_doc'].to(device))  # todo: look here
+                                                               ex['negative_doc'].to(device))
             batch_loss = loss(scores_p, scores_n, torch.ones(scores_p.size()).to(device))
             optimizer.zero_grad()
             batch_loss.backward()
