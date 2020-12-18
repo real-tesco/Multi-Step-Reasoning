@@ -105,7 +105,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
     return rst_dict
 
 
-def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader, dev_loader, qrels, metric, device, k=100):
+def train(args, knn_index, ranking_model, reformulator, loss_fn,optimizer, train_loader, dev_loader, qrels, metric, device, k=100):
     if args.reformulation_type == 'weighted_avg':
         reformulator.layer.train()
     else:
@@ -148,7 +148,8 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
                 return
 
             # batch_loss = cross_entropy(new_queries, target_embeddings)
-            batch_loss = inner_product(new_queries, target_embeddings)
+            # batch_loss = inner_product(new_queries, target_embeddings)
+            batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()
             batch_loss.backward()
@@ -259,6 +260,9 @@ def main():
     # neural reformulator args
     parser.add_argument('-hidden1', type=int, default=1000)
     parser.add_argument('-hidden2', type=int, default=768)
+
+    # training args
+    parser.add_argument('-loss_fn', type=str, default='ip', help='loss function to use')
 
     # inference args
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
@@ -384,6 +388,11 @@ def main():
         return
 
     # set loss_fn
+
+    if args.loss_fn == 'ip':
+        loss_fn = inner_product
+    elif args.loss_fn == 'cross_entropy':
+        loss_fn = cross_entropy
     #loss_fn = torch.nn.CrossEntropyLoss()
     #loss_fn.to(device)
 
@@ -392,7 +401,7 @@ def main():
 
     # starting inference
     logger.info("Starting training...")
-    train(args, knn_index, ranking_model, reformulator, optimizer, train_loader, dev_loader, qrels, metric, device, args.k)
+    train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, train_loader, dev_loader, qrels, metric, device, args.k)
 
 
 if __name__ == '__main__':
