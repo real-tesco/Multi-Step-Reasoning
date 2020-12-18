@@ -115,7 +115,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
             document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
                 train_batch['query'])
 
-            query_embeddings.to(device)
+            query_embeddings = query_embeddings.to(device)
 
             batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
             #batch_score = batch_score.detach().cpu().tolist()
