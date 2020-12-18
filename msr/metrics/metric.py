@@ -50,7 +50,7 @@ class Metric():
         mrr /= len(run)
         return mrr
 
-    def get_mrr_dict(qrels: str, trec: str, metric: str = 'mrr_cut_100'):
+    def get_mrr_dict(self, qrels: str, trec: str, metric: str = 'mrr_cut_100'):
         k = int(metric.split('_')[-1])
         query_mrr_dict = {}
         qrel = {}
