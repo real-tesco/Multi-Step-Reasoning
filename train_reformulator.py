@@ -76,8 +76,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
             elif args.reformulation_type == 'weighted_avg':
                 new_queries = reformulator(sorted_docs, torch.tensor(batch_score).to(device))
             elif args.reformulation_type == 'transformer':
-                new_queries = reformulator.calc_embedding(sorted_docs)
-                print(new_queries.shape)
+                new_queries = reformulator.calc_embedding(query_embeddings, sorted_docs)
             else:
                 return
 
@@ -133,7 +132,7 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
             elif args.reformulation_type == 'weighted_avg':
                 new_queries = reformulator(sorted_docs, torch.tensor(batch_score).to(device))
             elif args.reformulation_type == 'transformer':
-                new_queries = reformulator(sorted_docs, target_embeddings)
+                new_queries = reformulator(query_embeddings, sorted_docs)
             else:
                 return
 

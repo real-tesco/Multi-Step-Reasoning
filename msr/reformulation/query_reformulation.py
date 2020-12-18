@@ -1,7 +1,11 @@
 import torch
 import torch.nn as nn
+from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import torch.nn.functional as F
+from torch.nn.modules.container import ModuleList
 import math
+import copy
+
 
 class QueryReformulator:
     def __init__(self, mode: str, topk=None):
@@ -82,30 +86,36 @@ class NeuralReformulator(nn.Module):
 
 
 class TransformerReformulator(nn.Module):
-    def __init__(self, topk, nhead=4, num_encoder_layers=1, num_decoder_layers=1, dim_feedforward=3072):
+    def __init__(self, topk, nhead=4, num_encoder_layers=1, dim_feedforward=3072):
         super(TransformerReformulator, self).__init__()
         self.d_model = 768
         self.topk = topk
-        self.transformer = torch.nn.Transformer(d_model=768, nhead=nhead, num_encoder_layers=num_encoder_layers,
-                                                num_decoder_layers=num_decoder_layers,
-                                                dim_feedforward=dim_feedforward)
+
         self.pos_enc = PositionalEncoding(d_model=768, max_len=topk)
+        encoder_layer = TransformerEncoderLayer(d_model=768, nhead=nhead, dim_feedforward=dim_feedforward)
+        self.layers = _get_clones(encoder_layer, num_encoder_layers)
 
-    # source is sequence of doc embeddings, target is correct embedding
-    def forward(self, source, target):
-        # source: (S, N, E) S is source sequence length here=topk, N=batchsize, E=feature number here 768
-        # target: (T, N, E) T is target sequence length here=1, N and E same values as source N, E
+        self.decoder = nn.Linear(768, 768)
+
+    def forward(self, query, source_embeddings):
+        # source_embeddings: (S, N, E) S is source sequence length here=topk, N=batchsize, E=feature number here 768
+        # query: (N, E) N and E same values as source N, E
         # needs to be transposed to match expected dimensions
-        source = source[:, :self.topk].transpose(0, 1)
-        target = target.unsqueeze(dim=0)
+        source = source_embeddings[:, :self.topk].transpose(0, 1)
+        query = query.unsqueeze(dim=0)
+        source = torch.cat([query, source])
         source = self.pos_enc(source * math.sqrt(self.d_model))
-        target = self.pos_enc(target * math.sqrt(self.d_model))
-        return self.transformer(source, target)
+        output = source
+        for layer in self.layers:
+            output = layer(output)
+        # output at index 0 is the query representation
+        output = output[0, :]
+        output = nn.functional.normalize(output, p=2, dim=1)
+        return output
 
-    def calc_embedding(self, source):
-        source = source[:, :self.topk].transpose(0, 1)
-        output = self.transformer.encoder(source).squeeze(dim=0)
-        return F.normalize(output, p=2, dim=1)
+
+def _get_clones(module, N):
+    return ModuleList([copy.deepcopy(module) for i in range(N)])
 
 
 class PositionalEncoding(nn.Module):
