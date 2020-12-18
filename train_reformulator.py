@@ -53,6 +53,7 @@ def get_relevant_embeddings(qids, qrels, knn_index):
 
 def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, device):
     logger.info("Evaluating trec metrics for dev set...")
+    reformulator.eval()
     rst_dict = {}
     for step, dev_batch in enumerate(dev_loader):
         # TODO: msmarco dataset refactoring
@@ -102,7 +103,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
 
 
 def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader, dev_loader, qrels, metric, device, k=100):
-
+    reformulator.train()
     mrr = 0.0
     best_mrr = 0.0
     best_epoch = 0
@@ -168,7 +169,10 @@ def train(args, knn_index, ranking_model, reformulator, optimizer, train_loader,
                         best_mrr = mrr
                         best_epoch = epoch
                         logger.info('New best mes = {:2.4f}'.format(best_mrr))
-                        torch.save(reformulator.state_dict(), args.model_name)
+                        if args.reformulation_type == 'weighted_avg':
+                            torch.save(reformulator.layer.state_dict(), args.model_name)
+                        else:
+                            torch.save(reformulator.state_dict(), args.model_name)
         # Eval run and print
         _ = metric.eval_run(args.qrels, args.res + '.best')
 
