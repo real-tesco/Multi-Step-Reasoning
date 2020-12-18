@@ -91,7 +91,7 @@ class TransformerReformulator(nn.Module):
         self.d_model = 768
         self.topk = topk
 
-        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk)
+        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 1)   # query on index 0
         encoder_layer = TransformerEncoderLayer(d_model=768, nhead=nhead, dim_feedforward=dim_feedforward)
         self.layers = _get_clones(encoder_layer, num_encoder_layers)
 
