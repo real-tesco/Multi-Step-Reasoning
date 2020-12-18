@@ -72,14 +72,14 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
             #batch_score = batch_score.detach().cpu().tolist()
 
             # sort doc embeddings according score and reformulate
-            sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True).to(device)
+            sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
             sorted_docs = document_embeddings[
                 torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
 
             if args.reformulation_type == 'neural':
                 new_queries = reformulator(query_embeddings, sorted_docs)
             elif args.reformulation_type == 'weighted_avg':
-                new_queries = reformulator(sorted_docs, sorted_scores)
+                new_queries = reformulator(sorted_docs, sorted_scores.to(device))
             elif args.reformulation_type == 'transformer':
                 new_queries = reformulator(query_embeddings, sorted_docs)
             else:
@@ -254,8 +254,7 @@ def main():
     # transformer reformulator args
     parser.add_argument('-nhead', type=int, default=4)
     parser.add_argument('-num_encoder_layers', type=int, default=1)
-    parser.add_argument('-num_decoder_layers', type=int, default=1)
-    parser.add_argument('-dim_feedforward', type=int, default=2048)
+    parser.add_argument('-dim_feedforward', type=int, default=3072)
 
     # neural reformulator args
     parser.add_argument('-hidden1', type=int, default=1000)
