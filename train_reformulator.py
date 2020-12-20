@@ -141,7 +141,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn,optimizer, train
             if args.reformulation_type == 'neural':
                 new_queries = reformulator(query_embeddings, sorted_docs)
             elif args.reformulation_type == 'weighted_avg':
-                new_queries = reformulator(sorted_docs, batch_score)
+                new_queries = reformulator(sorted_docs, scores_sorted.to(device))
             elif args.reformulation_type == 'transformer':
                 new_queries = reformulator(query_embeddings, sorted_docs)
             else:
