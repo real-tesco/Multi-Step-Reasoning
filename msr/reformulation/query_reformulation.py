@@ -34,6 +34,7 @@ class QueryReformulator:
         #scores = torch.ones_like(distances) - distances
         rst = self.layer.forward((document_vectors[:, :self.topk] * scores[:, :self.topk].unsqueeze(dim=-1)).sum(dim=1)
                                  / scores[:, :self.topk].unsqueeze(dim=-1).sum(dim=1))
+        rst = F.normalize(rst, p=2, dim=1)
         return rst
 
 
