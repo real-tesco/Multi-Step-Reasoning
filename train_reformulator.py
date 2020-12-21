@@ -288,6 +288,7 @@ def main():
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
     parser.add_argument('-lr', type=float, default=3e-6)
+    parser.add_argument('-n_warmup_steps', type=int, default=10000)
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
     parser.add_argument('-model_name', type=str, default='./checkpoints/reformulator.bin')
@@ -401,7 +402,7 @@ def main():
     else:
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.parameters()), lr=args.lr)
     m_scheduler = get_linear_schedule_with_warmup(m_optim, num_warmup_steps=args.n_warmup_steps,
-                                                  num_training_steps=len(train_dataset) * args.epoch // args.batch_size)
+                                                  num_training_steps=len(train_dataset) * args.epochs // args.batch_size)
 
     # set metric
     metric = msr.metrics.Metric()
