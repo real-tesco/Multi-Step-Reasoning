@@ -187,64 +187,6 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
         _ = metric.eval_run(args.qrels, args.res + '.best')
 
 
-def load_neural_reformulator(args):
-    reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_hidden, args.hidden1, args.hidden2)
-    parameters = reformulator.parameters()
-    optimizer = None
-    if parameters is not None:
-        if args.optimizer == 'sgd':
-            optimizer = optim.SGD(parameters, args.lr,
-                                  momentum=args.momentum,
-                                  weight_decay=args.weight_decay)
-        elif args.optimizer == 'adamax':
-            optimizer = optim.Adamax(parameters,
-                                     weight_decay=args.weight_decay)
-        else:
-            raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
-    else:
-        logger.info("Optimizer is None...")
-    return reformulator, optimizer
-
-
-def load_weighted_avg_reformulator(args):
-    reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
-    parameters = reformulator.layer.parameters()
-    optimizer = None
-    if parameters is not None:
-        if args.optimizer == 'sgd':
-            optimizer = optim.SGD(parameters, args.lr,
-                                  momentum=args.momentum,
-                                  weight_decay=args.weight_decay)
-        elif args.optimizer == 'adamax':
-            optimizer = optim.Adamax(parameters,
-                                     weight_decay=args.weight_decay)
-        else:
-            raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
-    else:
-        logger.info("Optimizer is None...")
-    return reformulator, optimizer
-
-
-def load_transformer_reformulator(args):
-    logger.info("Loading Transformer Reformulator..")
-    reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
-                                           args.dim_feedforward)
-    parameters = reformulator.parameters()
-    optimizer = None
-
-    if parameters is not None:
-        if args.optimizer == 'sgd':
-            optimizer = optim.SGD(parameters, args.lr,
-                                  momentum=args.momentum,
-                                  weight_decay=args.weight_decay)
-        elif args.optimizer == 'adamax':
-            optimizer = optim.Adamax(parameters,
-                                     weight_decay=args.weight_decay)
-        else:
-            raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
-    return reformulator, optimizer
-
-
 def main():
     # setting args
     parser = argparse.ArgumentParser()
