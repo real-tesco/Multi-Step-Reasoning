@@ -15,6 +15,7 @@ import msr.utils as utils
 from msr.reformulation.query_reformulation import NeuralReformulator, QueryReformulator, TransformerReformulator
 import logging
 import random
+from transformers import get_linear_schedule_with_warmup
 
 
 logger = logging.getLogger()
@@ -105,7 +106,8 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
     return rst_dict
 
 
-def train(args, knn_index, ranking_model, reformulator, loss_fn,optimizer, train_loader, dev_loader, qrels, metric, device, k=100):
+def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_scheduler, train_loader, dev_loader,
+          qrels, metric, device, k=100):
     if args.reformulation_type == 'weighted_avg':
         reformulator.layer.train()
     else:
@@ -154,6 +156,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn,optimizer, train
             optimizer.zero_grad()
             batch_loss.backward()
             optimizer.step()
+            m_scheduler.step()
             para_loss.update(batch_loss.data.item())
 
             if (idx + 1) % args.print_every == 0:
@@ -371,37 +374,41 @@ def main():
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
     if args.reformulation_type == 'neural':
-        reformulator, optimizer = load_neural_reformulator(args)
+        reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_hidden, args.hidden1, args.hidden2)
         reformulator.to(device)
     elif args.reformulation_type == 'weighted_avg':
-        reformulator, optimizer = load_weighted_avg_reformulator(args)
+        reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
         reformulator.layer.to(device)
     elif args.reformulation_type == 'transformer':
-        reformulator, optimizer = load_transformer_reformulator(args)
+        reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
+                                               args.dim_feedforward)
         reformulator.to(device)
-        # logger.info(reformulator)
         if torch.cuda.device_count() > 1:
             logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
             reformulator = torch.nn.DataParallel(reformulator)
-
     else:
         return
 
     # set loss_fn
-
     if args.loss_fn == 'ip':
         loss_fn = inner_product
     elif args.loss_fn == 'cross_entropy':
         loss_fn = cross_entropy
-    #loss_fn = torch.nn.CrossEntropyLoss()
-    #loss_fn.to(device)
+
+    # set optimizer and scheduler
+    if args.reformulation_type == 'weighted_avg':
+        m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.layer.parameters()), lr=args.lr)
+    else:
+        m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.parameters()), lr=args.lr)
+    m_scheduler = get_linear_schedule_with_warmup(m_optim, num_warmup_steps=args.n_warmup_steps,
+                                                  num_training_steps=len(train_dataset) * args.epoch // args.batch_size)
 
     # set metric
     metric = msr.metrics.Metric()
 
     # starting inference
     logger.info("Starting training...")
-    train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, train_loader, dev_loader, qrels, metric, device, args.k)
+    train(args, knn_index, ranking_model, reformulator, loss_fn, m_optim, m_scheduler, train_loader, dev_loader, qrels, metric, device, args.k)
 
 
 if __name__ == '__main__':
