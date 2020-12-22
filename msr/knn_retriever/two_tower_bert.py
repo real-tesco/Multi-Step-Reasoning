@@ -44,4 +44,7 @@ class TwoTowerBert(nn.Module):
         score = (document * query).sum(dim=1)
         score = torch.clamp(score, min=0.0, max=1.0)
 
+        # Use Sigmoid instead
+        # score = torch.sigmoid(score)
+
         return score, query, document

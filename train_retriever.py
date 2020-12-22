@@ -125,7 +125,6 @@ def save_embeddings(args, model, doc_loader, device):
                             f'| saved in {chunk} chunks..')
 
 
-# Legacy TODO: refactor
 def test_index(args):
     logger.info("Load index")
     index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)

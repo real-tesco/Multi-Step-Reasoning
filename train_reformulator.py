@@ -206,7 +206,6 @@ def main():
 
     # neural reformulator args
     parser.add_argument('-hidden1', type=int, default=1000)
-    parser.add_argument('-hidden2', type=int, default=768)
 
     # training args
     parser.add_argument('-loss_fn', type=str, default='ip', help='loss function to use')
@@ -319,7 +318,7 @@ def main():
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
     if args.reformulation_type == 'neural':
-        reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_hidden, args.hidden1, args.hidden2)
+        reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_hidden, args.hidden1)
         reformulator.to(device)
     elif args.reformulation_type == 'weighted_avg':
         reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
