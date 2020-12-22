@@ -67,7 +67,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
         with torch.no_grad():
 
             document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
-                dev_batch['q_input_ids'], dev_batch['q_segment_ids'], dev_batch['q_input_mask'])
+                dev_batch['q_input_ids'].to(device), dev_batch['q_segment_ids'].to(device), dev_batch['q_input_mask'].to(device))
             query_embeddings = query_embeddings.to(device)
 
             batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device),
@@ -125,7 +125,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 continue
             query_id = train_batch['query_id']
             document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
-                train_batch['q_input_ids'], train_batch['q_segment_ids'], train_batch['q_input_mask'])
+                train_batch['q_input_ids'].to(device), train_batch['q_segment_ids'].to(device), train_batch['q_input_mask'].to(device))
 
             query_embeddings = query_embeddings.to(device)
 
