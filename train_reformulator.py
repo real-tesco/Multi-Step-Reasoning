@@ -216,6 +216,7 @@ def main():
     parser.add_argument('-epochs', type=int, default=10)
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
     parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
+    parser.add_argument('-train_data', action=msr.utils.DictOrStr, default='./data/msmarco-train-queries-inference.jsonl')
     parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
     parser.add_argument('-train_qrels', type=str, default='./data/msmarco-doctrain-qrels.tsv')
     parser.add_argument('-res', type=str, default='./results/reformulator.trec')
@@ -236,6 +237,8 @@ def main():
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
     parser.add_argument('-model_name', type=str, default='./checkpoints/reformulator.bin')
+
+    # Legacy?
     parser.add_argument('-dataset', type=str, default='./data/reformulator_training_data.tsv')
     parser.add_argument('-query_embedding_format', type=str, default='./data/embeddings/embeddings_random_examples/'
                                                                      'marco_train_query_embeddings_{}.npy')
