@@ -338,6 +338,7 @@ def main():
         args.reformulator_checkpoint = args.model_name
 
     if args.reformulator_checkpoint:
+        logger.info("loading checkpoint...")
         checkpoint = torch.load(args.reformulator_checkpoint)
 
         if args.reformulation_type == 'weighted_avg':
