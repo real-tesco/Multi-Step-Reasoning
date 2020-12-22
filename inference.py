@@ -88,9 +88,9 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
     logger.info(f"Time needed for {(len(dev_loader) + len(dev_loader)) * args.batch_size} examples: {timer.time()} s")
     logger.info(f"Time needed per query: {timer.time() / ((len(dev_loader) + len(test_loader)) * args.batch_size)} s")
     logger.info("Eval for Dev:")
-    _ = metric.eval_run(args.qrels, args.res + ".dev")
+    _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
     logger.info("Eval for Test:")
-    _ = metric.eval_run(args.qrels, args.res + ".test")
+    _ = metric.eval_run(args.test_qrels, args.res + ".test")
 
 
 def main():
