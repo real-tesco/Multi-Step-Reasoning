@@ -196,6 +196,7 @@ def main():
                         type=str, default='neural', choices=['neural', 'weighted_avg', 'lstm', 'transformer'],
                         help='type of reformulator to train')
     parser.add_argument('-top_k_reformulator', type=int, default=5)
+    parser.add_argument('-reformulator_checkpoint', type=str)
 
     # transformer reformulator args
     parser.add_argument('-nhead', type=int, default=4)
@@ -331,6 +332,14 @@ def main():
             reformulator = torch.nn.DataParallel(reformulator)
     else:
         return
+
+    if args.reformulator_checkpoint:
+        checkpoint = torch.load()
+
+        if args.reformulation_type == 'weighted_avg':
+            reformulator.layer.load_state_dict(checkpoint)
+        else:
+            reformulator.load_state_dict(checkpoint)
 
     # set loss_fn
     if args.loss_fn == 'ip':
