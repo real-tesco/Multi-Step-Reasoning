@@ -101,7 +101,6 @@ class Metric():
 
         mes['mrr'] = mrr
         for key in mes:
-            print("Evaluation Result: ")
             print("{}: {:.4f}".format(key, mes[key]))
         print(f"\nstd_dev of mrr: {std_dev:2.4f}\n")
 

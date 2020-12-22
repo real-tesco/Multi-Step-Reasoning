@@ -9,8 +9,9 @@ from msr.knn_retriever.retriever_config import get_args as get_knn_args
 from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
+from msr.reformulation.reformulator_config import get_args as get_reformulator_args
 from msr.utils import Timer
-from msr.reformulation.query_reformulation import QueryReformulator
+from msr.reformulation.query_reformulation import QueryReformulator, TransformerReformulator, NeuralReformulator
 import logging
 import numpy as np
 
@@ -22,67 +23,96 @@ def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
-def inference(args, knn_index, ranking_model, reformulator, dev_loader, metric, device, k=100):
-    rst_dict = {}
-    timer = Timer()
-    for idx, dev_batch in enumerate(dev_loader):
-        if dev_batch is None:
-            continue
-        query_id = dev_batch['query_id']
-        document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
-            dev_batch['q_input_ids'].to(device),
-            dev_batch['q_input_mask'].to(device),
-            dev_batch['q_segment_ids'].to(device),
-            k=k)
+def process_batch(args, rst_dict_dev, knn_index, ranking_model, reformulator, dev_batch, device, k):
 
-        if args.full_ranking:
-            batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
+    query_id = dev_batch['query_id']
+    document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
+        dev_batch['q_input_ids'].to(device),
+        dev_batch['q_input_mask'].to(device),
+        dev_batch['q_segment_ids'].to(device),
+        k=k)
+
+    if args.full_ranking:
+        batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device),
+                                                     device)
+        batch_score = batch_score.detach().cpu().tolist()
+    else:
+        batch_score = distances
+
+    if args.reformulation_mode:
+        # sort doc embeddings according score and reformulate
+        _, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
+        sorted_docs = document_embeddings[
+            torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices]
+        new_queries = reformulator(sorted_docs)
+
+        # retrieve new set of candidate documents
+        document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
+            new_queries, k=k)
+
+        # rerank
+        if args.use_ranker_in_next_round:
+            batch_score = ranking_model.rerank_documents(query_embeddings.to(device),
+                                                         document_embeddings.to(device), device)
             batch_score = batch_score.detach().cpu().tolist()
         else:
             batch_score = distances
 
-        if args.reformulation_mode:
-            # sort doc embeddings according score and reformulate
-            _, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
-            sorted_docs = document_embeddings[torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices]
-            new_queries = reformulator(sorted_docs)
+    for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
+        rst_dict_dev[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
 
-            # retrieve new set of candidate documents
-            document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
-                new_queries, k=k)
 
-            # rerank
-            if args.use_ranker_in_next_round:
-                batch_score = ranking_model.rerank_documents(query_embeddings.to(device),
-                                                             document_embeddings.to(device), device)
-                batch_score = batch_score.detach().cpu().tolist()
-            else:
-                batch_score = distances
-
-        for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-            rst_dict[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
+def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loader, metric, device, k=100):
+    timer = Timer()
+    rst_dict_dev = {}
+    rst_dict_test = {}
+    logger.info("processing dev data...")
+    for idx, dev_batch in enumerate(dev_loader):
+        if dev_batch is None:
+            continue
+        process_batch(args, rst_dict_dev, knn_index, ranking_model, reformulator, dev_batch, device, k)
 
         if (idx+1) % args.print_every == 0:
             logger.info(f"{idx+1} / {len(dev_loader)}")
+
+    logger.info("processing test data...")
+    for idx, test_batch in enumerate(test_loader):
+        if test_batch is None:
+            continue
+        process_batch(args, rst_dict_test, knn_index, ranking_model, reformulator, test_batch, device, k)
+
+        if (idx + 1) % args.print_every == 0:
+            logger.info(f"{idx + 1} / {len(dev_loader)}")
     timer.stop()
-    msr.utils.save_trec_inference(args.res, rst_dict)
-    if args.metric.split('_')[0] == 'mrr':
-        mes = metric.get_mrr(args.qrels, args.res, args.metric)
-    else:
-        mes = metric.get_metric(args.qrels, args.res, args.metric)
-    logger.info(f"Evaluation done: {args.metric}={mes}")
-    logger.info(f"Time needed for {len(dev_loader) * args.batch_size}: {timer.time()}")
-    logger.info(f"Time needed per query: {timer.time() / (len(dev_loader) * args.batch_size)}")
+    msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
+    msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
+
+    logger.info(f"Time needed for {(len(dev_loader) + len(dev_loader)) * args.batch_size} examples: {timer.time()} s")
+    logger.info(f"Time needed per query: {timer.time() / ((len(dev_loader) + len(test_loader)) * args.batch_size)} s")
+    logger.info("Eval for Dev:")
+    _ = metric.eval_run(args.qrels, args.res + ".dev")
+    logger.info("Eval for Test:")
+    _ = metric.eval_run(args.qrels, args.res + ".test")
 
 
 def main():
     # setting args
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
+
+    # reformulator args
+    parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
+                                                                                'transformer'])
+    parser.add_argument('-reformulator_checkpoint', type=str, default='./checkpoints/reformulator_transformer_loss_ip_lr_top10.bin')
+
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
     parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
-    parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
+    parser.add_argument('-dev_qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
+
+    parser.add_argument('-test_data', action=msr.utils.DictOrStr, default='./data/msmarco-test-queries-inference.jsonl')
+    parser.add_argument('-test_qrels', type=str, default='./data/msmarco-test-qrels.tsv')
+
     parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
     parser.add_argument('-batch_size', type=int, default='32')
@@ -90,11 +120,12 @@ def main():
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-train', type='bool', default=False)
     parser.add_argument('-full_ranking', type='bool', default=True)
-    parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg'])
+
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
 
     args = parser.parse_args()
+    re_args = get_reformulator_args(parser)
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
     ranker_args.train = False
@@ -112,13 +143,23 @@ def main():
     )
     dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
 
+    logger.info("Loading test data...")
+    test_dataset = BertDataset(
+        dataset=args.test_data,
+        tokenizer=tokenizer,
+        mode='inference',
+        query_max_len=index_args.max_query_len,
+        doc_max_len=index_args.max_doc_len,
+        max_input=args.max_input
+    )
+    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
+
     # set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Loading models
     #    1. Load Retriever
     logger.info("Loading Retriever...")
-    #index_args = get_knn_args(parser)
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
     two_tower_bert.load_state_dict(checkpoint)
@@ -128,12 +169,26 @@ def main():
     knn_index.set_ef(index_args.efc)
     knn_index.set_device(device)
 
-    if args.reformulation_mode:
-        logger.info('Loading Reformulator...')
-        reformulator = QueryReformulator(args.reformulation_mode)
+    logger.info('Loading Reformulator...')
+    checkpoint = torch.load(args.reformulator_checkpoint)
+    if args.reformulation_type == 'neural':
+        reformulator = NeuralReformulator(re_args.top_k_reformulator, re_args.dim_embedding, re_args.hidden1)
+        reformulator.load_state_dict(checkpoint)
+        reformulator.to(device)
+    elif args.reformulation_type == 'weighted_avg':
+        reformulator = QueryReformulator(mode='weighted_avg', topk=re_args.top_k_reformulator)
+        reformulator.layer.load_state_dict(checkpoint)
+        reformulator.layer.to(device)
+    elif args.reformulation_type == 'transformer':
+        reformulator = TransformerReformulator(re_args.top_k_reformulator, re_args.nhead, re_args.num_encoder_layers,
+                                               re_args.dim_feedforward)
+        reformulator.load_state_dict(checkpoint)
+        reformulator.to(device)
+        if torch.cuda.device_count() > 1:
+            logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
+            reformulator = torch.nn.DataParallel(reformulator)
     else:
-        reformulator = None
-    # loading weights etc ...
+        return
 
     if args.full_ranking or args.use_ranker_in_next_round:
         #   2. Load Ranker
@@ -152,7 +207,7 @@ def main():
 
     # starting inference
     logger.info("Starting inference...")
-    inference(args, knn_index, ranking_model, reformulator, dev_loader, metric, device, args.k)
+    inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loader, metric, device, args.k)
 
 
 if __name__ == '__main__':
