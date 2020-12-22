@@ -99,7 +99,7 @@ def main():
     parser.register('type', 'bool', str2bool)
 
     # reformulator args
-    parser.add_argument('-reformulation_type', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
+    parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
                                                                                 'transformer'])
     parser.add_argument('-reformulator_checkpoint', type=str, default='./checkpoints/reformulator_transformer_loss_ip_lr_top10.bin')
 
