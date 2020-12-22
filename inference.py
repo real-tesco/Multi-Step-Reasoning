@@ -171,15 +171,15 @@ def main():
 
     logger.info('Loading Reformulator...')
     checkpoint = torch.load(args.reformulator_checkpoint)
-    if args.reformulation_type == 'neural':
+    if args.reformulation_mode == 'neural':
         reformulator = NeuralReformulator(re_args.top_k_reformulator, re_args.dim_embedding, re_args.hidden1)
         reformulator.load_state_dict(checkpoint)
         reformulator.to(device)
-    elif args.reformulation_type == 'weighted_avg':
+    elif args.reformulation_mode == 'weighted_avg':
         reformulator = QueryReformulator(mode='weighted_avg', topk=re_args.top_k_reformulator)
         reformulator.layer.load_state_dict(checkpoint)
         reformulator.layer.to(device)
-    elif args.reformulation_type == 'transformer':
+    elif args.reformulation_mode == 'transformer':
         reformulator = TransformerReformulator(re_args.top_k_reformulator, re_args.nhead, re_args.num_encoder_layers,
                                                re_args.dim_feedforward)
         reformulator.load_state_dict(checkpoint)
