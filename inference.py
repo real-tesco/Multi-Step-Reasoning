@@ -23,7 +23,7 @@ def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
 
 
-def process_batch(args, rst_dict_dev, knn_index, ranking_model, reformulator, dev_batch, device, k):
+def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_batch, device, k):
 
     query_id = dev_batch['query_id']
     document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
@@ -32,34 +32,32 @@ def process_batch(args, rst_dict_dev, knn_index, ranking_model, reformulator, de
         dev_batch['q_segment_ids'].to(device),
         k=k)
 
-    if args.full_ranking:
-        batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device),
-                                                     device)
-        batch_score = batch_score.detach().cpu().tolist()
+    batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
+
+    # sort doc embeddings according score and reformulate
+    sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
+    sorted_docs = document_embeddings[
+        torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+
+    if args.reformulation_type == 'neural':
+        new_queries = reformulator(query_embeddings.to(device), sorted_docs)
+    elif args.reformulation_type == 'weighted_avg':
+        new_queries = reformulator(sorted_docs, sorted_scores.to(device))
+    elif args.reformulation_type == 'transformer':
+        new_queries = reformulator(query_embeddings.to(device), sorted_docs)
     else:
-        batch_score = distances
+        return
 
-    if args.reformulation_mode:
-        # sort doc embeddings according score and reformulate
-        _, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
-        sorted_docs = document_embeddings[
-            torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices]
-        new_queries = reformulator(sorted_docs)
+    # do another run with the reformulated queries
+    document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
+        new_queries.cpu())
 
-        # retrieve new set of candidate documents
-        document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
-            new_queries, k=k)
-
-        # rerank
-        if args.use_ranker_in_next_round:
-            batch_score = ranking_model.rerank_documents(query_embeddings.to(device),
-                                                         document_embeddings.to(device), device)
-            batch_score = batch_score.detach().cpu().tolist()
-        else:
-            batch_score = distances
+    batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
+                                                 device)
+    batch_score = batch_score.detach().cpu().tolist()
 
     for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-        rst_dict_dev[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
+        rst_dict[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
 
 
 def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loader, metric, device, k=100):
@@ -101,7 +99,7 @@ def main():
     parser.register('type', 'bool', str2bool)
 
     # reformulator args
-    parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
+    parser.add_argument('-reformulation_type', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
                                                                                 'transformer'])
     parser.add_argument('-reformulator_checkpoint', type=str, default='./checkpoints/reformulator_transformer_loss_ip_lr_top10.bin')
 
@@ -171,15 +169,15 @@ def main():
 
     logger.info('Loading Reformulator...')
     checkpoint = torch.load(args.reformulator_checkpoint)
-    if args.reformulation_mode == 'neural':
+    if args.reformulation_type == 'neural':
         reformulator = NeuralReformulator(re_args.top_k_reformulator, re_args.dim_embedding, re_args.hidden1)
         reformulator.load_state_dict(checkpoint)
         reformulator.to(device)
-    elif args.reformulation_mode == 'weighted_avg':
+    elif args.reformulation_type == 'weighted_avg':
         reformulator = QueryReformulator(mode='weighted_avg', topk=re_args.top_k_reformulator)
         reformulator.layer.load_state_dict(checkpoint)
         reformulator.layer.to(device)
-    elif args.reformulation_mode == 'transformer':
+    elif args.reformulation_type == 'transformer':
         reformulator = TransformerReformulator(re_args.top_k_reformulator, re_args.nhead, re_args.num_encoder_layers,
                                                re_args.dim_feedforward)
         reformulator.load_state_dict(checkpoint)
