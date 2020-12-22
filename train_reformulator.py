@@ -6,6 +6,7 @@ from torch.nn.functional import softmax
 import msr
 from msr.data.dataloader import DataLoader
 from msr.data.datasets.rankingdataset import RankingDataset
+from msr.data.datasets import BertDataset
 from transformers import AutoTokenizer
 from msr.knn_retriever.retriever import KnnIndex
 from msr.knn_retriever.retriever_config import get_args as get_knn_args
@@ -61,12 +62,12 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
         reformulator.eval()
     rst_dict = {}
     for step, dev_batch in enumerate(dev_loader):
-        # TODO: msmarco dataset refactoring
+
         query_id = dev_batch['query_id']
         with torch.no_grad():
 
-            document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
-                dev_batch['query'])
+            document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
+                dev_batch['q_input_ids'], dev_batch['q_segment_ids'], dev_batch['q_input_mask'])
             query_embeddings = query_embeddings.to(device)
 
             batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device),
@@ -123,8 +124,8 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 print("None batch...")
                 continue
             query_id = train_batch['query_id']
-            document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_embedded(
-                train_batch['query'])
+            document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
+                train_batch['q_input_ids'], train_batch['q_segment_ids'], train_batch['q_input_mask'])
 
             query_embeddings = query_embeddings.to(device)
 
@@ -252,6 +253,32 @@ def main():
     ranker_args.train = False
     args.dim_hidden = index_args.dim_hidden
 
+    tokenizer = AutoTokenizer.from_pretrained(index_args.pretrain)
+    logger.info("Load training data...")
+    train_dataset = BertDataset(
+        dataset=args.train_data,
+        tokenizer=tokenizer,
+        mode='inference',
+        query_max_len=index_args.max_query_len,
+        doc_max_len=index_args.max_doc_len,
+        max_input=args.max_input
+    )
+    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=8)
+
+    # DataLoaders for dev
+    logger.info("Loading dev data...")
+    dev_dataset = BertDataset(
+        dataset=args.dev_data,
+        tokenizer=tokenizer,
+        mode='inference',
+        query_max_len=index_args.max_query_len,
+        doc_max_len=index_args.max_doc_len,
+        max_input=args.max_input
+    )
+    dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
+
+    '''
+    # Refactor to use real queries
     logger.info("Loading train data...")
     doc_embedding_list = []
     doc_ids_list = []
@@ -266,7 +293,7 @@ def main():
         shuffle=True,
         num_workers=8
     )
-
+    
     logger.info("Loading dev data...")
     dev_query_embedding_list = [args.dev_query_embedding_file]
     dev_query_ids_list = [args.dev_query_ids_file]
@@ -279,7 +306,7 @@ def main():
         shuffle=False,
         num_workers=8
     )
-
+    '''
     # Load qrels for target document embedding
     qrels = {}
     with open(args.train_qrels, "r") as f:
@@ -301,6 +328,7 @@ def main():
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
     two_tower_bert.load_state_dict(checkpoint)
+    two_tower_bert.eval()
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File and set ef")
     knn_index.load_index()
@@ -314,6 +342,7 @@ def main():
     checkpoint = torch.load(args.ranker_checkpoint)
     ranking_model.load_state_dict(checkpoint)
     ranking_model.to(device)
+    ranking_model.eval()
 
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
