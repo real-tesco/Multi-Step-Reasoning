@@ -334,9 +334,6 @@ def main():
     else:
         return
 
-    if os.path.isfile(args.model_name):
-        args.reformulator_checkpoint = args.model_name
-
     if args.reformulator_checkpoint:
         logger.info("loading checkpoint...")
         checkpoint = torch.load(args.reformulator_checkpoint)
