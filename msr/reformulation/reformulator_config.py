@@ -20,8 +20,8 @@ def get_args(parser=None):
 
     # transformer
     parser.add_argument('-nhead', type=int, default=6)
-    parser.add_argument('-num_encoder_layers', type=int, default=84)
-    parser.add_argument('-dim_feedforward', type=int, default=500)
+    parser.add_argument('-num_encoder_layers', type=int, default=4)
+    parser.add_argument('-dim_feedforward', type=int, default=3072)
 
     #neural
     parser.add_argument('-dim_embedding', type=str, default='ip')
