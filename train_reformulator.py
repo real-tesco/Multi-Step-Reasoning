@@ -1,4 +1,5 @@
 import argparse
+import os
 import torch
 import torch.optim as optim
 from torch.nn.functional import softmax
@@ -333,8 +334,11 @@ def main():
     else:
         return
 
+    if os.path.isfile(args.model_name):
+        args.reformulator_checkpoint = args.model_name
+
     if args.reformulator_checkpoint:
-        checkpoint = torch.load()
+        checkpoint = torch.load(args.reformulator_checkpoint)
 
         if args.reformulation_type == 'weighted_avg':
             reformulator.layer.load_state_dict(checkpoint)
