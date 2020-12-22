@@ -115,7 +115,7 @@ def main():
 
     parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
-    parser.add_argument('-batch_size', type=int, default='32')
+    parser.add_argument('-batch_size', type=int, default=32)
     parser.add_argument('-max_input', type=int, default=1280000)
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-train', type='bool', default=False)

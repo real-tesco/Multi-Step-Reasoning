@@ -16,8 +16,7 @@ def get_args(parser=None):
         parser = argparse.ArgumentParser()
         parser.register('type', 'bool', str2bool)
 
-    parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
-                                                                                'transformer'])
+    parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg', 'transformer'])
     parser.add_argument('-top_k_reformulator', type=int, default=10)
 
     # transformer
