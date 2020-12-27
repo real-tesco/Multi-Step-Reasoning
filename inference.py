@@ -183,18 +183,18 @@ def main():
         reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_embedding, args.hidden1)
         reformulator.load_state_dict(checkpoint)
         reformulator.to(device)
+        reformulator.eval()
     elif args.reformulation_type == 'weighted_avg':
         reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
         reformulator.layer.load_state_dict(checkpoint)
         reformulator.layer.to(device)
+        reformulator.layer.eval()
     elif args.reformulation_type == 'transformer':
         reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
                                                args.dim_feedforward)
         reformulator.load_state_dict(checkpoint)
         reformulator.to(device)
-        if torch.cuda.device_count() > 1:
-            logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
-            reformulator = torch.nn.DataParallel(reformulator)
+        reformulator.eval()
     else:
         return
 
