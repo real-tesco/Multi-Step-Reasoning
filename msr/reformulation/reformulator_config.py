@@ -24,7 +24,7 @@ def get_args(parser=None):
     parser.add_argument('-dim_feedforward', type=int, default=3072)
 
     #neural
-    parser.add_argument('-dim_embedding', type=str, default='ip')
+    parser.add_argument('-dim_embedding', type=int, default=768)
     parser.add_argument('-hidden1', type=int, default=2500)
 
 
