@@ -102,6 +102,16 @@ def main():
     parser.add_argument('-reformulation_type', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
                                                                                 'transformer', 'neural'])
     parser.add_argument('-reformulator_checkpoint', type=str, default='./checkpoints/reformulator_transformer_loss_ip_lr_top10.bin')
+    parser.add_argument('-top_k_reformulator', type=int, default=10)
+    # transformer
+    parser.add_argument('-nhead', type=int, default=6)
+    parser.add_argument('-num_encoder_layers', type=int, default=4)
+    parser.add_argument('-dim_feedforward', type=int, default=3072)
+
+    # neural
+    parser.add_argument('-dim_embedding', type=int, default=768)
+    parser.add_argument('-hidden1', type=int, default=2500)
+
 
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
@@ -123,7 +133,7 @@ def main():
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
 
     args = parser.parse_args()
-    re_args = get_reformulator_args(parser)
+    # re_args = get_reformulator_args(parser)
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
     ranker_args.train = False
@@ -170,16 +180,16 @@ def main():
     logger.info('Loading Reformulator...')
     checkpoint = torch.load(args.reformulator_checkpoint)
     if args.reformulation_type == 'neural':
-        reformulator = NeuralReformulator(re_args.top_k_reformulator, re_args.dim_embedding, re_args.hidden1)
+        reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_embedding, args.hidden1)
         reformulator.load_state_dict(checkpoint)
         reformulator.to(device)
     elif args.reformulation_type == 'weighted_avg':
-        reformulator = QueryReformulator(mode='weighted_avg', topk=re_args.top_k_reformulator)
+        reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
         reformulator.layer.load_state_dict(checkpoint)
         reformulator.layer.to(device)
     elif args.reformulation_type == 'transformer':
-        reformulator = TransformerReformulator(re_args.top_k_reformulator, re_args.nhead, re_args.num_encoder_layers,
-                                               re_args.dim_feedforward)
+        reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
+                                               args.dim_feedforward)
         reformulator.load_state_dict(checkpoint)
         reformulator.to(device)
         if torch.cuda.device_count() > 1:
