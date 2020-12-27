@@ -24,7 +24,7 @@ def str2bool(v):
 
 
 def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_batch, device, k):
-
+    second_run = True
     query_id = dev_batch['query_id']
     document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
         dev_batch['q_input_ids'].to(device),
@@ -46,14 +46,17 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
     elif args.reformulation_type == 'transformer':
         new_queries = reformulator(query_embeddings.to(device), sorted_docs)
     else:
-        return
+        # baseline
+        second_run = False
 
-    # do another run with the reformulated queries
-    document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
-        new_queries.cpu())
+    if second_run:
 
-    batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
-                                                 device)
+        # do another run with the reformulated queries
+        document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
+            new_queries.cpu())
+
+        batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
+                                                     device)
     batch_score = batch_score.detach().cpu().tolist()
 
     for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
@@ -196,7 +199,7 @@ def main():
         reformulator.to(device)
         reformulator.eval()
     else:
-        return
+        reformulator = None
 
     if args.full_ranking or args.use_ranker_in_next_round:
         #   2. Load Ranker
