@@ -9,4 +9,4 @@ class BM25Retriever:
 
     def query(self, query_text, k=100):
         hits = self._searcher.search(query_text, k=k)
-        return hits, query_text
+        return hits
