@@ -145,10 +145,10 @@ def eval_base_line(args):
             docids = [hit.docid for hit in hits]
             scores = [hit.score for hit in hits]
             for (d_id, b_s) in zip(docids, scores):
-                if qid not in rst_dict_dev:
-                    rst_dict_dev[qid] = [(d_id, b_s)]
+                if qid not in rst_dict_test:
+                    rst_dict_test[qid] = [(d_id, b_s)]
                 else:
-                    rst_dict_dev[qid].append((d_id, b_s))
+                    rst_dict_test[qid].append((d_id, b_s))
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(test_loader)}")
     msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
