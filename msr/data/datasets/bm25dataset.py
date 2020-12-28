@@ -22,8 +22,8 @@ class BM25Dataset(Dataset):
         self._count = len(self._examples)
 
     def collate(self, batch: Dict[str, Any]):
-        query_ids = torch.tensor([item['query_id'] for item in batch])
-        queries = torch.tensor([item['query'] for item in batch])
+        query_ids = [item['query_id'] for item in batch]
+        queries = [item['query'] for item in batch]
 
         return {'query_id': query_ids, "query": queries}
 
