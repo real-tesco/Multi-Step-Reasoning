@@ -176,7 +176,7 @@ def main():
     parser.add_argument('-hidden1', type=int, default=2500)
 
     parser.add_argument('-baseline', type='bool', default=False, help="if true only use bm25 to score documents")
-    parser.add_argument('-bm25_index', type=str)
+    parser.add_argument('-bm25_index', type=str, default='./data/indexes/anserini/index-msmarco-doc-20201117-f87c94')
 
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
