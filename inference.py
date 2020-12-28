@@ -14,7 +14,8 @@ from msr.utils import Timer
 from msr.reformulation.query_reformulation import QueryReformulator, TransformerReformulator, NeuralReformulator
 import logging
 import numpy as np
-
+from msr.retriever.bm25_model import BM25Retriever
+from msr.data.datasets.bm25dataset import BM25Dataset
 
 logger = logging.getLogger()
 
@@ -60,7 +61,7 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
     batch_score = batch_score.detach().cpu().tolist()
 
     for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-        rst_dict[q_id] = [(score, docid) for score, docid in zip(d_id, b_s)]
+        rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
 
 
 def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loader, metric, device, k=100):
@@ -83,7 +84,7 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
         process_batch(args, rst_dict_test, knn_index, ranking_model, reformulator, test_batch, device, k)
 
         if (idx + 1) % args.print_every == 0:
-            logger.info(f"{idx + 1} / {len(dev_loader)}")
+            logger.info(f"{idx + 1} / {len(test_loader)}")
     timer.stop()
     msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
@@ -96,6 +97,64 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
     _ = metric.eval_run(args.test_qrels, args.res + ".test")
 
 
+def eval_base_line(args):
+    rst_dict_dev = {}
+    rst_dict_test = {}
+    metric = msr.metrics.Metric()
+
+    # DataLoaders for dev
+    logger.info("Loading dev data...")
+    dev_dataset = BM25Dataset(
+        dataset=args.dev_data,
+    )
+    dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
+
+    logger.info("Loading test data...")
+    test_dataset = BM25Dataset(
+        dataset=args.test_data,
+    )
+    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
+    bm25searcher = BM25Retriever(args.bm25_index)
+
+    for idx, dev_batch in enumerate(dev_loader):
+        if dev_batch is None:
+            continue
+        query_ids = dev_batch['query_id']
+        queries = dev_batch['query']
+        for qid, query in zip(query_ids, queries):
+            hits = bm25searcher.query(query, k=100)
+            docids = [hit.docid for hit in hits]
+            scores = [hit.score for hit in hits]
+            for (d_id, b_s) in zip(docids, scores):
+                if qid not in rst_dict_dev:
+                    rst_dict_dev[qid] = [(d_id, b_s)]
+                else:
+                    rst_dict_dev[qid].append((d_id, b_s))
+
+    logger.info("processing test data...")
+    for idx, test_batch in enumerate(test_loader):
+        if test_batch is None:
+            continue
+        query_ids = test_batch['query_id']
+        queries = test_batch['query']
+        for qid, query in zip(query_ids, queries):
+            hits = bm25searcher.query(query, k=100)
+            docids = [hit.docid for hit in hits]
+            scores = [hit.score for hit in hits]
+            for (d_id, b_s) in zip(docids, scores):
+                if qid not in rst_dict_dev:
+                    rst_dict_dev[qid] = [(d_id, b_s)]
+                else:
+                    rst_dict_dev[qid].append((d_id, b_s))
+    msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
+    msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
+    logger.info("Eval for Dev:")
+    _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
+    logger.info("Eval for Test:")
+    _ = metric.eval_run(args.test_qrels, args.res + ".test")
+    exit(0)
+
+
 def main():
     # setting args
     parser = argparse.ArgumentParser()
@@ -106,6 +165,7 @@ def main():
                                                                                 'transformer', 'neural'])
     parser.add_argument('-reformulator_checkpoint', type=str, default='./checkpoints/reformulator_transformer_loss_ip_lr_top10.bin')
     parser.add_argument('-top_k_reformulator', type=int, default=10)
+
     # transformer
     parser.add_argument('-nhead', type=int, default=6)
     parser.add_argument('-num_encoder_layers', type=int, default=4)
@@ -115,6 +175,8 @@ def main():
     parser.add_argument('-dim_embedding', type=int, default=768)
     parser.add_argument('-hidden1', type=int, default=2500)
 
+    parser.add_argument('-baseline', type='bool', default=False, help="if true only use bm25 to score documents")
+    parser.add_argument('-bm25_index', type=str)
 
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
@@ -140,7 +202,10 @@ def main():
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
     ranker_args.train = False
-
+    
+    if args.baseline:
+        eval_base_line(args)
+    
     # DataLoaders for dev
     logger.info("Loading dev data...")
     tokenizer = AutoTokenizer.from_pretrained(index_args.pretrain)
