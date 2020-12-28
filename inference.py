@@ -116,6 +116,7 @@ def eval_base_line(args):
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
     bm25searcher = BM25Retriever(args.bm25_index)
 
+    logger.info("Processing dev data...")
     for idx, dev_batch in enumerate(dev_loader):
         if dev_batch is None:
             continue
@@ -130,6 +131,8 @@ def eval_base_line(args):
                     rst_dict_dev[qid] = [(d_id, b_s)]
                 else:
                     rst_dict_dev[qid].append((d_id, b_s))
+        if (idx + 1) % args.print_every == 0:
+            logger.info(f"{idx + 1} / {len(dev_loader)}")
 
     logger.info("processing test data...")
     for idx, test_batch in enumerate(test_loader):
@@ -146,6 +149,8 @@ def eval_base_line(args):
                     rst_dict_dev[qid] = [(d_id, b_s)]
                 else:
                     rst_dict_dev[qid].append((d_id, b_s))
+        if (idx + 1) % args.print_every == 0:
+            logger.info(f"{idx + 1} / {len(test_loader)}")
     msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
     logger.info("Eval for Dev:")
