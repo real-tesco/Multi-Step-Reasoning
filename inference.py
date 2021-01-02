@@ -165,8 +165,7 @@ def eval_base_line(args):
 def eval_ideal(args, knn_index, ranking_model, device):
     rst_dict_test = {}
     metric = msr.metrics.Metric()
-
-    stats = {"skipped": 0, "kept": 0}
+    avg_stats = {}
 
     qrels = {}
     with open(args.test_qrels, "r") as f:
@@ -196,9 +195,17 @@ def eval_ideal(args, knn_index, ranking_model, device):
                     rst_dict_test[qid].append((d_id, b_s))
             if (idx + 1) % args.print_every == 0:
                 logger.info(f"{idx + 1} / {len(qrels)}")
-    msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
-    logger.info("Ideal eval for Test:")
-    _ = metric.eval_run(args.test_qrels, args.res + ".test")
+        msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
+        logger.info("Ideal eval for Test:")
+        metrics = metric.eval_run(args.test_qrels, args.res + ".test")
+        for key, val in metrics.items():
+            if key not in avg_stats:
+                avg_stats[key] = val
+            else:
+                avg_stats[key] += val
+    for key in avg_stats:
+        avg_stats[key] = avg_stats[key] / args.number_ideal_runs
+
     exit(0)
 
 
