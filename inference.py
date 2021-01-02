@@ -170,7 +170,7 @@ def eval_ideal(args, knn_index, ranking_model, device):
     with open(args.test_qrels, "r") as f:
         for line in f:
             split = line.split()
-            if split[2] not in qrels[split[0]]:
+            if split[0] not in qrels:
                 qrels[split[0]] = [split[2]]
             else:
                 qrels[split[0]].append(split[2])
@@ -311,6 +311,7 @@ def main():
     else:
         logger.info("No ranker is used...")
         ranking_model = None
+
     if args.ideal:
         eval_ideal(args, knn_index, ranking_model, device)
 
