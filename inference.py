@@ -261,35 +261,8 @@ def main():
     ranker_args = get_ranker_args(parser)
     ranker_args.train = False
 
-    if args.ideal:
-        eval_ideal(args)
-
     if args.baseline:
         eval_base_line(args)
-    
-    # DataLoaders for dev
-    logger.info("Loading dev data...")
-    tokenizer = AutoTokenizer.from_pretrained(index_args.pretrain)
-    dev_dataset = BertDataset(
-        dataset=args.dev_data,
-        tokenizer=tokenizer,
-        mode='inference',
-        query_max_len=index_args.max_query_len,
-        doc_max_len=index_args.max_doc_len,
-        max_input=args.max_input
-    )
-    dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
-
-    logger.info("Loading test data...")
-    test_dataset = BertDataset(
-        dataset=args.test_data,
-        tokenizer=tokenizer,
-        mode='inference',
-        query_max_len=index_args.max_query_len,
-        doc_max_len=index_args.max_doc_len,
-        max_input=args.max_input
-    )
-    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
 
     # set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -338,6 +311,32 @@ def main():
     else:
         logger.info("No ranker is used...")
         ranking_model = None
+    if args.ideal:
+        eval_ideal(args, knn_index, ranking_model, device)
+
+    # DataLoaders for dev
+    logger.info("Loading dev data...")
+    tokenizer = AutoTokenizer.from_pretrained(index_args.pretrain)
+    dev_dataset = BertDataset(
+        dataset=args.dev_data,
+        tokenizer=tokenizer,
+        mode='inference',
+        query_max_len=index_args.max_query_len,
+        doc_max_len=index_args.max_doc_len,
+        max_input=args.max_input
+    )
+    dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
+
+    logger.info("Loading test data...")
+    test_dataset = BertDataset(
+        dataset=args.test_data,
+        tokenizer=tokenizer,
+        mode='inference',
+        query_max_len=index_args.max_query_len,
+        doc_max_len=index_args.max_doc_len,
+        max_input=args.max_input
+    )
+    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
 
     # set metric
     metric = msr.metrics.Metric()
