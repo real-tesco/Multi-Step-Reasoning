@@ -190,6 +190,9 @@ def eval_ideal(args, knn_index, ranking_model, device):
             query_ids = test_batch['query_id']
             queries = []
             for qid in query_ids:
+                if qid not in qrels[qid]:
+                    logger.info("skipped a query, since not in qrels...")
+                    continue
                 correct_docid = random.choice(qrels[qid])
                 queries.append(knn_index.get_document(correct_docid))
             queries = torch.tensor(queries).to(device)
