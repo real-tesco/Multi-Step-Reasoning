@@ -1,16 +1,15 @@
-# Multi Step Query Modelling for Long Document Retrieval
+# Multi Step Query Modelling for Document Retrieval
 
 
 *Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning).
 
 ## Setup
-The requirements are in the [requirements file](requirements.txt). In my env, I also needed to set PYTHONPATH (as in the [setup.sh](setup.sh))
+The requirements are in the [requirements file](requirements.txt). 
 ```
 pip install -r requirements.txt
-source setup.sh
 ```
 
-## Data
+## Data TODO
 I am making the pre-processed data and paragraph vectors available so that is is easier to get started. They can downloaded from [here](http://iesl.cs.umass.edu/downloads/multi-step-reasoning-iclr19/data.tar.gz). (41GB compressed, 56GB decompressed; user/pass: guest/guest). If you need the pretrained paragraph encoder used to generate the vectors, feel free to get in touch with me.
 After un-taring, you will find a directory corresponding to each dataset. Each directory further contains:
 ```
@@ -23,11 +22,11 @@ embeddings/ -- Saved lookup table for faster initialization. The embeddings are 
 If you want to generate your own data here are the steps you have to make and the files you can use.
 
 
-## Paragraph encoder
+## Paragraph encoder TODO
 If you want to train new paragraph embeddings instead of using the ones we used, please refer to this [readme](paragraph_encoder/README.md)
 
 
-## Training
+## Training TODO
 ```
 python scripts/reader/train.py --data_dir <path-to-downloaded-data> --model_dir <path-to-downloaded-model> --dataset_name searchqa|triviaqa\quasart --saved_para_vectors_dir <path-to-downloaded-data>/dataset_name/paragraph_vectors/web-open 
 ```
@@ -50,7 +49,7 @@ Training details:
 
 In our experiments for searchqa and quasart, we found step 2 (pretraining the GRU was not important) and the reasoner was directly able to learn via RL. However, pretraining never hurt the performance as well.
 
-## Pretrained models
+## Pretrained models TODO
 
 We are also providing pretrained models for download and scripts to run them directly. Download the pretrained models from [here](http://iesl.cs.umass.edu/downloads/multi-step-reasoning-iclr19/models.tar.gz).
 ```
@@ -61,14 +60,14 @@ model_dir -- path to pretrained model that you downloaded
 out_dir -- directory for logging
 ```
 
-## Citation
+## Citation TODO
 ```
 @inproceedings{
-das2018multistep,
-title={Multi-step Retriever-Reader Interaction for Scalable Open-domain Question Answering},
-author={Rajarshi Das and Shehzaad Dhuliawala and Manzil Zaheer and Andrew McCallum},
-booktitle={ICLR},
-year={2019},
+2020multistepquerymodeling,
+title={Multi-step Query Modelling for Document Retrieval},
+author={L. J. Brandt},
+booktitle={LUH},
+year={2020},
 }
 ```
 
