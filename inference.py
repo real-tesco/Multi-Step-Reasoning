@@ -183,11 +183,11 @@ def eval_ideal(args, knn_index, ranking_model, device):
         logger.info("Processing test data...")
         for idx, qid in enumerate(qrels):
             correct_docid = random.choice(qrels[qid])
-            query = torch.tensor(knn_index.get_document(correct_docid)).unsqueeze(dim=0).to(device)
+            query = torch.tensor(knn_index.get_document(correct_docid)).unsqueeze(dim=0)
 
             document_labels, document_embeddings, _, _ = knn_index.knn_query_embedded(query)
 
-            batch_score = ranking_model.rerank_documents(query, document_embeddings.to(device),
+            batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
                                                          device)
             for (d_id, b_s) in zip(document_labels, batch_score):
                 if qid not in rst_dict_test:
