@@ -166,6 +166,8 @@ def eval_ideal(args, knn_index, ranking_model, device):
     rst_dict_test = {}
     metric = msr.metrics.Metric()
 
+    stats = {"skipped": 0, "kept": 0}
+
     qrels = {}
     with open(args.test_qrels, "r") as f:
         for line in f:
@@ -174,32 +176,18 @@ def eval_ideal(args, knn_index, ranking_model, device):
                 qrels[split[0]] = [split[2]]
             else:
                 qrels[split[0]].append(split[2])
-
+    logger.info(f"len of qrels: {len(qrels)}")
     logger.info("Loading test data...")
 
-    test_dataset = BM25Dataset(
-        dataset=args.test_data,
-    )
-    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
     for i in range(0, args.number_ideal_runs):
         logger.info("Processing test data...")
-        for idx, test_batch in enumerate(test_loader):
-            if test_batch is None:
-                continue
+        for idx, qid in enumerate(qrels):
+            correct_docid = random.choice(qrels[qid])
+            query = torch.tensor(knn_index.get_document(correct_docid)).unsqueeze(dim=0).to(device)
 
-            query_ids = test_batch['query_id']
-            queries = []
-            for qid in query_ids:
-                if qid not in qrels:
-                    logger.info("skipped a query, since not in qrels...")
-                    continue
-                correct_docid = random.choice(qrels[qid])
-                queries.append(knn_index.get_document(correct_docid))
-            queries = torch.tensor(queries).to(device)
+            document_labels, document_embeddings, _, _ = knn_index.knn_query_embedded(query)
 
-            document_labels, document_embeddings, _, _ = knn_index.knn_query_embedded(queries)
-
-            batch_score = ranking_model.rerank_documents(queries, document_embeddings.to(device),
+            batch_score = ranking_model.rerank_documents(query, document_embeddings.to(device),
                                                          device)
             for (d_id, b_s) in zip(document_labels, batch_score):
                 if qid not in rst_dict_test:
@@ -207,7 +195,7 @@ def eval_ideal(args, knn_index, ranking_model, device):
                 else:
                     rst_dict_test[qid].append((d_id, b_s))
             if (idx + 1) % args.print_every == 0:
-                logger.info(f"{idx + 1} / {len(test_loader)}")
+                logger.info(f"{idx + 1} / {len(qrels)}")
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
     logger.info("Ideal eval for Test:")
     _ = metric.eval_run(args.test_qrels, args.res + ".test")
