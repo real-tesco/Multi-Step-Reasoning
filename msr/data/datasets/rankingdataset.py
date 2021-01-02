@@ -47,8 +47,6 @@ class RankingDataset(Dataset):
 
         #del tmp_queries, tmp_query_ids, tmp_docs, tmp_docids
 
-
-
         self._dataset = dataset
 
         if self._dataset.split('.')[-1] == 'tsv':

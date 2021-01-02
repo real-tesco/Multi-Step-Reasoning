@@ -3,6 +3,7 @@ import torch
 import msr
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
+from msr.data.datasets.rankingdataset import RankingDataset
 from transformers import AutoTokenizer
 from msr.knn_retriever.retriever import KnnIndex
 from msr.knn_retriever.retriever_config import get_args as get_knn_args
@@ -16,6 +17,7 @@ import logging
 import numpy as np
 from msr.retriever.bm25_model import BM25Retriever
 from msr.data.datasets.bm25dataset import BM25Dataset
+import random
 
 logger = logging.getLogger()
 
@@ -160,6 +162,55 @@ def eval_base_line(args):
     exit(0)
 
 
+def eval_ideal(args, knn_index, ranking_model, device):
+    rst_dict_test = {}
+    metric = msr.metrics.Metric()
+
+    qrels = {}
+    with open(args.test_qrels, "r") as f:
+        for line in f:
+            split = line.split()
+            if split[2] not in qrels[split[0]]:
+                qrels[split[0]] = [split[2]]
+            else:
+                qrels[split[0]].append(split[2])
+
+    logger.info("Loading test data...")
+
+    test_dataset = BM25Dataset(
+        dataset=args.test_data,
+    )
+    test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
+    for i in range(0, args.number_ideal_runs):
+        logger.info("Processing test data...")
+        for idx, test_batch in enumerate(test_loader):
+            if test_batch is None:
+                continue
+
+            query_ids = test_batch['query_id']
+            queries = []
+            for qid in query_ids:
+                correct_docid = random.choice(qrels[qid])
+                queries.append(knn_index.get_document(correct_docid))
+            queries = torch.tensor(queries).to(device)
+
+            document_labels, document_embeddings, _, _ = knn_index.knn_query_embedded(queries)
+
+            batch_score = ranking_model.rerank_documents(queries, document_embeddings.to(device),
+                                                         device)
+            for (d_id, b_s) in zip(document_labels, batch_score):
+                if qid not in rst_dict_test:
+                    rst_dict_test[qid] = [(d_id, b_s)]
+                else:
+                    rst_dict_test[qid].append((d_id, b_s))
+            if (idx + 1) % args.print_every == 0:
+                logger.info(f"{idx + 1} / {len(test_loader)}")
+    msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
+    logger.info("Ideal eval for Test:")
+    _ = metric.eval_run(args.test_qrels, args.res + ".test")
+    exit(0)
+
+
 def main():
     # setting args
     parser = argparse.ArgumentParser()
@@ -181,6 +232,8 @@ def main():
     parser.add_argument('-hidden1', type=int, default=2500)
 
     parser.add_argument('-baseline', type='bool', default=False, help="if true only use bm25 to score documents")
+    parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
+    parser.add_argument('-number_ideal_runs', type=int, default=10)
     parser.add_argument('-bm25_index', type=str, default='./data/indexes/anserini/index-msmarco-doc-20201117-f87c94')
 
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
@@ -207,7 +260,10 @@ def main():
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
     ranker_args.train = False
-    
+
+    if args.ideal:
+        eval_ideal(args)
+
     if args.baseline:
         eval_base_line(args)
     
