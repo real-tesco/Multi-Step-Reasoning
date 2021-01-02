@@ -196,16 +196,17 @@ def eval_ideal(args, knn_index, ranking_model, device):
             if (idx + 1) % args.print_every == 0:
                 logger.info(f"{idx + 1} / {len(qrels)}")
         msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
-        logger.info("Ideal eval for Test:")
+        logger.info(f"Ideal eval for Test run #{i+1}:")
         metrics = metric.eval_run(args.test_qrels, args.res + ".test")
         for key, val in metrics.items():
             if key not in avg_stats:
                 avg_stats[key] = val
             else:
                 avg_stats[key] += val
+    logger.info("Final result after averaging:")
     for key in avg_stats:
         avg_stats[key] = avg_stats[key] / args.number_ideal_runs
-
+        logger.info(f"{key}:\t{avg_stats[key]}")
     exit(0)
 
 
