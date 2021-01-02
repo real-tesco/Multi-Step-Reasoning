@@ -188,11 +188,11 @@ def eval_ideal(args, knn_index, ranking_model, device):
 
             batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
                                                          device)
+
             for (d_id, b_s) in zip(document_labels, batch_score):
-                if qid not in rst_dict_test:
-                    rst_dict_test[qid] = [(d_id, b_s)]
-                else:
-                    rst_dict_test[qid].append((d_id, b_s))
+                rst_dict_test[qid] = [(docid, score) for docid, score in zip(d_id, b_s)]
+
+
             if (idx + 1) % args.print_every == 0:
                 logger.info(f"{idx + 1} / {len(qrels)}")
         msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
