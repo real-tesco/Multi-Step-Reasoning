@@ -184,11 +184,15 @@ def eval_ideal(args, knn_index, ranking_model, device):
             correct_docid = random.choice(qrels[qid])
             query = torch.tensor(knn_index.get_document(correct_docid)).unsqueeze(dim=0)
 
-            document_labels, document_embeddings, _, _ = knn_index.knn_query_embedded(query)
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(query)
 
-            batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
+            if args.full_ranking:
+                batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
                                                          device)
-            batch_score = batch_score.detach().cpu().tolist()
+                batch_score = batch_score.detach().cpu().tolist()
+            else:
+                batch_score = distances.tolist()
+
             for (d_id, b_s) in zip(document_labels, batch_score):
                 rst_dict_test[qid] = [(docid, score) for docid, score in zip(d_id, b_s)]
 
