@@ -107,6 +107,7 @@ class Metric():
             print("# results per qid: ", len(run[qid]))
             for rst in run[qid]:
                 print("# docs per rst", len(rst))
+                print(rst)
                 for docid in rst:
                     if docid not in qrel[qid]:
                         cnt += 1
