@@ -102,14 +102,15 @@ class Metric():
         # calc number of unjudged documents returned
         cnt = 0
         total = 0
+        print("# qids in run: ", len(run))
         for qid in run:
+            print("# results per qid: ", len(run[qid]))
             for rst in run[qid]:
+                print("# docs per rst", len(rst))
                 for docid in rst:
                     if docid not in qrel[qid]:
                         cnt += 1
-                        total += 1
-                    else:
-                        total += 1
+                    total += 1
 
         mes['mrr'] = mrr
         for key in mes:
