@@ -92,7 +92,6 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu())
 
-            # TODO: Check rerank regarding the new or the old queries??
             batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
                                                          device)
             batch_score = batch_score.detach().cpu().tolist()
