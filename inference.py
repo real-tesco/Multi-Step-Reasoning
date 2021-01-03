@@ -196,7 +196,6 @@ def eval_ideal(args, knn_index, ranking_model, device):
             for (d_id, b_s) in zip(document_labels, batch_score):
                 rst_dict_test[qid] = [(docid, score) for docid, score in zip(d_id, b_s)]
 
-
             if (idx + 1) % args.print_every == 0:
                 logger.info(f"{idx + 1} / {len(qrels)}")
         msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)

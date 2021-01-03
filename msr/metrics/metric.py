@@ -108,12 +108,13 @@ class Metric():
                     cnt += 1
                 total += 1
 
+        mes['unjudged'] = cnt
+        mes['total'] = total
         mes['mrr'] = mrr
+        mes['std'] = std_dev
         for key in mes:
             print("{}: {:.4f}".format(key, mes[key]))
-        print(f"\nstd_dev of mrr: {std_dev:2.4f}\n")
-        print(f"Unjudged documents in result: {cnt}/{total}")
-        print(f"Unjudged documents avg per query: {cnt / len(run)}/{total / len(run)}")
+        # print(f"\nstd_dev of mrr: {std_dev:2.4f}\n")
 
         if print_graphs:
             query_measure_to_print = ['recall_100', 'recall_30', 'ndcg', 'map', 'P_10', 'mrr_cut_100']
