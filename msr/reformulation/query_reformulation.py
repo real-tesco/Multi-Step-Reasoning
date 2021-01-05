@@ -113,6 +113,7 @@ class TransformerReformulator(nn.Module):
         output = nn.functional.normalize(output, p=2, dim=1)
         return output
 
+    # refactor needed
     # hack to not retrain the reformulators
     def load_fixed_checkpoint(self, path):
         m = torch.load(path)
@@ -135,23 +136,23 @@ def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
 
 
-class PositionalEncoding:
+class PositionalEncoding(nn.Module):
     def __init__(self, d_model=768, dropout=0.1, max_len=10):
         super(PositionalEncoding, self).__init__()
-        # self.dropout = nn.Dropout(p=dropout)
+        self.dropout = nn.Dropout(p=dropout)
 
-        self.pe = torch.zeros(max_len, d_model)
+        pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
-        self.pe[:, 0::2] = torch.sin(position * div_term)
-        self.pe[:, 1::2] = torch.cos(position * div_term)
-        self.pe = self.pe.unsqueeze(0).transpose(0, 1)
-        # self.register_buffer('pe', pe)
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = self.pe.unsqueeze(0).transpose(0, 1)
+        self.register_buffer('pe', pe)
 
     def __call__(self, *args, **kwargs):
         return self.forward(*args)
 
     def forward(self, x):
         x = x + self.pe[:x.size(0), :]
-        # x = self.dropout(x)
+        x = self.dropout(x)
         return x
