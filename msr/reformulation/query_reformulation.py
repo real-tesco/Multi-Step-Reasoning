@@ -127,9 +127,8 @@ class TransformerReformulator(nn.Module):
         self.load_state_dict(model_dict)
 
     def to_device(self, device):
-        print(device)
         self.to(device)
-        self.pos_enc.pe.to(device)
+        self.pos_enc.pe.cuda()
         print("reformulator pe: ", self.pos_enc.pe.device)
 
 
