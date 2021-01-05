@@ -303,7 +303,8 @@ def main():
     elif args.reformulation_type == 'transformer':
         reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
                                                args.dim_feedforward)
-        reformulator.load_state_dict(checkpoint)
+        # reformulator.load_state_dict(checkpoint)
+        reformulator.load_fixed_checkpoint(checkpoint)
         reformulator.to(device)
         reformulator.eval()
     else:

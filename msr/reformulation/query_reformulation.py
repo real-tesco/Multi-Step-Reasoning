@@ -113,6 +113,19 @@ class TransformerReformulator(nn.Module):
         output = nn.functional.normalize(output, p=2, dim=1)
         return output
 
+    # hack to not retrain the reformulators
+    def load_fixed_checkpoint(self, path):
+        m = torch.load(path)
+        model_dict = self.state_dict()
+        for k in m.keys():
+            if '"pos_enc.pe"' in k:
+                continue
+            if k in model_dict:
+                pname = k
+                pval = m[k]
+                model_dict[pname] = pval.clone().to(model_dict[pname].device)
+        self.load_state_dict(model_dict)
+
 
 def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
@@ -130,6 +143,9 @@ class PositionalEncoding:
         self.pe[:, 1::2] = torch.cos(position * div_term)
         self.pe = self.pe.unsqueeze(0).transpose(0, 1)
         # self.register_buffer('pe', pe)
+
+    def __call__(self, *args, **kwargs):
+        return self.forward(args)
 
     def forward(self, x):
         x = x + self.pe[:x.size(0), :]
