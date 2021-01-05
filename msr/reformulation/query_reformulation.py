@@ -91,7 +91,8 @@ class TransformerReformulator(nn.Module):
         self.d_model = 768
         self.topk = topk
 
-        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 1)   # query on index 0
+        # self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 1)   # query on index 0
+        self.pos_enc = PositionalEncodingNomodule(d_model=768, max_len=topk + 1)   # query on index 0
         encoder_layer = TransformerEncoderLayer(d_model=768, nhead=nhead, dim_feedforward=dim_feedforward)
         self.layers = _get_clones(encoder_layer, num_encoder_layers)
 
@@ -149,10 +150,27 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0).transpose(0, 1)
         self.register_buffer('pe', pe)
 
+    def forward(self, x):
+        x = x + self.pe[:x.size(0), :]
+        x = self.dropout(x)
+        return x
+
+
+class PositionalEncodingNomodule:
+    def __init__(self, d_model=768, dropout=0.1, max_len=10):
+        # super(PositionalEncoding, self).__init__()
+        # self.dropout = nn.Dropout(p=dropout)
+
+        self.pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        self.pe[:, 0::2] = torch.sin(position * div_term)
+        self.pe[:, 1::2] = torch.cos(position * div_term)
+        self.pe = self.pe.unsqueeze(0).transpose(0, 1)
+
     def __call__(self, *args, **kwargs):
         return self.forward(*args)
 
     def forward(self, x):
         x = x + self.pe[:x.size(0), :]
-        x = self.dropout(x)
         return x

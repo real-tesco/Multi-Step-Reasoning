@@ -240,7 +240,7 @@ def main():
     parser.add_argument('-dim_embedding', type=int, default=768)
     parser.add_argument('-hidden1', type=int, default=2500)
 
-    parser.add_argument('-baseline', type='bool', default=False, help="if true only use bm25 to score documents")
+    parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
     parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
     parser.add_argument('-number_ideal_runs', type=int, default=10)
     parser.add_argument('-bm25_index', type=str, default='./data/indexes/anserini/index-msmarco-doc-20201117-f87c94')
@@ -303,8 +303,8 @@ def main():
     elif args.reformulation_type == 'transformer':
         reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
                                                args.dim_feedforward)
-        reformulator.load_state_dict(checkpoint)
-        # reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
+        # reformulator.load_state_dict(checkpoint)
+        reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
         reformulator.to_device(device)
         # reformulator.eval()
     else:
