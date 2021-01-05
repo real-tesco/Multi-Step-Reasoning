@@ -129,7 +129,6 @@ class TransformerReformulator(nn.Module):
     def to_device(self, device):
         self.to(device)
         self.pos_enc.pe = self.pos_enc.pe.to(device)
-        print("reformulator pe: ", self.pos_enc.pe.device)
 
 
 def _get_clones(module, N):
@@ -153,8 +152,6 @@ class PositionalEncoding:
         return self.forward(*args)
 
     def forward(self, x):
-        print(x.device)
-        print(self.pe.device)
         x = x + self.pe[:x.size(0), :]
         # x = self.dropout(x)
         return x
