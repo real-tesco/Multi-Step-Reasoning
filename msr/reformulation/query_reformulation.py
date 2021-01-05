@@ -145,7 +145,7 @@ class PositionalEncoding:
         # self.register_buffer('pe', pe)
 
     def __call__(self, *args, **kwargs):
-        return self.forward(args)
+        return self.forward(*args)
 
     def forward(self, x):
         x = x + self.pe[:x.size(0), :]
