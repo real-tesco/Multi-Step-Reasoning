@@ -305,7 +305,7 @@ def main():
                                                args.dim_feedforward)
         # reformulator.load_state_dict(checkpoint)
         reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
-        reformulator.to(device)
+        reformulator.to_device(device)
         reformulator.eval()
     else:
         reformulator = None
