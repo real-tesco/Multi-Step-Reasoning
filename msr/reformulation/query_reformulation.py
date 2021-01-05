@@ -129,7 +129,7 @@ class TransformerReformulator(nn.Module):
     def to_device(self, device):
         self.to(device)
         self.pos_enc.pe.to(device)
-        print(self.pos_enc.pe.device)
+        print("reformulator pe: ", self.pos_enc.pe.device)
 
 
 def _get_clones(module, N):
