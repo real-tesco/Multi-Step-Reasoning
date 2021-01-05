@@ -152,6 +152,8 @@ class PositionalEncoding:
         return self.forward(*args)
 
     def forward(self, x):
+        print(x.device)
+        print(self.pe.device)
         x = x + self.pe[:x.size(0), :]
         # x = self.dropout(x)
         return x
