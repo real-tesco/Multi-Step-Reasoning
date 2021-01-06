@@ -183,6 +183,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                         mrr = metric.get_mrr(args.qrels, args.res, args.metric)
                     else:
                         mrr = metric.get_metric(args.qrels, args.res, args.metric)
+                    writer.add_scalar('mrr on dev set', mrr, epoch*len(train_loader) + idx)
                     if mrr > best_mrr:
                         msr.utils.save_trec(args.res + '.best', rst_dict)
                         best_mrr = mrr
@@ -358,16 +359,12 @@ def main():
     elif args.loss_fn == 'cross_entropy':
         loss_fn = cross_entropy
 
-    test = next(iter(train_loader))
-    print(type(test))
-    print(test)
-
     # set optimizer and scheduler
     if args.reformulation_type == 'weighted_avg':
         # writer.add_graph(reformulator.layer)
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.layer.parameters()), lr=args.lr)
     else:
-        writer.add_graph(reformulator)
+        # writer.add_graph(reformulator)
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.parameters()), lr=args.lr)
     m_scheduler = get_linear_schedule_with_warmup(m_optim, num_warmup_steps=args.n_warmup_steps,
                                                   num_training_steps=len(train_dataset) * args.epochs // args.batch_size)
