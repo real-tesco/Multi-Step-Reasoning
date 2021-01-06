@@ -91,12 +91,11 @@ class TransformerReformulator(nn.Module):
         self.d_model = 768
         self.topk = topk
 
-        # self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 1)   # query on index 0
-        self.pos_enc = PositionalEncodingNomodule(d_model=768, max_len=topk + 1)   # query on index 0
+        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 1)   # query on index 0
         encoder_layer = TransformerEncoderLayer(d_model=768, nhead=nhead, dim_feedforward=dim_feedforward)
         self.layers = _get_clones(encoder_layer, num_encoder_layers)
 
-        self.decoder = nn.Linear(768, 768)
+        # self.decoder = nn.Linear(768, 768)
 
     def forward(self, query, source_embeddings):
         # source_embeddings: (S, N, E) S is source sequence length here=topk, N=batchsize, E=feature number here 768
@@ -137,9 +136,10 @@ def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
 
 
-class PositionalEncoding(nn.Module):
+# not needed
+class PositionalEncodingNNModule(nn.Module):
     def __init__(self, d_model=768, dropout=0.1, max_len=10):
-        super(PositionalEncoding, self).__init__()
+        super(PositionalEncodingNNModule, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
         pe = torch.zeros(max_len, d_model)
@@ -156,10 +156,8 @@ class PositionalEncoding(nn.Module):
         return x
 
 
-class PositionalEncodingNomodule:
-    def __init__(self, d_model=768, dropout=0.1, max_len=10):
-        # super(PositionalEncoding, self).__init__()
-        # self.dropout = nn.Dropout(p=dropout)
+class PositionalEncoding:
+    def __init__(self, d_model=768, max_len=10):
 
         self.pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)

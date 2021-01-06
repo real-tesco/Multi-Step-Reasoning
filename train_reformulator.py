@@ -104,6 +104,10 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
         if (step + 1) % args.print_every == 0:
             logger.info(f"-- eval: {step + 1}/{len(dev_loader)} --")
 
+    if args.reformulation_type == 'weighted_avg':
+        reformulator.layer.train()
+    else:
+        reformulator.train()
     return rst_dict
 
 
@@ -279,36 +283,6 @@ def main():
     )
     dev_loader = DataLoader(dev_dataset, args.batch_size, shuffle=False, num_workers=8)
 
-    '''
-    # Refactor to use real queries
-    logger.info("Loading train data...")
-    doc_embedding_list = []
-    doc_ids_list = []
-    query_embedding_list = [args.query_embedding_format.format(i) for i in range(0, args.num_query_files)]
-    query_ids_list = [args.query_ids_format.format(i) for i in range(0, args.num_query_files)]
-
-    train_dataset = RankingDataset(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list,
-                                   dataset=args.dataset, mode='train', model='reformulator')
-    train_loader = msr.data.dataloader.DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=8
-    )
-    
-    logger.info("Loading dev data...")
-    dev_query_embedding_list = [args.dev_query_embedding_file]
-    dev_query_ids_list = [args.dev_query_ids_file]
-
-    dev_dataset = RankingDataset(doc_embedding_list, doc_ids_list, dev_query_embedding_list, dev_query_ids_list,
-                                   dataset=args.dev_file, mode='dev', model='reformulator')
-    dev_loader = msr.data.dataloader.DataLoader(
-        dev_dataset,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=8
-    )
-    '''
     # Load qrels for target document embedding
     qrels = {}
     with open(args.train_qrels, "r") as f:
@@ -355,10 +329,7 @@ def main():
     elif args.reformulation_type == 'transformer':
         reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
                                                args.dim_feedforward)
-        reformulator.to(device)
-        if torch.cuda.device_count() > 1:
-            logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
-            reformulator = torch.nn.DataParallel(reformulator)
+        reformulator.to_device(device)
     else:
         return
 
@@ -388,7 +359,6 @@ def main():
     # set metric
     metric = msr.metrics.Metric()
 
-    # starting inference
     logger.info("Starting training...")
     train(args, knn_index, ranking_model, reformulator, loss_fn, m_optim, m_scheduler, train_loader, dev_loader, qrels, metric, device, args.k)
 
