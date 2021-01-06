@@ -18,6 +18,7 @@ from msr.reformulation.query_reformulation import NeuralReformulator, QueryRefor
 import logging
 import random
 from transformers import get_linear_schedule_with_warmup
+from torch.utils.tensorboard import SummaryWriter
 
 
 logger = logging.getLogger()
@@ -240,6 +241,8 @@ def main():
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
     parser.add_argument('-model_name', type=str, default='./checkpoints/reformulator.bin')
+    parser.add_argument('-tensorboard_output', type=str)
+
 
     # Legacy?
     parser.add_argument('-dataset', type=str, default='./data/reformulator_training_data.tsv')
@@ -258,6 +261,7 @@ def main():
     ranker_args = get_ranker_args(parser)
     ranker_args.train = False
     args.dim_hidden = index_args.dim_hidden
+
 
     tokenizer = AutoTokenizer.from_pretrained(index_args.pretrain)
     logger.info("Load training data...")
@@ -358,6 +362,11 @@ def main():
 
     # set metric
     metric = msr.metrics.Metric()
+
+    # setup tensorboard
+    writer = SummaryWriter(args.tensorboard_output)
+    writer.add_graph(reformulator)
+    writer.close()
 
     logger.info("Starting training...")
     train(args, knn_index, ranking_model, reformulator, loss_fn, m_optim, m_scheduler, train_loader, dev_loader, qrels, metric, device, args.k)
