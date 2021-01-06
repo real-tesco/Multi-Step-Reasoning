@@ -288,25 +288,26 @@ def main():
     knn_index.set_ef(index_args.efc)
     knn_index.set_device(device)
 
-    logger.info('Loading Reformulator...')
-    checkpoint = torch.load(args.reformulator_checkpoint)
-    if args.reformulation_type == 'neural':
-        reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_embedding, args.hidden1)
-        reformulator.load_state_dict(checkpoint)
-        reformulator.to(device)
-        reformulator.eval()
-    elif args.reformulation_type == 'weighted_avg':
-        reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
-        reformulator.layer.load_state_dict(checkpoint)
-        reformulator.layer.to(device)
-        reformulator.layer.eval()
-    elif args.reformulation_type == 'transformer':
-        reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
-                                               args.dim_feedforward)
-        # reformulator.load_state_dict(checkpoint)
-        reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
-        reformulator.to_device(device)
-        # reformulator.eval()
+    if args.reformulation_type is not None:
+        logger.info('Loading Reformulator...')
+        checkpoint = torch.load(args.reformulator_checkpoint)
+        if args.reformulation_type == 'neural':
+            reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_embedding, args.hidden1)
+            reformulator.load_state_dict(checkpoint)
+            reformulator.to(device)
+            reformulator.eval()
+        elif args.reformulation_type == 'weighted_avg':
+            reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
+            reformulator.layer.load_state_dict(checkpoint)
+            reformulator.layer.to(device)
+            reformulator.layer.eval()
+        elif args.reformulation_type == 'transformer':
+            reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
+                                                   args.dim_feedforward)
+            # reformulator.load_state_dict(checkpoint)
+            reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
+            reformulator.to_device(device)
+            # reformulator.eval()
     else:
         reformulator = None
 
