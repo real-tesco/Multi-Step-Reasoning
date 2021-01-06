@@ -305,6 +305,9 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # device = torch.device('cpu')
 
+    # setup tensorboard
+    writer = SummaryWriter(args.tensorboard_output)
+
     # Loading models
     #    1. Load Retriever
     logger.info("Loading Retriever...")
@@ -357,8 +360,10 @@ def main():
 
     # set optimizer and scheduler
     if args.reformulation_type == 'weighted_avg':
+        writer.add_graph(reformulator.layer)
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.layer.parameters()), lr=args.lr)
     else:
+        writer.add_graph(reformulator)
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.parameters()), lr=args.lr)
     m_scheduler = get_linear_schedule_with_warmup(m_optim, num_warmup_steps=args.n_warmup_steps,
                                                   num_training_steps=len(train_dataset) * args.epochs // args.batch_size)
@@ -366,9 +371,6 @@ def main():
     # set metric
     metric = msr.metrics.Metric()
 
-    # setup tensorboard
-    writer = SummaryWriter(args.tensorboard_output)
-    writer.add_graph(reformulator)
 
     logger.info("Starting training...")
     train(args, knn_index, ranking_model, reformulator, loss_fn, m_optim, m_scheduler, train_loader, dev_loader, qrels,
