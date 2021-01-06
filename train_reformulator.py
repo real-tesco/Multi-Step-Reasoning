@@ -358,9 +358,13 @@ def main():
     elif args.loss_fn == 'cross_entropy':
         loss_fn = cross_entropy
 
+    test = next(iter(train_loader))
+    print(type(test))
+    print(test)
+
     # set optimizer and scheduler
     if args.reformulation_type == 'weighted_avg':
-        writer.add_graph(reformulator.layer)
+        writer.add_graph(reformulator.layer, test[0])
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.layer.parameters()), lr=args.lr)
     else:
         writer.add_graph(reformulator)
