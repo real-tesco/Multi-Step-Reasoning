@@ -113,7 +113,7 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
 
 
 def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_scheduler, train_loader, dev_loader,
-          qrels, metric, device, k=100):
+          qrels, metric, device, writer, k=100):
     if args.reformulation_type == 'weighted_avg':
         reformulator.layer.train()
     else:
@@ -169,6 +169,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 logger.info('Epoch={} | iter={}/{} | avg loss={:2.4f} | last mrr={:2.5f} | '
                             'best mrr={:2.5f} ({})'.format(epoch, idx + 1, len(train_loader), para_loss.avg, mrr,
                                                            best_mrr, best_epoch))
+                writer.add_scalar('training loss', para_loss.avg, epoch*len(train_loader) + idx)
                 para_loss.reset()
 
             if (idx + 1) % args.eval_every == 0:
@@ -366,10 +367,10 @@ def main():
     # setup tensorboard
     writer = SummaryWriter(args.tensorboard_output)
     writer.add_graph(reformulator)
-    writer.close()
 
     logger.info("Starting training...")
-    train(args, knn_index, ranking_model, reformulator, loss_fn, m_optim, m_scheduler, train_loader, dev_loader, qrels, metric, device, args.k)
+    train(args, knn_index, ranking_model, reformulator, loss_fn, m_optim, m_scheduler, train_loader, dev_loader, qrels,
+          metric, device, writer, args.k)
 
 
 if __name__ == '__main__':
