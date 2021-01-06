@@ -364,7 +364,7 @@ def main():
 
     # set optimizer and scheduler
     if args.reformulation_type == 'weighted_avg':
-        writer.add_graph(reformulator.layer, test[0])
+        writer.add_graph(reformulator.layer, test['query_id'])
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.layer.parameters()), lr=args.lr)
     else:
         writer.add_graph(reformulator)
