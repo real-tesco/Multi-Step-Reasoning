@@ -160,9 +160,9 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 return
 
             if idx == 0 and args.reformulation_type == 'weighted_avg':
-                writer.add_graph(reformulator.layer, *inputs)
+                writer.add_graph(reformulator.layer, inputs)
             elif idx == 0:
-                writer.add_graph(reformulator, *inputs)
+                writer.add_graph(reformulator, inputs)
 
             batch_loss = loss_fn(new_queries, target_embeddings)
 
