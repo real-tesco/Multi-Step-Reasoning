@@ -50,5 +50,9 @@ class TwoTowerBert(nn.Module):
         return score, query, document
 
     def load_bert_model_state_dict(self, state_dict):
-        self._document_model.load_state_dict(state_dict)
-        self._query_model.load_state_dict(state_dict)
+        st = {}
+        for key in state_dict:
+            if key.startswith("bert."):
+                st[key[len("bert."):]] = state_dict[key]
+        self._document_model.load_state_dict(st)
+        self._query_model.load_state_dict(st)
