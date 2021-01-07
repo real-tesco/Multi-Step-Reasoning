@@ -9,6 +9,7 @@ import msr.utils as utils
 import numpy as np
 import logging
 import hnswlib
+from torch.utils.tensorboard import SummaryWriter
 
 
 def str2bool(v):
@@ -46,7 +47,7 @@ def dev(args, model, dev_loader, device):
     return rst_dict
 
 
-def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_loader, device):
+def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_loader, device, writer):
     best_mes = 0.0
     mes = 0.0
     for epoch in range(args.epoch):
@@ -70,9 +71,18 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
             m_scheduler.step()
             m_optim.zero_grad()
 
+            if step == 0:
+                writer.add_graph(model, (train_batch['q_input_ids'].to(device),
+                                 train_batch['d_input_ids'].to(device),
+                                 train_batch['q_input_mask'].to(device),
+                                 train_batch['q_segment_ids'].to(device),
+                                 train_batch['d_input_mask'].to(device),
+                                 train_batch['d_segment_ids'].to(device)))
+
             if (step + 1) % args.print_every == 0:
                 logger.info(f"Epoch={epoch} | {step + 1} / {len(train_loader)} | {avg_loss / args.print_every} | "
                             f"last metric: {mes} | best metric: {best_mes}")
+                writer.add_scalar('training loss', avg_loss / args.print_every, epoch * len(train_loader) + step)
                 avg_loss = 0.0
 
             if (step + 1) % args.eval_every == 0:
@@ -291,8 +301,10 @@ def main(args):
                                                       num_training_steps=len(train_set) * args.epoch // args.batch_size)
         metric = msr.metrics.Metric()
 
+        writer = SummaryWriter(args.tensorboard_output)
+
         logger.info("starting training...")
-        train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_loader, device)
+        train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_loader, device, writer)
     else:
         build_index(args)
 
