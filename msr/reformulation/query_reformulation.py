@@ -88,15 +88,15 @@ class NeuralReformulator(nn.Module):
 
 
 class TransformerReformulator(nn.Module):
-    def __init__(self, topk, nhead=4, num_encoder_layers=1, dim_feedforward=3072):
+    def __init__(self, topk, nhead=4, num_encoder_layers=1, dim_feedforward=3072, dropout=0.1):
         super(TransformerReformulator, self).__init__()
         self.d_model = 768
         self.topk = topk
 
-        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 1)   # query on index 0
+        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 2)   # query on index 0
         encoder_layer = TransformerEncoderLayer(d_model=768, nhead=nhead, dim_feedforward=dim_feedforward)
         self.layers = _get_clones(encoder_layer, num_encoder_layers)
-
+        self.dropout = nn.Dropout(p=dropout)
         # self.decoder = nn.Linear(768, 768)
 
     def forward(self, query, source_embeddings):
@@ -104,13 +104,16 @@ class TransformerReformulator(nn.Module):
         # query: (N, E) N and E same values as source N, E
         # needs to be transposed to match expected dimensions
         source = source_embeddings[:, :self.topk].transpose(0, 1)
+
         query = query.unsqueeze(dim=0)
-        source = torch.cat([query, source])
-        source = self.pos_enc(source * math.sqrt(self.d_model))
+        cls = torch.ones_like(query).to(query.device)
+
+        source = torch.cat([cls, query, source])
+        source = self.dropout(self.pos_enc(source * math.sqrt(self.d_model)))
         output = source
         for layer in self.layers:
             output = layer(output)
-        # output at index 0 is the query representation
+        # output at index 0 is the cls token representation
         output = output[0, :]
         output = nn.functional.normalize(output, p=2, dim=1)
         return output
