@@ -262,11 +262,13 @@ def main(args):
 
     model = msr.knn_retriever.TwoTowerBert(pretrained=args.pretrain)
 
-    if args.checkpoint is not None:
+    if args.two_tower_checkpoint is not None:
         logger.info("Loading model from checkpoint")
-        state_dict = torch.load(args.checkpoint)
+        state_dict = torch.load(args.two_tower_checkpoint)
         model.load_state_dict(state_dict)
-
+    elif args.bert_checkpoint is not None:
+        state_dict = torch.load(args.bert_checkpoint)
+        model.load_bert_model_state_dict(state_dict)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
 
@@ -305,7 +307,8 @@ if __name__ == '__main__':
     parser.add_argument('-dev', action=msr.utils.DictOrStr, default='./data/dev_toy.jsonl')
     parser.add_argument('-qrels', type=str, default='./data/qrels_toy')
     parser.add_argument('-vocab', type=str, default='bert-base-uncased')
-    parser.add_argument('-checkpoint', type=str, default=None)
+    parser.add_argument('-two_tower_checkpoint', type=str, default=None)
+    parser.add_argument('-bert_checkpoint', type=str, default=None)
     parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
     parser.add_argument('-n_kernels', type=int, default=21)

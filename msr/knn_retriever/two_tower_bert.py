@@ -48,3 +48,7 @@ class TwoTowerBert(nn.Module):
         # score = torch.sigmoid(score)
 
         return score, query, document
+
+    def load_bert_model_state_dict(self, state_dict):
+        self._document_model.load_state_dict(state_dict)
+        self._query_model.load_state_dict(state_dict)
