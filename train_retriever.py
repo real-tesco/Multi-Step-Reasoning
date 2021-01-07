@@ -62,7 +62,7 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
 
             if step == 0:
                 model.eval()
-                writer.add_graph(model, *inputs)
+                writer.add_graph(model, inputs)
                 model.train()
 
             batch_score, _, _ = model(*inputs)
