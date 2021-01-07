@@ -75,7 +75,6 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
 
             batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device),
                                                          device)
-            #batch_score = batch_score.detach().cpu().tolist()
 
             # sort doc embeddings according score and reformulate
             sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
@@ -149,16 +148,22 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
             target_embeddings = get_relevant_embeddings(query_id, qrels, knn_index).to(device)
 
             if args.reformulation_type == 'neural':
-                new_queries = reformulator(query_embeddings, sorted_docs)
+                inputs = query_embeddings, sorted_docs
+                new_queries = reformulator(*inputs)
             elif args.reformulation_type == 'weighted_avg':
-                new_queries = reformulator(sorted_docs, scores_sorted.to(device))
+                inputs = sorted_docs, scores_sorted.to(device)
+                new_queries = reformulator(*inputs)
             elif args.reformulation_type == 'transformer':
+                inputs = query_embeddings, sorted_docs
                 new_queries = reformulator(query_embeddings, sorted_docs)
             else:
                 return
 
-            # batch_loss = cross_entropy(new_queries, target_embeddings)
-            # batch_loss = inner_product(new_queries, target_embeddings)
+            if idx == 0 and args.reformulation_type == 'weighted_avg':
+                writer.add_graph(reformulator.layer, *inputs)
+            elif idx == 0:
+                writer.add_graph(reformulator, *inputs)
+
             batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()
@@ -361,17 +366,14 @@ def main():
 
     # set optimizer and scheduler
     if args.reformulation_type == 'weighted_avg':
-        # writer.add_graph(reformulator.layer)
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.layer.parameters()), lr=args.lr)
     else:
-        # writer.add_graph(reformulator)
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, reformulator.parameters()), lr=args.lr)
     m_scheduler = get_linear_schedule_with_warmup(m_optim, num_warmup_steps=args.n_warmup_steps,
                                                   num_training_steps=len(train_dataset) * args.epochs // args.batch_size)
 
     # set metric
     metric = msr.metrics.Metric()
-
 
     logger.info("Starting training...")
     train(args, knn_index, ranking_model, reformulator, loss_fn, m_optim, m_scheduler, train_loader, dev_loader, qrels,
