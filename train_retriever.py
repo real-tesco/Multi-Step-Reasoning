@@ -80,7 +80,7 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                     rst_dict = dev(args, model, dev_loader, device)
                     msr.utils.save_trec(args.res, rst_dict)
                     if args.metric.split('_')[0] == 'mrr':
-                        mes = metric.get_mrr(args.qrels, args.res, args.metric)
+                        mes, _ = metric.get_mrr_dict(args.qrels, args.res, args.metric)
                     else:
                         mes = metric.get_metric(args.qrels, args.res, args.metric)
                 if mes >= best_mes:
@@ -91,7 +91,6 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                         torch.save(model.module.state_dict(), args.save)
                     else:
                         torch.save(model.state_dict(), args.save)
-        mes = metric.eval_run(args.qrels, args.res + '.best')
 
 
 def save_embeddings(args, model, doc_loader, device):
@@ -267,6 +266,7 @@ def main(args):
         state_dict = torch.load(args.two_tower_checkpoint)
         model.load_state_dict(state_dict)
     elif args.bert_checkpoint is not None:
+        logger.info("Loading model from checkpoint")
         state_dict = torch.load(args.bert_checkpoint)
         model.load_bert_model_state_dict(state_dict)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
