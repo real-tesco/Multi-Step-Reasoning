@@ -185,7 +185,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                                              dev_loader, device)
                     msr.utils.save_trec(args.res, rst_dict)
                     if args.metric.split('_')[0] == 'mrr':
-                        mrr = metric.get_mrr(args.qrels, args.res, args.metric)
+                        mrr, _ = metric.get_mrr_dict(args.qrels, args.res, args.metric)
                     else:
                         mrr = metric.get_metric(args.qrels, args.res, args.metric)
                     writer.add_scalar('mrr on dev set', mrr, epoch*len(train_loader) + idx)
@@ -193,7 +193,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                         msr.utils.save_trec(args.res + '.best', rst_dict)
                         best_mrr = mrr
                         best_epoch = epoch
-                        logger.info('New best mes = {:2.4f}'.format(best_mrr))
+                        logger.info('New best mes = {:2.5f}'.format(best_mrr))
                         if args.reformulation_type == 'weighted_avg':
                             torch.save(reformulator.layer.state_dict(), args.model_name)
                         else:
