@@ -53,13 +53,19 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
     for epoch in range(args.epoch):
         avg_loss = 0.0
         for step, train_batch in enumerate(train_loader):
+            inputs = (train_batch['q_input_ids'].to(device),
+                      train_batch['d_input_ids'].to(device),
+                      train_batch['q_input_mask'].to(device),
+                      train_batch['q_segment_ids'].to(device),
+                      train_batch['d_input_mask'].to(device),
+                      train_batch['d_segment_ids'].to(device))
 
-            batch_score, _, _ = model(train_batch['q_input_ids'].to(device),
-                                      train_batch['d_input_ids'].to(device),
-                                      train_batch['q_input_mask'].to(device),
-                                      train_batch['q_segment_ids'].to(device),
-                                      train_batch['d_input_mask'].to(device),
-                                      train_batch['d_segment_ids'].to(device))
+            if step == 0:
+                model.eval()
+                writer.add_graph(model, *inputs)
+                model.train()
+
+            batch_score, _, _ = model(*inputs)
 
             batch_loss = loss_fn(batch_score.float(), train_batch['label'].float().to(device))
 
@@ -70,14 +76,6 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
             m_optim.step()
             m_scheduler.step()
             m_optim.zero_grad()
-
-            if step == 0:
-                writer.add_graph(model, (train_batch['q_input_ids'].to(device),
-                                 train_batch['d_input_ids'].to(device),
-                                 train_batch['q_input_mask'].to(device),
-                                 train_batch['q_segment_ids'].to(device),
-                                 train_batch['d_input_mask'].to(device),
-                                 train_batch['d_segment_ids'].to(device)))
 
             if (step + 1) % args.print_every == 0:
                 logger.info(f"Epoch={epoch} | {step + 1} / {len(train_loader)} | {avg_loss / args.print_every} | "
