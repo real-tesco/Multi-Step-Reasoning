@@ -56,13 +56,15 @@ class ProjectionLayer(nn.Module):
 
 
 class NeuralReformulator(nn.Module):
-    def __init__(self, top_k, embedding_size, hidden_size1):
+    def __init__(self, top_k, embedding_size, hidden_size1, hidden_size2, dropout=0.1):
         super(NeuralReformulator, self).__init__()
         self.top_k = top_k
         self.embedding_size = embedding_size
         self.input = nn.Linear((top_k+1)*embedding_size, hidden_size1)
-        self.output = nn.Linear(hidden_size1, embedding_size)
+        self.h1 = nn.Linear(hidden_size1, hidden_size2)
+        self.output = nn.Linear(hidden_size2, embedding_size)
         self.activation = nn.Sigmoid()
+        self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, query_embedding, document_embeddings):
         if len(query_embedding.shape) == 1:
@@ -74,8 +76,8 @@ class NeuralReformulator(nn.Module):
             inputs = inputs.flatten(start_dim=1)
 
         #print(inputs.shape)
-        x = self.activation(self.input(inputs))
-        # x = self.activation(self.h1(x))
+        x = self.dropout(self.activation(self.input(inputs)))
+        x = self.dropout(self.activation(self.h1(x)))
         x = self.output(x)
 
         if len(query_embedding.shape) == 1:
