@@ -314,6 +314,7 @@ if __name__ == '__main__':
     parser.register('type', 'bool', str2bool)
 
     parser.add_argument('-train', action=msr.utils.DictOrStr, default='./data/train_toy.jsonl')
+    parser.add_argument('-tensorboard_output', type=str)
     parser.add_argument('-max_input', type=int, default=12800000)
     parser.add_argument('-save', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-dev', action=msr.utils.DictOrStr, default='./data/dev_toy.jsonl')
