@@ -60,11 +60,6 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                       train_batch['d_input_mask'].to(device),
                       train_batch['d_segment_ids'].to(device))
 
-            if step == 0:
-                model.eval()
-                writer.add_graph(model, inputs)
-                model.train()
-
             batch_score, _, _ = model(*inputs)
 
             batch_loss = loss_fn(batch_score.float(), train_batch['label'].float().to(device))
