@@ -60,10 +60,15 @@ class NeuralReformulator(nn.Module):
         super(NeuralReformulator, self).__init__()
         self.top_k = top_k
         self.embedding_size = embedding_size
-        self.input = nn.Linear((top_k+1)*embedding_size, hidden_size1)
-        self.h1 = nn.Linear(hidden_size1, hidden_size2)
-        self.output = nn.Linear(hidden_size2, embedding_size)
-        self.activation = nn.Sigmoid()
+
+        self.input = nn.Linear((top_k + 1) * embedding_size, hidden_size1)
+        if hidden_size2 == 0:
+            self.h1 = None
+            self.output = nn.Linear(hidden_size1, embedding_size)
+        else:
+            self.h1 = nn.Linear(hidden_size1, hidden_size2)
+            self.output = nn.Linear(hidden_size2, embedding_size)
+        self.activation = nn.ReLU()
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, query_embedding, document_embeddings):
@@ -75,9 +80,9 @@ class NeuralReformulator(nn.Module):
             inputs = torch.cat([q_emb, d_emb], dim=2)
             inputs = inputs.flatten(start_dim=1)
 
-        #print(inputs.shape)
         x = self.dropout(self.activation(self.input(inputs)))
-        x = self.dropout(self.activation(self.h1(x)))
+        if self.h1 is not None:
+            x = self.dropout(self.activation(self.h1(x)))
         x = self.output(x)
 
         if len(query_embedding.shape) == 1:
@@ -106,7 +111,7 @@ class TransformerReformulator(nn.Module):
         source = source_embeddings[:, :self.topk].transpose(0, 1)
 
         query = query.unsqueeze(dim=0)
-        cls = torch.ones_like(query).to(query.device)
+        cls = torch.full(query.shape, 0.5).to(query.device)
 
         source = torch.cat([cls, query, source])
         source = self.dropout(self.pos_enc(source * math.sqrt(self.d_model)))
