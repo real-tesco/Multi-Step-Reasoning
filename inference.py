@@ -297,23 +297,6 @@ def main():
     # set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
-    #________________TEST__________
-    if args.full_ranking or args.use_ranker_in_next_round:
-        #   2. Load Ranker
-        logger.info("Loading Ranker...")
-        #ranker_args = get_ranker_args(parser)
-        ranking_model = NeuralRanker(ranker_args)
-        checkpoint = torch.load(args.ranker_checkpoint)
-        ranking_model.load_state_dict(checkpoint)
-        print(type(ranking_model))
-        print(type(ranking_model.eval()))
-        ranking_model.to(device)
-    else:
-        logger.info("No ranker is used...")
-        ranking_model = None
-
-
     # Loading models
     #    1. Load Retriever
     logger.info("Loading Retriever...")
