@@ -303,7 +303,8 @@ def main():
     logger.info("Loading Retriever...")
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
-    two_tower_bert.load_state_dict(checkpoint)   #, strict=False)
+    # strict=False because some version mismatch between checkpoints
+    two_tower_bert.load_state_dict(checkpoint, strict=False)
     two_tower_bert.eval()
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File and set ef")
@@ -337,12 +338,11 @@ def main():
     if args.full_ranking or args.use_ranker_in_next_round:
         #   2. Load Ranker
         logger.info("Loading Ranker...")
-        #ranker_args = get_ranker_args(parser)
         ranking_model = NeuralRanker(ranker_args)
         checkpoint = torch.load(args.ranker_checkpoint)
         ranking_model.load_state_dict(checkpoint)
         ranking_model.to(device)
-        ranking_model.eval()
+        # ranking_model.train = False
     else:
         logger.info("No ranker is used...")
         ranking_model = None

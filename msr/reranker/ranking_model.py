@@ -7,6 +7,7 @@ import torch.nn as nn
 class NeuralRanker(nn.Module):
     def __init__(self, args):
         super(NeuralRanker, self).__init__()
+        self.train = args.train
         self.input = nn.Linear(args.ranker_input, args.ranker_hidden)
 
         if args.extra_layer > 0:
@@ -22,11 +23,21 @@ class NeuralRanker(nn.Module):
 
     # no sigmoid since BCE loss with logits
     def forward(self, inputs):
-        x = self.dropout(self.activation(self.input(inputs)))
+        x = self.input(inputs)
+        x = self.activation(x)
+        if self.train:
+            x = self.dropout(x)
         if self.extra_hidden is not None:
-            x = self.dropout(self.activation(self.extra_hidden(x)))
-        x = self.dropout(self.activation(self.h1(x)))
+            x = self.extra_hidden(x)
+            x = self.activation(x)
+        #x = self.batchnorm1(x)
+        x = self.h1(x)
+        x = self.activation(x)
+        #x = self.batchnorm2(x)
+        if self.train:
+            x = self.dropout(x)
         x = self.output(x)
+        # x = torch.sigmoid(x)
         return x
 
     def score_documents(self, queries, positives, negatives=None):
