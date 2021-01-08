@@ -54,5 +54,5 @@ class TwoTowerBert(nn.Module):
         for key in state_dict:
             if key.startswith("bert."):
                 st[key[len("bert."):]] = state_dict[key]
-        self._document_model.load_state_dict(st, strict=False)
-        self._query_model.load_state_dict(st, strict=False)
+        self._document_model.load_state_dict(st)
+        self._query_model.load_state_dict(st)

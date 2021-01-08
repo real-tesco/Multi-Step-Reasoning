@@ -320,7 +320,7 @@ def main():
     logger.info("Loading Retriever...")
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
-    two_tower_bert.load_state_dict(checkpoint)
+    two_tower_bert.load_state_dict(checkpoint, strict=False)
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File and set ef")
     knn_index.load_index()
