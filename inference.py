@@ -260,6 +260,7 @@ def main():
     # neural
     parser.add_argument('-dim_embedding', type=int, default=768)
     parser.add_argument('-hidden1', type=int, default=2500)
+    parser.add_argument('-hidden2', type=int, default=0)
 
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
     parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
@@ -302,7 +303,7 @@ def main():
     logger.info("Loading Retriever...")
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
-    two_tower_bert.load_state_dict(checkpoint, strict=False)
+    two_tower_bert.load_state_dict(checkpoint)   #, strict=False)
     two_tower_bert.eval()
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File and set ef")
@@ -314,7 +315,7 @@ def main():
         logger.info('Loading Reformulator...')
         checkpoint = torch.load(args.reformulator_checkpoint)
         if args.reformulation_type == 'neural':
-            reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_embedding, args.hidden1)
+            reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_embedding, args.hidden1, args.hidden2)
             reformulator.load_state_dict(checkpoint)
             reformulator.to(device)
             reformulator.eval()
