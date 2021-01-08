@@ -61,10 +61,7 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                       train_batch['d_segment_ids'].to(device))
 
             batch_score, _, _ = model(*inputs)
-
-            # batch_loss = loss_fn(batch_score.float(), train_batch['label'].float().to(device))
-            batch_score = torch.stack([batch_score, 1-batch_score], dim=1)
-            batch_loss = loss_fn(batch_score, train_batch['label'].to(device))
+            batch_loss = loss_fn(batch_score.float(), train_batch['label'].float().to(device))
 
             if torch.cuda.device_count() > 1:
                 batch_loss = batch_loss.mean()
@@ -283,7 +280,7 @@ def main(args):
         save_embeddings(args, model, embed_loader, device)
 
     elif not args.index:
-        loss_fn = torch.nn.CrossEntropyLoss()
+        loss_fn = torch.nn.BCELoss()
         loss_fn.to(device)
 
         if torch.cuda.device_count() > 1:
