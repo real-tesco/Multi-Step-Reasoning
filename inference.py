@@ -304,7 +304,7 @@ def main():
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
     # strict=False because some version mismatch between checkpoints
-    two_tower_bert.load_state_dict(checkpoint, strict=False)
+    two_tower_bert.load_state_dict(checkpoint)
     two_tower_bert.eval()
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File and set ef")
