@@ -168,23 +168,7 @@ def eval_base_line(args):
 
 
 def eval_ideal(args, knn_index, ranking_model, device):
-    rst_dict_test = {}
-    metric = msr.metrics.Metric()
-    avg_stats = {}
-
-    qrels = {}
-    with open(args.test_qrels, "r") as f:
-        for line in f:
-            split = line.split()
-            if split[0] not in qrels:
-                qrels[split[0]] = [split[2]]
-            else:
-                qrels[split[0]].append(split[2])
-    logger.info(f"len of qrels: {len(qrels)}")
-    logger.info("Loading test data...")
-
-    for i in range(0, args.number_ideal_runs):
-        logger.info("Processing test data...")
+    def process_run_ideal(qrels, rst_dict):
         for idx, qid in enumerate(qrels):
             correct_docid = random.choice(qrels[qid])
             query = torch.tensor(knn_index.get_document(correct_docid)).unsqueeze(dim=0)
@@ -193,16 +177,52 @@ def eval_ideal(args, knn_index, ranking_model, device):
 
             if args.full_ranking:
                 batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
-                                                         device)
+                                                             device)
                 batch_score = batch_score.detach().cpu().tolist()
             else:
                 batch_score = distances
 
             for (d_id, b_s) in zip(document_labels, batch_score):
-                rst_dict_test[qid] = [(docid, score) for docid, score in zip(d_id, b_s)]
+                rst_dict[qid] = [(docid, score) for docid, score in zip(d_id, b_s)]
 
             if (idx + 1) % args.print_every == 0:
                 logger.info(f"{idx + 1} / {len(qrels)}")
+    rst_dict_test = {}
+    metric = msr.metrics.Metric()
+    avg_stats = {}
+    rst_dict_dev = {}
+    dev_qrels = {}
+    test_qrels = {}
+    logger.info("Loading test data...")
+    with open(args.test_qrels, "r") as f:
+        for line in f:
+            qid, _, docid, label = line.split()
+            if int(label) > 0:
+                if qid not in test_qrels:
+                    test_qrels[qid] = [docid]
+                else:
+                    test_qrels[qid].append(docid)
+
+    with open(args.dev_qrels, "r") as f:
+        for line in f:
+            qid, _, docid, label = line.split()
+            if int(label) > 0:
+                if qid not in dev_qrels:
+                    dev_qrels[qid] = [docid]
+                else:
+                    dev_qrels[qid].append(docid)
+
+    logger.info(f"len of dev qrels: {len(dev_qrels)}")
+    logger.info(f"len of test qrels: {len(test_qrels)}")
+
+    logger.info("processing dev")
+    process_run_ideal(dev_qrels, rst_dict_dev)
+    msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
+    _ = metric.eval_run(args.test_qrels, args.res + ".dev")
+
+    logger.info("processing test")
+    for i in range(0, args.number_ideal_runs):
+        process_run_ideal(test_qrels, rst_dict_test)
         msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
         logger.info(f"Ideal eval for Test run #{i+1}:")
         metrics = metric.eval_run(args.test_qrels, args.res + ".test")
@@ -211,6 +231,7 @@ def eval_ideal(args, knn_index, ranking_model, device):
                 avg_stats[key] = val
             else:
                 avg_stats[key] += val
+
     logger.info("Final result after averaging:")
     for key in avg_stats:
         avg_stats[key] = avg_stats[key] / args.number_ideal_runs
