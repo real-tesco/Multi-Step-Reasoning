@@ -207,6 +207,12 @@ def build_index(args):
     logger.info("Finished saving index with name: {}".format(index_name))
 
 
+def test_bert_checkpoint(args, model, metric, dev_loader, device):
+    rst_dict = dev(args, model, dev_loader, device)
+    msr.utils.save_trec(args.res, rst_dict)
+    mes, _ = metric.eval_run(args.qrels, args.res)
+
+
 def main(args):
 
     tokenizer = AutoTokenizer.from_pretrained(args.vocab)
@@ -271,8 +277,14 @@ def main(args):
         logger.info("Loading model from checkpoint")
         state_dict = torch.load(args.bert_checkpoint)
         model.load_bert_model_state_dict(state_dict)
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
+
+    metric = msr.metrics.Metric()
+
+    if args.test_bert:
+        test_bert_checkpoint(args, model, metric, dev_loader, device)
 
     if args.save_embeddings > 0:
         #if torch.cuda.device_count() > 1:
@@ -291,7 +303,6 @@ def main(args):
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
         m_scheduler = get_linear_schedule_with_warmup(m_optim, num_warmup_steps=args.n_warmup_steps,
                                                       num_training_steps=len(train_set) * args.epoch // args.batch_size)
-        metric = msr.metrics.Metric()
 
         writer = SummaryWriter(args.tensorboard_output)
 
@@ -325,7 +336,8 @@ if __name__ == '__main__':
     parser.add_argument('-eval_every', type=int, default=10000)
     parser.add_argument('-print_every', type=int, default=1000)
     parser.add_argument('-embed', type=str, default='./data/msmarco-docs.jsonl')
-    parser.add_argument('-save_embeddings', type=int, default=0)
+    parser.add_argument('-save_embeddings', type='bool', default=False)
+    parser.add_argument('-test_bert', type='bool', default=False)
     parser.add_argument('-embed_queries', type='bool', default=False)
     parser.add_argument('-embed_dir', type=str, default='./data/embeddings')
     parser.add_argument('-index', type='bool', default=False)
