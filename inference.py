@@ -306,7 +306,8 @@ def main():
         ranking_model = NeuralRanker(ranker_args)
         checkpoint = torch.load(args.ranker_checkpoint)
         ranking_model.load_state_dict(checkpoint)
-        ranking_model.eval()
+        print(type(ranking_model))
+        print(type(ranking_model.eval()))
         ranking_model.to(device)
     else:
         logger.info("No ranker is used...")
