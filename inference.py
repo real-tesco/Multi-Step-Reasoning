@@ -305,7 +305,7 @@ def main():
     checkpoint = torch.load(args.two_tower_checkpoint)
     # strict=False because some version mismatch between checkpoints
     two_tower_bert.load_state_dict(checkpoint)
-    two_tower_bert.eval()
+    # two_tower_bert.eval()
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File and set ef")
     knn_index.load_index()
@@ -319,19 +319,19 @@ def main():
             reformulator = NeuralReformulator(args.top_k_reformulator, args.dim_embedding, args.hidden1, args.hidden2)
             reformulator.load_state_dict(checkpoint)
             reformulator.to(device)
-            reformulator.eval()
+            # reformulator.eval()
         elif args.reformulation_type == 'weighted_avg':
             reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
             reformulator.layer.load_state_dict(checkpoint)
             reformulator.layer.to(device)
-            reformulator.layer.eval()
+            # reformulator.layer.eval()
         elif args.reformulation_type == 'transformer':
             reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
                                                    args.dim_feedforward)
             # reformulator.load_state_dict(checkpoint)
             reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
             reformulator.to_device(device)
-            reformulator.eval()
+            # reformulator.eval()
     else:
         reformulator = None
 
