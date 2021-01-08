@@ -218,7 +218,7 @@ def eval_ideal(args, knn_index, ranking_model, device):
     logger.info("processing dev")
     process_run_ideal(dev_qrels, rst_dict_dev)
     msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
-    _ = metric.eval_run(args.test_qrels, args.res + ".dev")
+    _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
 
     logger.info("processing test")
     for i in range(0, args.number_ideal_runs):
