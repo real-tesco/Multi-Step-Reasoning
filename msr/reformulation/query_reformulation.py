@@ -98,7 +98,7 @@ class TransformerReformulator(nn.Module):
         self.d_model = 768
         self.topk = topk
 
-        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 2)   # query on index 0
+        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 1)   # query on index 0
         encoder_layer = TransformerEncoderLayer(d_model=768, nhead=nhead, dim_feedforward=dim_feedforward)
         self.layers = _get_clones(encoder_layer, num_encoder_layers)
         self.dropout = nn.Dropout(p=dropout)
@@ -111,9 +111,10 @@ class TransformerReformulator(nn.Module):
         source = source_embeddings[:, :self.topk].transpose(0, 1)
 
         query = query.unsqueeze(dim=0)
-        cls = torch.full(query.shape, 0.5).to(query.device)
+        #cls = torch.full(query.shape, 0.5).to(query.device)
 
-        source = torch.cat([cls, query, source])
+        #source = torch.cat([cls, query, source])
+        source = torch.cat([query, source])
         source = self.dropout(self.pos_enc(source * math.sqrt(self.d_model)))
         output = source
         for layer in self.layers:
