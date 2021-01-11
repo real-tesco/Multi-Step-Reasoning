@@ -61,7 +61,7 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             new_queries = torch.mean(torch.stack([query_embeddings, new_queries], dim=-1), dim=-1)
 
         document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
-            new_queries.cpu())
+            new_queries.cpu(), k=k)
 
         batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
                                                      device)
