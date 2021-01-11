@@ -167,13 +167,13 @@ def eval_base_line(args):
     exit(0)
 
 
-def eval_ideal(args, knn_index, ranking_model, device):
+def eval_ideal(args, knn_index, ranking_model, device, k):
     def process_run_ideal(qrels, rst_dict):
         for idx, qid in enumerate(qrels):
             correct_docid = random.choice(qrels[qid])
             query = torch.tensor(knn_index.get_document(correct_docid)).unsqueeze(dim=0)
 
-            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(query)
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(query, k=k)
 
             if args.full_ranking:
                 batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
@@ -348,7 +348,7 @@ def main():
         ranking_model = None
 
     if args.ideal:
-        eval_ideal(args, knn_index, ranking_model, device)
+        eval_ideal(args, knn_index, ranking_model, device, k=args.k)
 
     # DataLoaders for dev
     logger.info("Loading dev data...")
