@@ -96,6 +96,7 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
 
 
 def save_embeddings(args, model, doc_loader, device):
+    model.eval()
     with torch.no_grad():
         docs = []
         doc_ids = []
@@ -272,7 +273,7 @@ def main(args):
     if args.two_tower_checkpoint is not None:
         logger.info("Loading model from checkpoint")
         state_dict = torch.load(args.two_tower_checkpoint)
-        model.load_state_dict(state_dict)
+        model.load_state_dict(state_dict, strict=False)
     elif args.bert_checkpoint is not None:
         logger.info("Loading model from checkpoint")
         state_dict = torch.load(args.bert_checkpoint)
