@@ -14,6 +14,7 @@ class BertDataset(Dataset):
         dataset: str,
         tokenizer: AutoTokenizer,
         mode: str,
+        passage_type: str = 'normal',
         query_max_len: int = 32,
         doc_max_len: int = 256,
         max_input: int = 1280000,
@@ -21,6 +22,7 @@ class BertDataset(Dataset):
         self._dataset = dataset
         self._tokenizer = tokenizer
         self._mode = mode
+        self._passage_type = passage_type
         self._query_max_len = query_max_len
         self._doc_max_len = doc_max_len
         self._seq_max_len = doc_max_len
@@ -248,7 +250,10 @@ class BertDataset(Dataset):
             return {'query_id': example['query_id'], 'doc_id': example['doc_id'], 'retrieval_score': example['retrieval_score'],
                     'input_ids': input_ids, 'input_mask': input_mask, 'segment_ids': segment_ids}
         elif self._mode == 'embed':
-            doc_tokens = self._tokenizer.tokenize(example['doc'])[:self._seq_max_len-2]
+            if self._passage_type == 'reverse':
+                doc_tokens = self._tokenizer.tokenize(example['doc'])[-(self._seq_max_len-2):]
+            else:
+                doc_tokens = self._tokenizer.tokenize(example['doc'])[:self._seq_max_len-2]
             tokenized = self.pack_bert_features_doc_only(doc_tokens)
             return {'doc_id': example['doc_id'], 'd_input_ids': tokenized[0], 'd_segment_ids': tokenized[1],
                     'd_input_mask': tokenized[2]}

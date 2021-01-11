@@ -219,10 +219,15 @@ def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.vocab)
     if args.save_embeddings > 0:
         logger.info('reading documents to embed..')
+        if args.reverse_passage:
+            passage_type = 'reverse'
+        else:
+            passage_type = 'normal'
         embed_set = msr.data.datasets.BertDataset(
             dataset=args.embed,
             tokenizer=tokenizer,
             mode='embed',
+            passage_type=passage_type,
             query_max_len=args.max_query_len,
             doc_max_len=args.max_doc_len,
             max_input=args.max_input,  # 3213835,
@@ -345,6 +350,7 @@ if __name__ == '__main__':
     parser.add_argument('-docs_per_chunk', type=int, default=200000)
     parser.add_argument('-out_dir', type=str, default='./results')
     parser.add_argument('-start_chunk', type=int, default=0)
+    parser.add_argument('-reverse_passage', type='bool', default=False)
 
     args = get_args(parser)
 
