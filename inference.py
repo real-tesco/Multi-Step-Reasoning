@@ -130,7 +130,7 @@ def eval_base_line(args):
         query_ids = dev_batch['query_id']
         queries = dev_batch['query']
         for (qid, query) in zip(query_ids, queries):
-            hits = bm25searcher.query(query, k=100)
+            hits = bm25searcher.query(query, k=args.k)
             docids = [hit.docid for hit in hits]
             scores = [hit.score for hit in hits]
             for (d_id, b_s) in zip(docids, scores):
@@ -148,7 +148,7 @@ def eval_base_line(args):
         query_ids = test_batch['query_id']
         queries = test_batch['query']
         for (qid, query) in zip(query_ids, queries):
-            hits = bm25searcher.query(query, k=100)
+            hits = bm25searcher.query(query, k=args.k)
             docids = [hit.docid for hit in hits]
             scores = [hit.score for hit in hits]
             for (d_id, b_s) in zip(docids, scores):
