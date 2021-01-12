@@ -95,7 +95,7 @@ def extend_knn_index(args):
 
     index_name = args.out_dir + f'msmarco_firstP_and_remainP_knn_index_M_{args.M}_efc_{args.ef_construction}.bin'
     p = hnswlib.Index(space=args.similarity, dim=args.dimension)
-    p.load(index_name)  # parameter tuning
+    p.load_index(index_name)
     idx = p.get_current_count()
     logger.info(f"currently the index contains {idx} elements")
     with open(args.mapping_file, "r") as f:
