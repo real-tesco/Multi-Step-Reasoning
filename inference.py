@@ -286,10 +286,10 @@ def main():
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
 
-    args = parser.parse_args()
     # re_args = get_reformulator_args(parser)
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
+    args = parser.parse_args()
     ranker_args.train = False
 
     if args.baseline:
