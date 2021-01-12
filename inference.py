@@ -68,10 +68,10 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
     batch_score = batch_score.detach().cpu().tolist()
 
     for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-        rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
-        # rst_list = [(docid, score) for docid, score in zip(d_id, b_s)]
-        # rst_dict[q_id] = [(docid, score) for i, (docid, score) in enumerate(rst_list)
-        #                  if not any(j == docid for j, _ in rst_list[:i])]
+        # rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+        rst_list = [(docid, score) for docid, score in zip(d_id, b_s)]
+        rst_dict[q_id] = [(docid, score) for i, (docid, score) in enumerate(rst_list)
+                          if not any(j == docid for j, _ in rst_list[:i])]
 
 
 def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loader, metric, device, k=100):
@@ -98,14 +98,14 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
     timer.stop()
     msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
+    # duplicate calculation only interesting for first+last passage without duplicate detection
+    #for key in rst_dict_dev:
+    #    number_duplicate_dev = len([i for i, (docid, score) in enumerate(rst_dict_dev[key])
+    #                                if any(j == docid for j, _ in rst_dict_dev[key][:i])])
 
-    for key in rst_dict_dev:
-        number_duplicate_dev = len([i for i, (docid, score) in enumerate(rst_dict_dev[key])
-                                    if any(j == docid for j, _ in rst_dict_dev[key][:i])])
-
-    for key in rst_dict_test:
-        number_duplicate_test = len([i for i, (docid, score) in enumerate(rst_dict_test[key])
-                                    if any(j == docid for j, _ in rst_dict_test[key][:i])])
+    # for key in rst_dict_test:
+    #    number_duplicate_test = len([i for i, (docid, score) in enumerate(rst_dict_test[key])
+    #                                if any(j == docid for j, _ in rst_dict_test[key][:i])])
 
     logger.info(f"Number duplicates dev {number_duplicate_dev} - number duplicates test {number_duplicate_test}")
     logger.info(f"Time needed for {(len(dev_loader) + len(dev_loader)) * args.batch_size} examples: {timer.time()} s")
