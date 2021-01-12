@@ -373,6 +373,7 @@ if __name__ == '__main__':
     parser.add_argument('-out_dir', type=str, default='./results')
     parser.add_argument('-start_chunk', type=int, default=0)
     parser.add_argument('-reverse_passage', type='bool', default=False)
+    parser.add_argument('-max_elems', type=int)
 
     args = get_args(parser)
 
