@@ -90,12 +90,11 @@ def convert_tsv_to_json(args):
 
 
 def extend_knn_index(args):
-    logger.info('Start loading existing index...')
     max_elements = args.max_elements
-
-    index_name = args.out_dir + f'msmarco_firstP_and_remainP_knn_index_M_{args.M}_efc_{args.ef_construction}.bin'
+    index_name = args.out_dir + f'msmarco_firstP_and_remainP_512_knn_index_M_{args.M}_efc_{args.ef_construction}.bin'
+    logger.info(f'Start loading existing index from {}...')
     p = hnswlib.Index(space=args.similarity, dim=args.dimension)
-    p.load_index(index_name)
+    p.load_index(index_name, max_elements=max_elements)
     idx = p.get_current_count()
     logger.info(f"currently the index contains {idx} elements")
     with open(args.mapping_file, "r") as f:
