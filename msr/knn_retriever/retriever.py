@@ -21,12 +21,20 @@ class KnnIndex:
         self._model = model
         self._docid2indexid = {}
         self._indexid2docid = {}
+        self._remainP = args.remainP
 
         with open(args.index_mapping, 'r') as f:
             mapping = json.load(f)
         for key in mapping:
-            self._indexid2docid[mapping[key]] = key
-            self._docid2indexid[key] = mapping[key]
+            if self._remainP:
+                self._indexid2docid[mapping[key][0]] = key
+                self._indexid2docid[mapping[key][1]] = key
+
+                # docid2indexid has lists as values
+                self._docid2indexid[key] = mapping[key]
+            else:
+                self._indexid2docid[mapping[key]] = key
+                self._docid2indexid[key] = mapping[key]
 
     def knn_query_text(self, query_text, device, k=100):
         input_ids, segment_ids, input_mask = self.tokenize(query_text)
@@ -36,10 +44,8 @@ class KnnIndex:
         query = query_embedding.detach().numpy()
         labels, distances = self._index.knn_query(query, k=k)
         distances = distances.tolist()
-        #labels = labels.tolist()
         document_labels = [[self._indexid2docid[labels[j][i]] for i in range(len(labels[j]))] for j in
                            range(len(labels))]
-        #labels = np.asarray(labels)
         document_embeddings = torch.tensor(self._index.get_items(labels.flatten()))
         document_embeddings = document_embeddings.reshape(labels.shape[0], labels.shape[1], self._args.dim_hidden)
         return document_labels, document_embeddings, distances, query_embedding
@@ -80,9 +86,14 @@ class KnnIndex:
     def set_ef(self, ef):
         self._index.set_ef(ef=ef)
 
-    def get_document(self, did):
-        # check if works, else pid needs to be N dim np array
-        did = [self._docid2indexid[did]]
+    def get_document(self, did, first=True):
+        if self._remainP:
+            if first:
+                did = [self._docid2indexid[did][0]]
+            else:
+                did = [self._docid2indexid[did][1]]
+        else:
+            did = [self._docid2indexid[did]]
         return self._index.get_items(did)[0]
 
     def set_device(self, device):
