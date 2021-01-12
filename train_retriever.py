@@ -10,6 +10,7 @@ import numpy as np
 import logging
 import hnswlib
 from torch.utils.tensorboard import SummaryWriter
+import json
 
 
 def str2bool(v):
@@ -172,7 +173,11 @@ def test_index(args):
 
 
 def build_index(args):
-    index_name = os.path.join(args.out_dir, "msmarco_firstP_512_knn_M_{}_efc_{}.bin".format(args.M, args.efc))
+    if args.reverse_passage:
+        name = "firstP_and_remainP"
+    else:
+        name = "firstP"
+    index_name = os.path.join(args.out_dir, "msmarco_{}_512_knn_M_{}_efc_{}.bin".format(name, args.M, args.efc))
     if os.path.isfile(index_name):
         logger.info('Loading index with parameters: \n'
                     'ef_construction={}\n'
@@ -180,7 +185,9 @@ def build_index(args):
                     'dimension={}'.format(args.M, args.efc, args.dim_hidden)
                     )
         index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
-        index.load_index(index_name)
+        index.load_index(index_name, max_elements=args.max_elems)
+        with open(args.index_mapping, "r") as f:
+            docid2index = json.load(f)
         start = args.start_chunk
     else:
         logger.info('Initializing index with parameters:\n'
@@ -191,6 +198,8 @@ def build_index(args):
         index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
         index.init_index(max_elements=args.max_elems, ef_construction=args.efc, M=args.M)
         start = 0
+        docid2index = {}
+
     for i in range(start, args.num_passage_files):
 
         current_passage_file = os.path.join(args.embed_dir, "marco_doc_embeddings_" + str(i) + ".npy")
@@ -198,13 +207,26 @@ def build_index(args):
         index_dataset = msr.data.IndexDataset(current_passage_file, current_index_file)
         index_loader = msr.data.DataLoader(dataset=index_dataset, shuffle=False,
                                            batch_size=args.batch_size, num_workers=8)
+
         for idx, ex in enumerate(index_loader):
             if ex is None:
                 continue
-            ids, docs = ex['id'], ex['doc']
-            index.add_items(docs, ids)
+
+            doc_ids, docs = ex['id'], ex['doc']
+            # indices in hnswlib index are numbered from 0 to max_elements
+            indices = np.arange(i * args.num_per_passage + (idx * args.batch_size),
+                                i * args.num_per_passage + (idx + args.batch_size) + len(doc_ids))
+
+            index.add_items(docs, indices)
+            for idy, did in enumerate(doc_ids):
+                if did in docid2index:
+                    docid2index[did] = [docid2index[did], indices[idy]]
+                else:
+                    docid2index[did] = indices[idy]
         logger.info("Added {}/{} chunks...".format(i + 1, args.num_passage_files))
     index.save_index(index_name)
+    with open(args.index_mapping, "w") as f:
+        json.dump(docid2index, f)
     logger.info("Finished saving index with name: {}".format(index_name))
 
 
