@@ -89,6 +89,41 @@ def convert_tsv_to_json(args):
     logger.info('Conversion done!')
 
 
+def extend_knn_index(args):
+    logger.info('Start loading existing index...')
+    max_elements = args.max_elements
+
+    index_name = args.out_dir + f'msmarco_firstP_and_remainP_knn_index_M_{args.M}_efc_{args.ef_construction}.bin'
+    p = hnswlib.Index(space=args.similarity, dim=args.dimension)
+    p.load(index_name)  # parameter tuning
+    idx = p.get_current_count()
+    logger.info(f"currently the index contains {idx} elements")
+    with open(args.mapping_file, "r") as f:
+        docid2indexid = json.load(f)
+
+    for i in range(0, args.number_of_doc_files):
+        data = np.load(args.passage_file_format.format(i))
+        indices = np.load(args.indices_file_format.format(i))
+        current_idxs = np.empty(len(indices))
+        for idy, docid in enumerate(indices):
+            current_idxs[idy] = idx
+            if docid in docid2indexid:
+                docid2indexid[docid] = (docid2indexid[docid], idx)
+            else:
+                logger.info(f"docid {docid} was not found in mapping file...")
+                docid2indexid[docid] = idx
+            idx += 1
+        logger.info('Starting adding current chunk of docs to knn index...')
+        p.add_items(data, current_idxs)
+        logger.info(f'Indexed {idx} / {max_elements} passages!')
+
+    logger.info(f'Finished creating index added {idx} chunks, starting saving index and docid2indexid file')
+    p.save_index(index_name)
+    with open(args.mapping_file, 'w+') as f:
+        json.dump(docid2indexid, f)
+    logger.info('Finished!')
+
+
 if __name__ == '__main__':
     #start indexing on hadoop/nvidia:
     # python3 ./scripts/encode/build_index.py -index_type knn -out_dir ./data/indexes/ -ef_construction 100 -M 84 -similarity ip
@@ -122,6 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('-number_of_doc_files', type=int, default=13)
     parser.add_argument('-max_elements', type=int, default=3213835)
     parser.add_argument('-mapping_file', type=str, default='./data/indexes/mapping_docid2indexid.json')
+    parser.add_argument('-extend_index', type='bool', default=False)
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
                             '%m/%d/%Y %I:%M:%S %p')
@@ -134,7 +170,10 @@ if __name__ == '__main__':
     if args.convert_tsv_to_json:
         convert_tsv_to_json(args)
     elif args.index_type == 'knn':
-        create_knn_index(args)
+        if args.extend_index:
+            extend_knn_index(args)
+        else:
+            create_knn_index(args)
     elif args.index_type == 'bm25':
         pass
 
