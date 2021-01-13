@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
-#LEGACY
-
+import nltk
 from timeit import default_timer
 import io
 import os
@@ -123,6 +122,18 @@ def extend_knn_index(args):
     logger.info('Finished!')
 
 
+def truncate_docs(args):
+    with open(args.doc_file, "r") as f, open(args.output_file, "w", encoding='utf-8') as out:
+        for line in f:
+            did, _, _, content = line.split()
+            tokens = nltk.word_tokenize(content)
+            if len(tokens) > 512:
+                tokens = tokens[:512]
+            out.write("{\"doc_id\":\"" + did + "\", \"contents\": " + " ".join(tokens))
+
+
+
+
 if __name__ == '__main__':
     #start indexing on hadoop/nvidia:
     # python3 ./scripts/encode/build_index.py -index_type knn -out_dir ./data/indexes/ -ef_construction 100 -M 84 -similarity ip
@@ -157,6 +168,13 @@ if __name__ == '__main__':
     parser.add_argument('-max_elements', type=int, default=3213835)
     parser.add_argument('-mapping_file', type=str, default='./data/indexes/mapping_docid2indexid.json')
     parser.add_argument('-extend_index', type='bool', default=False)
+
+    parser.add_argument('-truncate_bm25', type='bool', default=False)
+    parser.add_argument('-truncate_limit', type=int, default=512)
+    parser.add_argument('-doc_file', type=str, default="./data/msmarco-docs.tsv")
+    parser.add_argument('-output_file', type=str, default="./data/msmarco-docs-truncated-512.jsonl")
+
+
     logger.setLevel(logging.INFO)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]',
                             '%m/%d/%Y %I:%M:%S %p')
@@ -173,6 +191,8 @@ if __name__ == '__main__':
             extend_knn_index(args)
         else:
             create_knn_index(args)
+    elif args.truncate_bm25:
+        truncate_docs(args)
     elif args.index_type == 'bm25':
         pass
 
