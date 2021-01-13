@@ -107,7 +107,7 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
     #    number_duplicate_test = len([i for i, (docid, score) in enumerate(rst_dict_test[key])
     #                                if any(j == docid for j, _ in rst_dict_test[key][:i])])
 
-    logger.info(f"Number duplicates dev {number_duplicate_dev} - number duplicates test {number_duplicate_test}")
+    # logger.info(f"Number duplicates dev {number_duplicate_dev} - number duplicates test {number_duplicate_test}")
     logger.info(f"Time needed for {(len(dev_loader) + len(dev_loader)) * args.batch_size} examples: {timer.time()} s")
     logger.info(f"Time needed per query: {timer.time() / ((len(dev_loader) + len(test_loader)) * args.batch_size)} s")
     logger.info("Eval for Dev:")
