@@ -139,7 +139,7 @@ if __name__ == '__main__':
     # python3 ./scripts/encode/build_index.py -index_type knn -out_dir ./data/indexes/ -ef_construction 100 -M 84 -similarity ip
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
-    parser.add_argument('-index_type', type=str, default='knn', choices=['knn', 'bm25'],
+    parser.add_argument('-index_type', type=str, default=None, choices=[None, 'knn', 'bm25'],
                         help='type of index to build: choose from knn and bm25')
     parser.add_argument('-embedding_dir', type=str,
                         help='path to encoded passages, should be in chunks as dicts in .json files with pid:passage')
