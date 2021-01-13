@@ -124,7 +124,7 @@ def extend_knn_index(args):
 
 def truncate_docs(args):
     with open(args.doc_file, "r") as f, open(args.output_file, "w", encoding='utf-8') as out:
-        for line in f:
+        for line in tqdm(f):
             did, _, _, content = line.split('\t')
             tokens = nltk.word_tokenize(content)
             if len(tokens) > 512:
