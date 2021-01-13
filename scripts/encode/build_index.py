@@ -129,7 +129,7 @@ def truncate_docs(args):
             tokens = nltk.word_tokenize(content)
             if len(tokens) > 512:
                 tokens = tokens[:512]
-            out.write("{\"doc_id\":\"" + did + "\", \"contents\": " + " ".join(tokens))
+            out.write("{\"doc_id\":\"" + did + "\", \"contents\": " + " ".join(tokens) + "}\n")
 
 
 
