@@ -123,15 +123,17 @@ def extend_knn_index(args):
 
 
 def truncate_docs(args):
-    with open(args.doc_file, "r") as f, open(args.output_file, "w", encoding='utf-8') as out:
-        for line in tqdm(f):
+    with open("msmarco-docs.tsv", "r") as f, open("msmarco-docs-truncated-512.jsonl", "w") as out:
+        for idx, line in enumerate(f):
+            if idx == 10000:
+                print(f"we did {idx}")
             did, _, _, content = line.split('\t')
-            tokens = nltk.word_tokenize(content)
+            tokens = content.split(" ")
             if len(tokens) > 512:
                 tokens = tokens[:512]
-            out.write("{\"doc_id\": \"" + did + "\", \"contents\": \"" + " ".join(tokens) + "\"}\n")
-
-
+            contents = " ".join(tokens)
+            json_object = {"id": did, "contents": contents}
+            out.write(json.dumps(json_object) + "\n")
 
 
 if __name__ == '__main__':

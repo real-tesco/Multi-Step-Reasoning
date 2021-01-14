@@ -251,6 +251,11 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
     exit(0)
 
 
+# TODO: exact knn implementation, batching might not be necessary
+def exact_knn(args):
+    pass
+
+
 def main():
     # setting args
     parser = argparse.ArgumentParser()
@@ -297,12 +302,17 @@ def main():
 
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
+    
+
 
     # re_args = get_reformulator_args(parser)
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
     args = parser.parse_args()
     ranker_args.train = False
+
+    if args.exact_knn:
+        exact_knn(args)
 
     if args.baseline:
         eval_base_line(args)
