@@ -19,6 +19,7 @@ with open(args.corpus, "r") as input_f:
         else:
             print("use .tsv or .jsonl file...")
             exit(0)
-        avg_len += len(content.split(" "))
+        #  += len(content.split(" ")) # faster
+        avg_len += len(nltk.word_tokenize(content))
         number_of_docs += 1
     print(f"Average length of given dataset: {avg_len/number_of_docs}")
