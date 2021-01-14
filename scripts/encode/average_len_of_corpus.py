@@ -14,7 +14,6 @@ with open(args.corpus, "r") as input_f:
         if args.corpus.split(".")[-1] == "tsv":
             _, _, _, content = line.split('\t')
         elif args.corpus.split(".")[-1] == "jsonl":
-            print("jsonl detected")
             j = json.loads(line)
             content = j["contents"]
         else:
