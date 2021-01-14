@@ -14,8 +14,12 @@ with open(args.corpus, "r") as input_f:
         if args.corpus.split(".")[-1] == "tsv":
             _, _, _, content = line.split('\t')
         elif args.corpus.split(".")[-1] == "jsonl":
+            print("jsonl detected")
             j = json.loads(line)
             content = j["contents"]
+        else:
+            print("use .tsv or .jsonl file...")
+            exit(0)
         avg_len += len(content.split(" "))
         number_of_docs += 1
     print(f"Average length of given dataset: {avg_len/number_of_docs}")
