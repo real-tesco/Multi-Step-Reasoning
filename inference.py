@@ -253,25 +253,52 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 
 
 # TODO: exact knn implementation, batching might not be necessary
-def exact_knn(args, knn_index, device):
+def exact_knn(args, knn_index, device, k=1000):
     logger.info("loading all document embeddings from index")
     all_docs, all_docids = knn_index.get_all_docs()
     logger.info("load test set")
-    test_queries = torch.from_numpy(np.load(args.test_embeddings))
+    rst_dict = {}
+    test_queries = torch.from_numpy(np.load(args.test_embeddings)).to(device)
     test_q_indices = np.load(args.test_ids).tolist()
-    first_half = all_docs[:len(all_docs)//2]
+
+    first_half = all_docs[:len(all_docs)//2].to(device)
+    first_half_did = all_docids[:len(all_docs)//2]
+
     second_half = all_docs[len(all_docs)//2:]
+    second_half_did = all_docids[len(all_docs)//2:]
+
     logger.info("start first large matrix multiplication")
-    first_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(first_half.to(device).float(), 0, 1))
-    logger.info("saving multiplication")
-    torch.save(first_scores, args.save_exact_knn_path + "_first")
+    first_scores = torch.matmul(test_queries.float(), torch.transpose(first_half.float(), 0, 1))
+
+    first_sorted_scores, scores_sorted_indices = torch.sort(first_scores, dim=1, descending=True)
+    first_sorted_dids = first_half_did[
+        torch.arange(first_half.shape[0]).unsqueeze(-1), scores_sorted_indices][:k]
+    first_sorted_scores = first_sorted_scores[:k]
+
+    for qid in test_q_indices:
+        rst_dict[qid] = [(docid, score) for docid, score in zip(first_sorted_dids, first_sorted_scores)]
+
     del first_half
     del first_scores
     torch.cuda.empty_cache()
+
     logger.info("start second large matrix multiplication")
     second_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(second_half.to(device).float(), 0, 1))
-    logger.info("saving multiplication")
-    torch.save(second_scores, args.save_exact_knn_path + "_second")
+
+    second_sorted_scores, scores_sorted_indices = torch.sort(second_scores, dim=1, descending=True)
+    second_sorted_dids = second_half_did[
+                            torch.arange(second_half.shape[0]).unsqueeze(-1), scores_sorted_indices][:k]
+    second_sorted_scores = second_sorted_scores[:k]
+
+    for qid in test_q_indices:
+        rst_dict[qid] = rst_dict[qid].extend([(docid, score)
+                                              for docid, score in zip(first_sorted_dids, first_sorted_scores)])
+    logger.info("storing result file")
+    with open(args.rst_file, 'w') as writer:
+        for q_id, scores in rst_dict.items():
+            res = sorted(scores, key=lambda x: x[1], reverse=True)[:k]
+            for rank, value in enumerate(res):
+                writer.write(q_id + ' Q0 ' + str(value[0]) + ' ' + str(rank + 1) + ' ' + str(value[1]) + ' exactknn\n')
 
 
 
