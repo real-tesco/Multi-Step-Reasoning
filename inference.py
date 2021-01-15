@@ -264,14 +264,14 @@ def exact_knn(args, knn_index, device):
     logger.info("start first large matrix multiplication")
     first_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(first_half.to(device).float(), 0, 1))
     logger.info("saving multiplication")
-    torch.save(first_scores, "first_" + args.save_exact_knn_path)
+    torch.save(first_scores, args.save_exact_knn_path + "_first")
     del first_half
     del first_scores
     torch.cuda.empty_cache()
     logger.info("start second large matrix multiplication")
     second_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(second_half.to(device).float(), 0, 1))
     logger.info("saving multiplication")
-    torch.save(second_scores, "second" + args.save_exact_knn_path)
+    torch.save(second_scores, args.save_exact_knn_path + "_second")
 
 
 
