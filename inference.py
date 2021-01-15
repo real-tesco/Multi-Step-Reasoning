@@ -304,7 +304,7 @@ def exact_knn(args, knn_index, device, k=1000):
         rst_dict[qid].extend([(docid, score) for docid, score in zip(sorted_second_half_did, second_sorted_scores.tolist())])
 
     logger.info("storing result file")
-    with open(args.rst_file, 'w') as writer:
+    with open(args.res, 'w') as writer:
         for q_id, scores in rst_dict.items():
             res = sorted(scores, key=lambda x: x[1], reverse=True)[:k]
             for rank, value in enumerate(res):
