@@ -271,12 +271,17 @@ def exact_knn(args, knn_index, device, k=1000):
     first_scores = torch.matmul(test_queries.float(), torch.transpose(first_half.float(), 0, 1))
 
     first_sorted_scores, scores_sorted_indices = torch.sort(first_scores, dim=1, descending=True)
-    first_sorted_dids = first_half_did[
-        torch.arange(first_half.shape[0]).unsqueeze(-1), scores_sorted_indices][:k]
-    first_sorted_scores = first_sorted_scores[:k]
+
+    sorted_first_half_did = []
+    for i in range(len(first_half_did)):
+        sorted_first_half_did[i] = []
+        for j in scores_sorted_indices:
+            sorted_first_half_did[i].append(first_half_did[i][j])
+        sorted_first_half_did[i] = sorted_first_half_did[i][:k]
+    sorted_first_half_did = sorted_first_half_did[:k]
 
     for qid in test_q_indices:
-        rst_dict[qid] = [(docid, score) for docid, score in zip(first_sorted_dids, first_sorted_scores)]
+        rst_dict[qid] = [(docid, score) for docid, score in zip(sorted_first_half_did, first_sorted_scores.tolist())]
 
     del first_half
     del first_scores
@@ -286,13 +291,18 @@ def exact_knn(args, knn_index, device, k=1000):
     second_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(second_half.to(device).float(), 0, 1))
 
     second_sorted_scores, scores_sorted_indices = torch.sort(second_scores, dim=1, descending=True)
-    second_sorted_dids = second_half_did[
-                            torch.arange(second_half.shape[0]).unsqueeze(-1), scores_sorted_indices][:k]
-    second_sorted_scores = second_sorted_scores[:k]
+
+    sorted_second_half_did = []
+    for i in range(len(second_half_did)):
+        sorted_second_half_did[i] = []
+        for j in scores_sorted_indices:
+            sorted_second_half_did[i].append(second_half_did[i][j])
+        sorted_second_half_did[i] = sorted_second_half_did[i][:k]
+    sorted_second_half_did = sorted_second_half_did[:k]
 
     for qid in test_q_indices:
-        rst_dict[qid] = rst_dict[qid].extend([(docid, score)
-                                              for docid, score in zip(first_sorted_dids, first_sorted_scores)])
+        rst_dict[qid].extend([(docid, score) for docid, score in zip(sorted_second_half_did, second_sorted_scores.tolist())])
+
     logger.info("storing result file")
     with open(args.rst_file, 'w') as writer:
         for q_id, scores in rst_dict.items():
