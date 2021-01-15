@@ -253,7 +253,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 
 
 # TODO: exact knn implementation, batching might not be necessary
-def exact_knn(args, index_args, knn_index, device):
+def exact_knn(args, knn_index, device):
     logger.info("loading all document embeddings from index")
     all_docs, all_docids = knn_index.get_all_docs()
     all_docs.to(device)
@@ -263,6 +263,19 @@ def exact_knn(args, index_args, knn_index, device):
     logger.info("start large matrix multiplication")
     all_scores = torch.matmul(test_queries.to(device), torch.transpose(all_docs, 0, 1))
     logger.info("saving multiplication")
+    torch.save(all_scores, args.save_exact_knn_path)
+
+
+def exact_knn_one(args, index_args, knn_index, device):
+    logger.info("load test set")
+    test_queries = torch.from_numpy(np.load(args.test_embeddings)).to(device)
+    test_q_ids = np.load(args.test_ids).tolist()
+    rst_dict = {}
+    for idx in range(0, args.num_doc_files):
+        doc_chunk = torch.transpose(torch.from_numpy(np.load(args.doc_embed_format.format(idx))), 0, 1).to(device)
+        doc_ids = np.load(args.doc_ids_format.format(idx))
+        exact_scores = torch.matmul(test_queries, doc_chunk).detach()
+
     torch.save(all_scores, args.save_exact_knn_path)
 
 
@@ -313,11 +326,16 @@ def main():
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
     parser.add_argument('-exact_knn', type='bool', default=False)
-    parser.add_argument('-test_embeddings', type=str, default='./data/embeddings/marco_test_query_embeddings_0.npy')
-    parser.add_argument('-test_ids', type=str, default='./data/embeddings/marco_test_query_embeddings_indices_0.npy')
-    parser.add_argument('-doc_emb_format', type=str, default='./data/embeddings/marco_test_query_embeddings_{}.npy')
-    parser.add_argument('-doc_ids_format', type=str, default='./data/embeddings/marco_test_query_embeddings_indices_{}.npy')
+    parser.add_argument('-test_embeddings', type=str,
+                        default='./data/embeddings/embeddings_random_examples/marco_test_query_embeddings_0.npy')
+    parser.add_argument('-test_ids', type=str,
+                        default='./data/embeddings/embeddings_random_examples/marco_test_query_embeddings_indices_0.npy')
+    parser.add_argument('-doc_emb_format', type=str,
+                        default='./data/embeddings/embeddings_random_examplesmarco_doc_embeddings_{}.npy')
+    parser.add_argument('-doc_ids_format', type=str,
+                        default='./data/embeddings/embeddings_random_examplesmarco_doc_embeddings_indices_{}.npy')
     parser.add_argument('-save_exact_knn_path', type=str, default='./results/tensors/exact_mm_test_set.pt')
+    parser.add_argument('-num_doc_files', type=int, default=13)
 
     # re_args = get_reformulator_args(parser)
     index_args = get_knn_args(parser)
@@ -346,7 +364,7 @@ def main():
     knn_index.set_device(device)
 
     if args.exact_knn:
-        exact_knn(args, index_args, knn_index, device)
+        exact_knn(args, knn_index, device)
 
     if args.reformulation_type is not None:
         logger.info('Loading Reformulator...')
