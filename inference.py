@@ -271,11 +271,13 @@ def exact_knn(args, knn_index, device, k=1000):
     first_scores = torch.matmul(test_queries.float(), torch.transpose(first_half.float(), 0, 1))
 
     first_sorted_scores, scores_sorted_indices = torch.sort(first_scores, dim=1, descending=True)
-
+    print("sorted scores indices: ", scores_sorted_indices.shape)
     sorted_first_half_did = []
-    for i in range(len(first_half_did)):
+    for i in range(len(first_scores)):
+        print("first scrs: ", first_scores.shape)
         sorted_first_half_did.append([])
         for j in scores_sorted_indices[i]:
+            print("scores sorted i: ", scores_sorted_indices[i].shape)
             sorted_first_half_did[i].append(first_half_did[i][j])
         sorted_first_half_did[i] = sorted_first_half_did[i][:k]
     sorted_first_half_did = sorted_first_half_did[:k]
