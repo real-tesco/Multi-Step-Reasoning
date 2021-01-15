@@ -259,10 +259,20 @@ def exact_knn(args, knn_index, device):
     logger.info("load test set")
     test_queries = torch.from_numpy(np.load(args.test_embeddings))
     test_q_indices = np.load(args.test_ids).tolist()
-    logger.info("start large matrix multiplication")
-    all_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(all_docs.to(device).float(), 0, 1))
+    first_half = all_docs[:len(all_docs)//2]
+    second_half = all_docs[len(all_docs)//2:]
+    logger.info("start first large matrix multiplication")
+    first_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(first_half.to(device).float(), 0, 1))
     logger.info("saving multiplication")
-    torch.save(all_scores, args.save_exact_knn_path)
+    torch.save(first_scores, "first_" + args.save_exact_knn_path)
+    del first_half
+    del first_scores
+    torch.cuda.empty_cache()
+    logger.info("start second large matrix multiplication")
+    second_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(second_half.to(device).float(), 0, 1))
+    logger.info("saving multiplication")
+    torch.save(second_scores, "second" + args.save_exact_knn_path)
+
 
 
 def exact_knn_one(args, index_args, knn_index, device):
