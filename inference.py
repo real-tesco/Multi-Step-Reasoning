@@ -260,7 +260,7 @@ def exact_knn(args, knn_index, device):
     test_queries = torch.from_numpy(np.load(args.test_embeddings))
     test_q_indices = np.load(args.test_ids).tolist()
     logger.info("start large matrix multiplication")
-    all_scores = torch.matmul(test_queries.to(device), torch.transpose(all_docs.to(device), 0, 1))
+    all_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(all_docs.to(device).float(), 0, 1))
     logger.info("saving multiplication")
     torch.save(all_scores, args.save_exact_knn_path)
 
