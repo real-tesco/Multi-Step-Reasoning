@@ -295,7 +295,7 @@ def exact_knn(args, knn_index, device, k=1000):
     for i in range(len(second_half_did)):
         sorted_second_half_did[i] = []
         for j in scores_sorted_indices[i]:
-            sorted_second_half_did[i].append(second_half_did[scores_sorted_indices[j]])
+            sorted_second_half_did[i].append(second_half_did[scores_sorted_indices[i][j]])
         sorted_second_half_did[i] = sorted_second_half_did[i][:k]
     sorted_second_half_did = sorted_second_half_did[:k]
 
