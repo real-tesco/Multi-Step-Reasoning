@@ -313,8 +313,8 @@ def main():
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
     parser.add_argument('-exact_knn', type='bool', default=False)
-    parser.add_argument('-test_embeddings', type='bool', default='./data/embeddings/marco_test_query_embeddings_0.npy')
-    parser.add_argument('-test_ids', type='bool', default='./data/embeddings/marco_test_query_embeddings_indices_0.npy')
+    parser.add_argument('-test_embeddings', type=str, default='./data/embeddings/marco_test_query_embeddings_0.npy')
+    parser.add_argument('-test_ids', type=str, default='./data/embeddings/marco_test_query_embeddings_indices_0.npy')
     parser.add_argument('-save_exact_knn_path', type=str, default='./results/tensors/exact_mm_test_set.pt')
 
     # re_args = get_reformulator_args(parser)
