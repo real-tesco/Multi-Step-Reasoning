@@ -96,6 +96,15 @@ class KnnIndex:
             did = [self._docid2indexid[did]]
         return self._index.get_items(did)[0]
 
+    def get_all_docs(self):
+        ids = np.asarray(self.get_all_ids())
+        docs = torch.from_numpy(self._index.get_items(ids))
+        doc_ids = [self._indexid2docid[index_id] for index_id in ids]
+        return docs, doc_ids
+
+    def get_all_ids(self):
+        return self._index.get_ids_list()
+
     def set_device(self, device):
         self._model.to(device)
 

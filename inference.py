@@ -1,6 +1,7 @@
 import argparse
 import torch
 import msr
+import hnswlib
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
 from msr.data.datasets.rankingdataset import RankingDataset
@@ -252,8 +253,17 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 
 
 # TODO: exact knn implementation, batching might not be necessary
-def exact_knn(args):
-    pass
+def exact_knn(args, index_args, knn_index, device):
+    logger.info("loading all document embeddings from index")
+    all_docs, all_docids = knn_index.get_all_docs()
+    all_docs.to(device)
+    logger.info("load test set")
+    test_queries = torch.from_numpy(np.load(args.test_embeddings))
+    test_q_indices = np.load(args.test_ids).tolist()
+    logger.info("start large matrix multiplication")
+    all_scores = torch.matmul(test_queries.to(device), torch.transpose(all_docs, 0, 1))
+    logger.info("saving multiplication")
+    torch.save(all_scores, args.save_exact_knn_path)
 
 
 def main():
@@ -302,17 +312,16 @@ def main():
 
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
-    
-
+    parser.add_argument('-exact_knn', type='bool', default=False)
+    parser.add_argument('-test_embeddings', type='bool', default='./data/embeddings/marco_test_query_embeddings_0.npy')
+    parser.add_argument('-test_ids', type='bool', default='./data/embeddings/marco_test_query_embeddings_indices_0.npy')
+    parser.add_argument('-save_exact_knn_path', type=str, default='./results/tensors/exact_mm_test_set.pt')
 
     # re_args = get_reformulator_args(parser)
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
     args = parser.parse_args()
     ranker_args.train = False
-
-    if args.exact_knn:
-        exact_knn(args)
 
     if args.baseline:
         eval_base_line(args)
@@ -333,6 +342,9 @@ def main():
     knn_index.load_index()
     knn_index.set_ef(index_args.efc)
     knn_index.set_device(device)
+
+    if args.exact_knn:
+        exact_knn(args, index_args, knn_index, device)
 
     if args.reformulation_type is not None:
         logger.info('Loading Reformulator...')
