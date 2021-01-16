@@ -334,7 +334,7 @@ def exact_knn_one(args, knn_index, metric, device, k=1000):
     logger.info("convert internal ids to docids...")
     for idx, _ in enumerate(test_queries):
         sorted_internal_ids[idx] = internal_ids[sorted_indices[idx]][:k]
-        sorted_docids.append(knn_index.get_doc_id(sorted_internal_ids[idx]))
+        sorted_docids.append(knn_index.get_doc_id(sorted_internal_ids[idx].item()))
     logger.info("load docids into dict, save, and eval...")
     for qid in test_q_indices:
         rst_dict[qid] = [(docid, score) for docid, score in zip(sorted_docids, sorted_scores.tolist())]
