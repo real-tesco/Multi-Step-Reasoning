@@ -339,7 +339,7 @@ def exact_knn_one(args, knn_index, metric, device, k=1000):
                                                                 sorted_scores[idx].tolist())]
 
     msr.utils.save_trec_inference(args.res, rst_dict)
-    metric.eval_run(args.res)
+    metric.eval_run(args.test_qrels, args.res)
 
 
 def main():
