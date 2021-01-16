@@ -329,9 +329,11 @@ def exact_knn_one(args, knn_index, metric, device, k=1000):
     torch.cuda.empty_cache()
 
     sorted_scores, sorted_indices = torch.sort(first_scores, dim=1, descending=True)
-    sorted_internal_ids = internal_ids[
-        torch.arange(shape).unsqueeze(-1), sorted_indices][:k]
-    sorted_docids = knn_index.get_doc_id(sorted_internal_ids)
+    sorted_internal_ids = torch.empty(sorted_scores.shape)
+    sorted_docids = []
+    for idx, _ in enumerate(test_queries):
+        sorted_internal_ids[idx] = internal_ids[sorted_indices[idx]][:k]
+        sorted_docids.append(knn_index.get_doc_id(sorted_internal_ids[idx]))
 
     for qid in test_q_indices:
         rst_dict[qid] = [(docid, score) for docid, score in zip(sorted_docids, sorted_scores.tolist())]
