@@ -255,7 +255,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 # TODO: exact knn implementation, batching might not be necessary
 def exact_knn(args, knn_index, device, k=1000):
     logger.info("loading all document embeddings from index")
-    all_docs, all_docids = knn_index.get_all_docs()
+    all_docs, all_docids, internal_ids = knn_index.get_all_docs()
     logger.info("load test set")
     rst_dict = {}
     test_queries = torch.from_numpy(np.load(args.test_embeddings)).to(device)
@@ -310,19 +310,29 @@ def exact_knn(args, knn_index, device, k=1000):
                 writer.write(q_id + ' Q0 ' + str(value[0]) + ' ' + str(rank + 1) + ' ' + str(value[1]) + ' exactknn\n')
 
 
-
-def exact_knn_one(args, index_args, knn_index, device):
+def exact_knn_one(args, knn_index, metric, device, k=1000):
+    logger.info("loading all document embeddings from index")
+    all_docs, all_docids, internal_ids = knn_index.get_all_docs()
     logger.info("load test set")
-    test_queries = torch.from_numpy(np.load(args.test_embeddings)).to(device)
-    test_q_ids = np.load(args.test_ids).tolist()
     rst_dict = {}
-    for idx in range(0, args.num_doc_files):
-        doc_chunk = torch.transpose(torch.from_numpy(np.load(args.doc_embed_format.format(idx))), 0, 1).to(device)
-        doc_ids = np.load(args.doc_ids_format.format(idx))
-        exact_scores = torch.matmul(test_queries, doc_chunk).detach()
+    test_queries = torch.from_numpy(np.load(args.test_embeddings)).to(device)
+    test_q_indices = np.load(args.test_ids).tolist()
 
-    torch.save(all_scores, args.save_exact_knn_path)
+    all_docs = all_docs.to(device)
 
+    logger.info("start first large matrix multiplication")
+    first_scores = torch.matmul(test_queries.float(), torch.transpose(all_docs.float(), 0, 1))
+    torch.save(first_scores, "./results/tensors/matrix_multiplication_result.pt")
+
+    sorted_scores, sorted_indices = torch.sort(first_scores, dim=1, descending=True)
+    sorted_internal_ids = internal_ids[
+        torch.arange(all_docs.shape[0]).unsqueeze(-1), sorted_indices][:k]
+    sorted_docids = knn_index.get_doc_id(sorted_internal_ids)
+
+    for qid in test_q_indices:
+        rst_dict[qid] = [(docid, score) for docid, score in zip(sorted_docids, sorted_scores.tolist())]
+    msr.utils.save_trec_inference(args.res, rst_dict)
+    metric.eval_run(args.res)
 
 def main():
     # setting args
@@ -394,6 +404,9 @@ def main():
     # set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    # set metric
+    metric = msr.metrics.Metric()
+
     # Loading models
     #    1. Load Retriever
     logger.info("Loading Retriever...")
@@ -409,7 +422,7 @@ def main():
     knn_index.set_device(device)
 
     if args.exact_knn:
-        exact_knn(args, knn_index, device)
+        exact_knn_one(args, knn_index, metric, device, k=1000)
 
     if args.reformulation_type is not None:
         logger.info('Loading Reformulator...')
@@ -472,9 +485,6 @@ def main():
         max_input=args.max_input
     )
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
-
-    # set metric
-    metric = msr.metrics.Metric()
 
     # starting inference
     logger.info("Starting inference...")

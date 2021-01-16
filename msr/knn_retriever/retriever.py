@@ -100,7 +100,13 @@ class KnnIndex:
         ids = np.asarray(self.get_all_ids())
         docs = torch.from_numpy(np.asarray(self._index.get_items(ids)))
         doc_ids = [self._indexid2docid[index_id] for index_id in ids]
-        return docs, doc_ids
+        return docs, doc_ids, torch.tensor(ids)
+
+    def get_doc_id(self, internal_ids):
+        docids = []
+        for idx in internal_ids:
+            docids.append(self._indexid2docid[idx])
+        return docids
 
     def get_all_ids(self):
         return self._index.get_ids_list()
