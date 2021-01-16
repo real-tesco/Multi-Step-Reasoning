@@ -320,25 +320,27 @@ def exact_knn_one(args, knn_index, metric, device, k=1000):
 
     all_docs = all_docs.to(device)
 
-    logger.info("start first large matrix multiplication")
+    logger.info("start large matrix multiplication...")
     first_scores = torch.matmul(test_queries.float(), torch.transpose(all_docs.float(), 0, 1))
     torch.save(first_scores, "./results/tensors/matrix_multiplication_result.pt")
     shape = all_docs.shape[0]
 
     del all_docs
     torch.cuda.empty_cache()
-
+    logger.info("sorting scores...")
     sorted_scores, sorted_indices = torch.sort(first_scores, dim=1, descending=True)
-    sorted_internal_ids = torch.empty(sorted_scores.shape)
+    sorted_internal_ids = torch.empty((sorted_scores.shape[0], k))
     sorted_docids = []
+    logger.info("convert internal ids to docids...")
     for idx, _ in enumerate(test_queries):
         sorted_internal_ids[idx] = internal_ids[sorted_indices[idx]][:k]
         sorted_docids.append(knn_index.get_doc_id(sorted_internal_ids[idx]))
-
+    logger.info("load docids into dict, save, and eval...")
     for qid in test_q_indices:
         rst_dict[qid] = [(docid, score) for docid, score in zip(sorted_docids, sorted_scores.tolist())]
     msr.utils.save_trec_inference(args.res, rst_dict)
     metric.eval_run(args.res)
+
 
 def main():
     # setting args
