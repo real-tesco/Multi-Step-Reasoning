@@ -323,10 +323,14 @@ def exact_knn_one(args, knn_index, metric, device, k=1000):
     logger.info("start first large matrix multiplication")
     first_scores = torch.matmul(test_queries.float(), torch.transpose(all_docs.float(), 0, 1))
     torch.save(first_scores, "./results/tensors/matrix_multiplication_result.pt")
+    shape = all_docs.shape[0]
+
+    del all_docs
+    torch.cuda.empty_cache()
 
     sorted_scores, sorted_indices = torch.sort(first_scores, dim=1, descending=True)
     sorted_internal_ids = internal_ids[
-        torch.arange(all_docs.shape[0]).unsqueeze(-1), sorted_indices][:k]
+        torch.arange(shape).unsqueeze(-1), sorted_indices][:k]
     sorted_docids = knn_index.get_doc_id(sorted_internal_ids)
 
     for qid in test_q_indices:
