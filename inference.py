@@ -252,65 +252,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
     exit(0)
 
 
-# TODO: exact knn implementation, batching might not be necessary
-def exact_knn(args, knn_index, device, k=1000):
-    logger.info("loading all document embeddings from index")
-    all_docs, all_docids, internal_ids = knn_index.get_all_docs()
-    logger.info("load test set")
-    rst_dict = {}
-    test_queries = torch.from_numpy(np.load(args.test_embeddings)).to(device)
-    test_q_indices = np.load(args.test_ids).tolist()
-
-    first_half = all_docs[:len(all_docs)//2].to(device)
-    first_half_did = all_docids[:len(all_docs)//2]
-
-    second_half = all_docs[len(all_docs)//2:]
-    second_half_did = all_docids[len(all_docs)//2:]
-
-    logger.info("start first large matrix multiplication")
-    first_scores = torch.matmul(test_queries.float(), torch.transpose(first_half.float(), 0, 1))
-
-    first_sorted_scores, scores_sorted_indices = torch.sort(first_scores, dim=1, descending=True)
-    sorted_first_half_did = []
-    for i in range(len(first_scores)):
-        sorted_first_half_did.append([])
-        for j in scores_sorted_indices[i]:
-            sorted_first_half_did[i].append(first_half_did[scores_sorted_indices[i][j]])
-        sorted_first_half_did[i] = sorted_first_half_did[i][:k]
-    sorted_first_half_did = sorted_first_half_did[:k]
-
-    for qid in test_q_indices:
-        rst_dict[qid] = [(docid, score) for docid, score in zip(sorted_first_half_did, first_sorted_scores.tolist())]
-
-    del first_half
-    del first_scores
-    torch.cuda.empty_cache()
-
-    logger.info("start second large matrix multiplication")
-    second_scores = torch.matmul(test_queries.to(device).float(), torch.transpose(second_half.to(device).float(), 0, 1))
-
-    second_sorted_scores, scores_sorted_indices = torch.sort(second_scores, dim=1, descending=True)
-
-    sorted_second_half_did = []
-    for i in range(len(second_half_did)):
-        sorted_second_half_did[i] = []
-        for j in scores_sorted_indices[i]:
-            sorted_second_half_did[i].append(second_half_did[scores_sorted_indices[i][j]])
-        sorted_second_half_did[i] = sorted_second_half_did[i][:k]
-    sorted_second_half_did = sorted_second_half_did[:k]
-
-    for qid in test_q_indices:
-        rst_dict[qid].extend([(docid, score) for docid, score in zip(sorted_second_half_did, second_sorted_scores.tolist())])
-
-    logger.info("storing result file")
-    with open(args.res, 'w') as writer:
-        for q_id, scores in rst_dict.items():
-            res = sorted(scores, key=lambda x: x[1], reverse=True)[:k]
-            for rank, value in enumerate(res):
-                writer.write(q_id + ' Q0 ' + str(value[0]) + ' ' + str(rank + 1) + ' ' + str(value[1]) + ' exactknn\n')
-
-
-def exact_knn_one(args, knn_index, metric, device, k=1000):
+def exact_knn(args, knn_index, metric, device, k=1000):
     logger.info("loading all document embeddings from index")
     all_docs, all_docids, internal_ids = knn_index.get_all_docs()
     logger.info("load test set")
@@ -330,16 +272,16 @@ def exact_knn_one(args, knn_index, metric, device, k=1000):
     logger.info("sorting scores...")
     sorted_scores, sorted_indices = torch.sort(first_scores, dim=1, descending=True)
     sorted_internal_ids = torch.empty((sorted_scores.shape[0], k))
-    sorted_docids = []
-    logger.info("convert internal ids to docids and save...")
+
+    logger.info("convert internal ids to docids...")
     for idx, qid in enumerate(test_q_indices):
         sorted_internal_ids[idx] = internal_ids[sorted_indices[idx]][:k]
-        # sorted_docids.append(knn_index.get_doc_id(sorted_internal_ids[idx]))
         rst_dict[qid] = [(docid, score) for docid, score in zip(knn_index.get_doc_id(sorted_internal_ids[idx]),
                                                                 sorted_scores[idx].tolist())]
-
+    logger.info("save trec file and evaluate")
     msr.utils.save_trec_inference(args.res, rst_dict)
     metric.eval_run(args.test_qrels, args.res)
+    exit(0)
 
 
 def main():
@@ -430,7 +372,7 @@ def main():
     knn_index.set_device(device)
 
     if args.exact_knn:
-        exact_knn_one(args, knn_index, metric, device, k=1000)
+        exact_knn(args, knn_index, metric, device, k=1000)
 
     if args.reformulation_type is not None:
         logger.info('Loading Reformulator...')
