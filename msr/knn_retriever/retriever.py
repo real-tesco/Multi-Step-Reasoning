@@ -105,7 +105,7 @@ class KnnIndex:
     def get_doc_id(self, internal_ids):
         docids = []
         for idx in internal_ids:
-            docids.append(self._indexid2docid[idx])
+            docids.append(self._indexid2docid[idx.item()])
         return docids
 
     def get_all_ids(self):
