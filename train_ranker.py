@@ -63,7 +63,7 @@ def init_from_checkpoint(args):
                                  weight_decay=args.weight_decay)
     else:
         raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
-    optimizer.load_state_dict(checkpoint['state_dict']['optimizer'])
+    # optimizer.load_state_dict(checkpoint['state_dict']['optimizer'])
     logger.info('Model loaded...')
 
     return ranker, optimizer
