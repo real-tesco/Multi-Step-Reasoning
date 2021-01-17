@@ -234,7 +234,7 @@ def main(args):
         test_query_embedding_list = [args.test_query_embedding_file]
         test_query_ids_list = [args.test_query_ids_file]
         test_loader = make_dataloader(doc_embedding_list, doc_ids_list, test_query_embedding_list,
-                                      test_query_ids_list, args., mode='test')
+                                      test_query_ids_list, args.test_data, mode='test')
 
         dev_dict, test_dict = eval_ranker(args, ranker_model, dev_loader, device, test_loader)
 
