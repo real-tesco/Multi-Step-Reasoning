@@ -49,7 +49,7 @@ class RankingDataset(Dataset):
 
         self._dataset = dataset
 
-        if self._dataset.split('.')[-1] == 'tsv':
+        if self._dataset.split('.')[-1] == 'tsv' or self._dataset.split('.')[-1] == 'trec':
             if isinstance(self._dataset, str):
                 with open(self._dataset, 'r') as f:
                     self._examples = []
@@ -88,6 +88,10 @@ class RankingDataset(Dataset):
             elif self._model == 'reformulator':
                 qid = example[0]
                 return {'query_id': qid, 'query': self._queries[qid]}
+        elif self._mode == 'test':
+            query_id = example[0]
+            did = example[2]
+            return {'query_id': query_id, 'doc_id': did, 'query': self._queries[query_id], 'doc': self._docs[did]}
 
     def collate(self, batch):
         if self._mode == 'train':
@@ -115,6 +119,12 @@ class RankingDataset(Dataset):
                 query_id = [item['query_id'] for item in batch]
                 queries = torch.stack([item['query'] for item in batch])
                 return {'query_id': query_id, 'query': queries}
+        elif self._mode == 'test':
+            query_id = [item['query_id'] for item in batch]
+            queries = torch.stack([item['query'] for item in batch])
+            doc_id = [item['doc_id'] for item in batch]
+            doc = torch.stack([item['doc'] for item in batch])
+            return {'query_id': query_id, 'query': queries, 'doc_id': doc_id, 'doc': doc}
 
     def __len__(self):
         return self._count

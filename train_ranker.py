@@ -146,30 +146,40 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
         _ = metric.eval_run(args.qrels, args.res + '.best')
 
 
-def eval_ranker(args, model,  dev_loader, device):
+def process_batch(model, batch, rst_dict, device):
+    query_id, doc_id, label, retrieval_score = batch['query_id'], batch['doc_id'], batch['label'], batch['retrieval_score']
+    with torch.no_grad():
+        batch_score = model.score_documents(batch['query'].to(device),
+                                            batch['doc'].to(device))
+
+        batch_score = batch_score.detach().cpu().tolist()
+        for (q_id, d_id, b_s, l) in zip(query_id, doc_id, batch_score, label):
+            if q_id in rst_dict:
+                rst_dict[q_id].append((b_s, d_id, l))
+            else:
+                rst_dict[q_id] = [(b_s, d_id, l)]
+
+
+def eval_ranker(args, model,  dev_loader, device, test_loader=None):
     logger.info("Evaluating trec metrics for dev set...")
-    rst_dict = {}
+    rst_dict_dev = {}
+    rst_dict_test = None
     model.train = False
     for step, dev_batch in enumerate(dev_loader):
-        # TODO: msmarco dataset refactoring
-        query_id, doc_id, label, retrieval_score = dev_batch['query_id'], dev_batch['doc_id'], dev_batch['label'], \
-                                                   dev_batch['retrieval_score']
-        with torch.no_grad():
-
-            batch_score = model.score_documents(dev_batch['query'].to(device),
-                                                dev_batch['doc'].to(device))
-
-            # TODO: write to file
-            batch_score = batch_score.detach().cpu().tolist()
-            for (q_id, d_id, b_s, l) in zip(query_id, doc_id, batch_score, label):
-                if q_id in rst_dict:
-                    rst_dict[q_id].append((b_s, d_id, l))
-                else:
-                    rst_dict[q_id] = [(b_s, d_id, l)]
+        process_batch(model, dev_batch, rst_dict_dev, device)
         if (step + 1) % args.print_every == 0:
             print(f"-- eval: {step + 1}/{len(dev_loader)} --")
+
+    if test_loader:
+        rst_dict_test = {}
+        for step, test_batch in enumerate(dev_loader):
+            process_batch(model, test_batch, rst_dict_test, device)
+
+            if (step + 1) % args.print_every == 0:
+                print(f"-- eval: {step + 1}/{len(test_loader)} --")
+
     model.train = True
-    return rst_dict
+    return rst_dict_dev, rst_dict_test
 
 
 def main(args):
@@ -209,6 +219,20 @@ def main(args):
     if args.train:
         logger.info("Starting training...")
         train(args, loss, ranker_model, metric, optimizer, device, train_loader, dev_loader)
+    elif args.eval:
+        doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
+        doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
+        test_query_embedding_list = [args.test_query_embedding_file]
+        test_query_ids_list = [args.test_query_ids_file]
+        test_loader = make_dataloader(doc_embedding_list, doc_ids_list, test_query_embedding_list,
+                                      test_query_ids_list, args.dev_file, mode='test')
+        dev_dict, test_dict = eval_ranker(args, ranker_model, dev_loader, device, test_loader)
+        utils.save_trec(args.res + '.dev', dev_dict)
+        utils.save_trec(args.res + '.test', test_dict)
+        logger.info("Results for dev: ")
+        _ = metric.eval_run(args.qrels, args.res + '.dev')
+        logger.info("Results for test: ")
+        _ = metric.eval_run(args.qrels_test, args.res + '.test')
 
 
 if __name__ == '__main__':
@@ -245,13 +269,12 @@ if __name__ == '__main__':
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-eval_every', type=int, default=10000)
     # run options
-    parser.add_argument('-test', type='bool', default=True, help='test the index for self-recall and query recall')
-    parser.add_argument('-train', type='bool', default=True, help='train document transformer')
+    parser.add_argument('-train', type='bool', default=True, help='train document ranker')
+    parser.add_argument('-eval', type='bool', default=False, help='eval ranker ')
 
     parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv',
                         help='dev qrels file')
-    parser.add_argument('-out_file', type=str, default='./results/ranking_results.tsv',
-                        help='result file for the evaluation of the index')
+    parser.add_argument('-qrels_test', type=str, default='./data/msmarco-test-qrels.tsvs')
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
     parser.add_argument('-pretrained', type=str, default='ranker.ckpt', help='checkpoint file to load checkpoint')
