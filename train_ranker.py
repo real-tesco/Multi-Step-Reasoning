@@ -156,9 +156,9 @@ def process_batch(model, batch, rst_dict, device):
         batch_score = batch_score.detach().cpu().tolist()
         for (q_id, d_id, b_s) in zip(query_id, doc_id, batch_score):
             if q_id not in rst_dict:
-                rst_dict[q_id] = []
-            for d, s in (zip(d_id, b_s)):
-                rst_dict[q_id].append((s, d))
+                rst_dict[q_id] = [(b_s, d_id)]
+            # for d, s in (zip(d_id, b_s)):
+            #    rst_dict[q_id].append((s, d))
 
 #            if q_id in rst_dict:
 #                rst_dict[q_id].append((b_s, d_id, l))
@@ -237,9 +237,6 @@ def main(args):
                                       test_query_ids_list, args.test_data, mode='test')
 
         dev_dict, test_dict = eval_ranker(args, ranker_model, dev_loader, device, test_loader)
-
-        logger.info(dev_dict.items())
-        logger.info(test_dict.items())
 
         utils.save_trec(args.res + '.dev', dev_dict)
         utils.save_trec(args.res + '.test', test_dict)
