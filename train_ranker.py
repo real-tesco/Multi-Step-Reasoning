@@ -155,10 +155,15 @@ def process_batch(model, batch, rst_dict, device):
 
         batch_score = batch_score.detach().cpu().tolist()
         for (q_id, d_id, b_s, l) in zip(query_id, doc_id, batch_score, label):
-            if q_id in rst_dict:
-                rst_dict[q_id].append((b_s, d_id, l))
-            else:
-                rst_dict[q_id] = [(b_s, d_id, l)]
+            if q_id not in rst_dict:
+                rst_dict[q_id] = []
+            for d, s in (zip(d_id, b_s)):
+                rst_dict[q_id].append((s, d))
+
+#            if q_id in rst_dict:
+#                rst_dict[q_id].append((b_s, d_id, l))
+#            else:
+#                rst_dict[q_id] = [(b_s, d_id, l)]
 
 
 def eval_ranker(args, model,  dev_loader, device, test_loader=None):
@@ -172,8 +177,9 @@ def eval_ranker(args, model,  dev_loader, device, test_loader=None):
             print(f"-- eval: {step + 1}/{len(dev_loader)} --")
 
     if test_loader:
+        logger.info("Evaluating trec metrics for test set")
         rst_dict_test = {}
-        for step, test_batch in enumerate(dev_loader):
+        for step, test_batch in enumerate(test_loader):
             process_batch(model, test_batch, rst_dict_test, device)
 
             if (step + 1) % args.print_every == 0:
