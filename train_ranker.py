@@ -50,7 +50,8 @@ def init_from_checkpoint(args):
     logger.info('Loading model from saved checkpoint {}'.format(args.checkpoint))
     checkpoint = torch.load(args.checkpoint)
     ranker = NeuralRanker(args)
-    ranker.load_state_dict(checkpoint['state_dict']['model'])
+    # ranker.load_state_dict(checkpoint['state_dict']['model'])
+    ranker.load_state_dict(checkpoint)
 
     parameters = ranker.parameters()
     if args.optimizer == 'sgd':
