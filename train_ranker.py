@@ -154,7 +154,7 @@ def process_batch(model, batch, rst_dict, device):
                                             batch['doc'].to(device))
 
         batch_score = batch_score.detach().cpu().tolist()
-        for (q_id, d_id, b_s, l) in zip(query_id, doc_id, batch_score):
+        for (q_id, d_id, b_s) in zip(query_id, doc_id, batch_score):
             if q_id not in rst_dict:
                 rst_dict[q_id] = []
             for d, s in (zip(d_id, b_s)):
