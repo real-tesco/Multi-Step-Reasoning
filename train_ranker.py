@@ -47,8 +47,8 @@ def save(args, model, optimizer, filename):
 
 
 def init_from_checkpoint(args):
-    logger.info('Loading model from saved checkpoint {}'.format(args.pretrained))
-    checkpoint = torch.load(args.pretrained)
+    logger.info('Loading model from saved checkpoint {}'.format(args.checkpoint))
+    checkpoint = torch.load(args.checkpoint)
     ranker = NeuralRanker(args)
     ranker.load_state_dict(checkpoint['state_dict']['model'])
 
@@ -141,8 +141,8 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                         #best_mrr = mrr if mrr > best_mrr else best_mrr
                         #best_ndcg = ndcg if ndcg > best_ndcg else best_ndcg
                         logger.info('New best mes = {:2.4f}'.format(best_mes))
-                        logger.info('checkpointing  model at {}.ckpt'.format(args.model_name))
-                        torch.save(ranking_model.state_dict(), args.model_name + ".ckpt")
+                        logger.info('checkpointing  model at {}.ckpt'.format(args.checkpoint))
+                        torch.save(ranking_model.state_dict(), args.checkpoint + ".ckpt")
         _ = metric.eval_run(args.qrels, args.res + '.best')
 
 
@@ -211,12 +211,12 @@ def main(args):
         ranker_model, optimizer = init_from_scratch(args)
 
     ranker_model.to(device)
-    loss = torch.nn.MarginRankingLoss(margin=1.0)
-    loss = loss.to(device)
 
     metric = msr.metrics.Metric()
 
     if args.train:
+        loss = torch.nn.MarginRankingLoss(margin=1.0)
+        loss = loss.to(device)
         logger.info("Starting training...")
         train(args, loss, ranker_model, metric, optimizer, device, train_loader, dev_loader)
     elif args.eval:
@@ -226,7 +226,9 @@ def main(args):
         test_query_ids_list = [args.test_query_ids_file]
         test_loader = make_dataloader(doc_embedding_list, doc_ids_list, test_query_embedding_list,
                                       test_query_ids_list, args.dev_file, mode='test')
+
         dev_dict, test_dict = eval_ranker(args, ranker_model, dev_loader, device, test_loader)
+
         utils.save_trec(args.res + '.dev', dev_dict)
         utils.save_trec(args.res + '.test', test_dict)
         logger.info("Results for dev: ")
@@ -266,6 +268,13 @@ if __name__ == '__main__':
                         default='./data/embeddings/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-dev_query_ids_file', type=str,
                         default='./data/embeddings/marco_dev_query_embeddings_indices_0.npy')
+
+    parser.add_argument('-test_file', type=str, default='./result/')
+    parser.add_argument('-test_query_embedding_file', type=str,
+                        default='./data/embeddings/marco_dev_query_embeddings_0.npy')
+    parser.add_argument('-test_query_ids_file', type=str,
+                        default='./data/embeddings/marco_dev_query_embeddings_indices_0.npy')
+
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-eval_every', type=int, default=10000)
     # run options
@@ -278,8 +287,7 @@ if __name__ == '__main__':
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
     parser.add_argument('-pretrained', type=str, default='ranker.ckpt', help='checkpoint file to load checkpoint')
-    parser.add_argument('-checkpoint', type='bool', default=False, help='Whether to use a checkpoint or not')
-    parser.add_argument('-model_name', type=str, default='ranker', help='Model name to load from/save as checkpoint')
+    parser.add_argument('-checkpoint', type=str, default=None, help='Checkpoint name of ranker model')
     parser.add_argument('-metric', type=str, default='ndcg_cut_10', help='metric to evaluate ranker with')
     parser.add_argument('-res', type=str, default='./results/ranking_result.trec', help='metric to evaluate ranker with')
 

@@ -49,7 +49,7 @@ class RankingDataset(Dataset):
 
         self._dataset = dataset
 
-        if self._dataset.split('.')[-1] == 'tsv' or self._dataset.split('.')[-1] == 'trec':
+        if self._dataset.split('.')[-1] == 'tsv' or self._dataset.split('.')[-2] == 'trec':
             if isinstance(self._dataset, str):
                 with open(self._dataset, 'r') as f:
                     self._examples = []
