@@ -234,7 +234,7 @@ def main(args):
         test_query_embedding_list = [args.test_query_embedding_file]
         test_query_ids_list = [args.test_query_ids_file]
         test_loader = make_dataloader(doc_embedding_list, doc_ids_list, test_query_embedding_list,
-                                      test_query_ids_list, args.dev_file, mode='test')
+                                      test_query_ids_list, args., mode='test')
 
         dev_dict, test_dict = eval_ranker(args, ranker_model, dev_loader, device, test_loader)
 
@@ -287,6 +287,7 @@ if __name__ == '__main__':
                         default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-test_query_ids_file', type=str,
                         default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_indices_0.npy')
+    parser.add_argument('-test_data', type=str, default='./results/inference_bm25_baseline_1000.trec.test')
 
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-eval_every', type=int, default=10000)
