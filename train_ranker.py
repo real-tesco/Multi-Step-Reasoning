@@ -148,13 +148,13 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
 
 
 def process_batch(model, batch, rst_dict, device):
-    query_id, doc_id, label, retrieval_score = batch['query_id'], batch['doc_id'], batch['label'], batch['retrieval_score']
+    query_id, doc_id = batch['query_id'], batch['doc_id']   #, batch['label'], batch['retrieval_score']
     with torch.no_grad():
         batch_score = model.score_documents(batch['query'].to(device),
                                             batch['doc'].to(device))
 
         batch_score = batch_score.detach().cpu().tolist()
-        for (q_id, d_id, b_s, l) in zip(query_id, doc_id, batch_score, label):
+        for (q_id, d_id, b_s, l) in zip(query_id, doc_id, batch_score):
             if q_id not in rst_dict:
                 rst_dict[q_id] = []
             for d, s in (zip(d_id, b_s)):
