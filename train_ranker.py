@@ -185,14 +185,15 @@ def eval_ranker(args, model,  dev_loader, device, test_loader=None):
 def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    logger.info("Loading train data...")
-    doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
-    doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
-    query_embedding_list = (args.query_embedding_format.format(i) for i in range(0, args.num_query_files))
-    query_ids_list = (args.query_ids_format.format(i) for i in range(0, args.num_query_files))
+    if args.train:
+        logger.info("Loading train data...")
+        doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
+        doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
+        query_embedding_list = (args.query_embedding_format.format(i) for i in range(0, args.num_query_files))
+        query_ids_list = (args.query_ids_format.format(i) for i in range(0, args.num_query_files))
 
-    train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.triples,
-                                   mode='train', model='ranker')
+        train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.triples,
+                                       mode='train', model='ranker')
 
     logger.info("Loading dev data...")
     doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
@@ -220,6 +221,7 @@ def main(args):
         logger.info("Starting training...")
         train(args, loss, ranker_model, metric, optimizer, device, train_loader, dev_loader)
     elif args.eval:
+        logger.info("loading test data")
         doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
         doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
         test_query_embedding_list = [args.test_query_embedding_file]
