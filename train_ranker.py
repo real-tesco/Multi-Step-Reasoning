@@ -204,13 +204,13 @@ def main(args):
         train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.triples,
                                        mode='train', model='ranker')
 
-    logger.info("Loading dev data...")
-    doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
-    doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
-    dev_query_embedding_list = [args.dev_query_embedding_file]
-    dev_query_ids_list = [args.dev_query_ids_file]
-    dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, dev_query_embedding_list,
-                                 dev_query_ids_list, args.dev_file, mode='dev')
+        logger.info("Loading dev data...")
+        doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
+        doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
+        dev_query_embedding_list = [args.dev_query_embedding_file]
+        dev_query_ids_list = [args.dev_query_ids_file]
+        dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, dev_query_embedding_list,
+                                     dev_query_ids_list, args.dev_file, mode='dev')
 
     # initialize Model
     if args.checkpoint:
@@ -230,6 +230,14 @@ def main(args):
         logger.info("Starting training...")
         train(args, loss, ranker_model, metric, optimizer, device, train_loader, dev_loader)
     elif args.eval:
+        logger.info("Loading dev data...")
+        doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
+        doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
+        dev_query_embedding_list = [args.dev_query_embedding_file]
+        dev_query_ids_list = [args.dev_query_ids_file]
+        dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, dev_query_embedding_list,
+                                     dev_query_ids_list, args.dev_data, mode='test')
+
         logger.info("loading test data")
         doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
         doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
@@ -283,6 +291,7 @@ if __name__ == '__main__':
                         default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-dev_query_ids_file', type=str,
                         default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_indices_0.npy')
+    parser.add_argument('-dev_data', type=str, default='./data/results/inference_bm25_baseline_1000.trec.dev')
 
     parser.add_argument('-test_file', type=str, default='./result/')
     parser.add_argument('-test_query_embedding_file', type=str,
