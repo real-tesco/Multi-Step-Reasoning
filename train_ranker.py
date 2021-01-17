@@ -250,16 +250,18 @@ if __name__ == '__main__':
     parser.add_argument('-cuda', type=bool, default=torch.cuda.is_available(), help='use cuda and gpu')
     parser.add_argument('-batch_size', type=int, default=64, help='batch size to use')
     parser.add_argument('-data_workers', type=int, default=5, help='number of data workers to use')
-    parser.add_argument('-doc_embedding_format', type=str, default='./data/embeddings/marco_doc_embeddings_{}.npy',
+    parser.add_argument('-doc_embedding_format', type=str,
+                        default='./data/embeddings/embeddings_random_examples/marco_doc_embeddings_{}.npy',
                         help='folder with chunks of document embeddings, with format brackets for idx')
-    parser.add_argument('-doc_ids_format', type=str, default='./data/embeddings/marco_doc_embeddings_indices_{}.npy',
+    parser.add_argument('-doc_ids_format', type=str,
+                        default='./data/embeddings/embeddings_random_examples/marco_doc_embeddings_indices_{}.npy',
                         help='folder with chunks of document ids, with format brackets for idx')
     parser.add_argument('-num_doc_files', type=int, default=13, help='number of chunks of training triples')
     parser.add_argument('-query_embedding_format', type=str,
-                        default='./data/embeddings/marco_train_query_embeddings_{}.npy',
+                        default='./data/embeddings/embeddings_random_examples/marco_train_query_embeddings_{}.npy',
                         help='folder with chunks of document embeddings, with format brackets for idx')
     parser.add_argument('-query_ids_format', type=str,
-                        default='./data/embeddings/marco_train_query_embeddings_indices_{}.npy',
+                        default='./data/embeddings/embeddings_random_examples/marco_train_query_embeddings_indices_{}.npy',
                         help='folder with chunks of document ids, with format brackets for idx')
     parser.add_argument('-num_query_files', type=int, default=1, help='number of chunks of training triples')
     parser.add_argument('-triples', type=str, default='./data/trids_marco-doc-10.tsv',
@@ -267,15 +269,15 @@ if __name__ == '__main__':
 
     parser.add_argument('-dev_file', type=str, default='./data/msmarco-doc.dev.jsonl')
     parser.add_argument('-dev_query_embedding_file', type=str,
-                        default='./data/embeddings/marco_dev_query_embeddings_0.npy')
+                        default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-dev_query_ids_file', type=str,
-                        default='./data/embeddings/marco_dev_query_embeddings_indices_0.npy')
+                        default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_indices_0.npy')
 
     parser.add_argument('-test_file', type=str, default='./result/')
     parser.add_argument('-test_query_embedding_file', type=str,
-                        default='./data/embeddings/marco_dev_query_embeddings_0.npy')
+                        default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-test_query_ids_file', type=str,
-                        default='./data/embeddings/marco_dev_query_embeddings_indices_0.npy')
+                        default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_indices_0.npy')
 
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-eval_every', type=int, default=10000)
