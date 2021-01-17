@@ -240,6 +240,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # training options
+    parser.register('type', 'bool', str2bool)
+
     parser.add_argument('-epochs', type=int, default=30,
                         help='number of epochs to train the retriever')
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
