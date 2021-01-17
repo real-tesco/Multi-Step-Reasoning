@@ -238,6 +238,9 @@ def main(args):
 
         dev_dict, test_dict = eval_ranker(args, ranker_model, dev_loader, device, test_loader)
 
+        logger.info(dev_dict.items())
+        logger.info(test_dict.items())
+
         utils.save_trec(args.res + '.dev', dev_dict)
         utils.save_trec(args.res + '.test', test_dict)
         logger.info("Results for dev: ")
