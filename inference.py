@@ -64,7 +64,9 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
         document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
             new_queries.cpu(), k=k)
 
-        batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
+        # use the new retrieved documents in retrieved order
+        if args.use_ranker_in_next_round:
+            batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
                                                      device)
     batch_score = batch_score.detach().cpu().tolist()
 
