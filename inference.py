@@ -69,8 +69,9 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
 
         # use the new retrieved documents in retrieved order
         if args.use_ranker_in_next_round:
-            batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
-                                                     device)
+            batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
+        else:
+            batch_score = torch.tensor(distances)
     batch_score = batch_score.detach().cpu().tolist()
 
     for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
