@@ -28,8 +28,15 @@ def save_trec_inference(rst_file, rst_dict):
     with open(rst_file, 'w') as writer:
         for q_id, scores in rst_dict.items():
             res = sorted(scores, key=lambda x: x[1], reverse=True)
+            ranked_docids = []
+            cnt = 0
             for rank, value in enumerate(res):
-                writer.write(q_id+' Q0 '+str(value[0])+' '+str(rank+1)+' '+str(value[1])+' twotower_full\n')
+                if value[0] not in ranked_docids:
+                    writer.write(q_id+' Q0 '+str(value[0])+' '+str(rank+1)+' '+str(value[1])+' twotower_full\n')
+                    ranked_docids.append(value[0])
+                else:
+                    cnt += 1
+    print("Number deleted duplicate doids: ", cnt)
     return
 
 

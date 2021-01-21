@@ -206,6 +206,36 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 
             if (idx + 1) % args.print_every == 0:
                 logger.info(f"{idx + 1} / {len(qrels)}")
+
+    def process_run_ideal_with_sampling(args, qrels, rst_dict):
+        for idx, qid in enumerate(qrels):
+
+            correct_docids = random.choices(qrels[qid], k=args.number_ideal_samples)
+            query = torch.empty((args.number_ideal_samples, args.dim_embedding))
+            for idy, did in enumerate(correct_docids):
+
+                query[idy] = torch.tensor(knn_index.get_document(did))
+
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(query, k=100)
+
+            if args.full_ranking:
+                batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
+                                                             device)
+                # normalize score over all the queries
+                for idy in range(0, batch_score.shape[0]):
+                    batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
+                                       (batch_score[idy].max() - batch_score[idy].min())
+                batch_score = batch_score.flatten()
+                document_labels = document_labels.flatten()
+                batch_score = batch_score.detach().cpu().tolist()
+            else:
+                batch_score = distances
+
+            for (d_id, b_s) in zip(document_labels, batch_score):
+                rst_dict[qid] = [(docid, score) for docid, score in zip(d_id, b_s)]
+
+            if (idx + 1) % args.print_every == 0:
+                logger.info(f"{idx + 1} / {len(qrels)}")
     rst_dict_test = {}
     metric = msr.metrics.Metric()
     avg_stats = {}
@@ -241,7 +271,10 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 
     logger.info("processing test")
     for i in range(0, args.number_ideal_runs):
-        process_run_ideal(test_qrels, rst_dict_test)
+        if args.number_ideal_samples > 0:
+            process_run_ideal_with_sampling(args, test_qrels, rst_dict_test)
+        else:
+            process_run_ideal(test_qrels, rst_dict_test)
         msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
         logger.info(f"Ideal eval for Test run #{i+1}:")
         metrics = metric.eval_run(args.test_qrels, args.res + ".test")
@@ -316,6 +349,7 @@ def main():
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
     parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
     parser.add_argument('-number_ideal_runs', type=int, default=10)
+    parser.add_argument('-number_ideal_samples', type=int, default=0)
     parser.add_argument('-bm25_index', type=str, default='./data/indexes/anserini/index-msmarco-doc-20201117-f87c94')
 
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
