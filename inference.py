@@ -229,7 +229,8 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                     batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
                                        (batch_score[idy].max() - batch_score[idy].min())
                 batch_score = batch_score.flatten()
-                document_labels = document_labels.flatten()
+                # document_labels = document_labels.flatten()
+                document_labels = [label for dids in document_labels for label in dids]
                 batch_score = batch_score.detach().cpu().tolist()
             else:
                 batch_score = distances
@@ -266,11 +267,11 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 
     logger.info(f"len of dev qrels: {len(dev_qrels)}")
     logger.info(f"len of test qrels: {len(test_qrels)}")
-
-    logger.info("processing dev")
-    process_run_ideal(dev_qrels, rst_dict_dev)
-    msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
-    _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
+    if not args.skip_dev:
+        logger.info("processing dev")
+        process_run_ideal(dev_qrels, rst_dict_dev)
+        msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
+        _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
 
     logger.info("processing test")
     for i in range(0, args.number_ideal_runs):
@@ -360,6 +361,7 @@ def main():
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
     parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
     parser.add_argument('-dev_qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
+    parser.add_argument('-skip_dev', type='bool', default=False)
 
     parser.add_argument('-test_data', action=msr.utils.DictOrStr, default='./data/msmarco-test-queries-inference.jsonl')
     parser.add_argument('-test_qrels', type=str, default='./data/msmarco-test-qrels.tsv')
