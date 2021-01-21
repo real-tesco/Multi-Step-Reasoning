@@ -142,6 +142,7 @@ def eval_base_line(args):
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
     bm25searcher = BM25Retriever(args.bm25_index)
     if args.use_rm3:
+        bm25searcher.set_bm25(4.46, 0.82)
         bm25searcher.set_rm3(10, 10, 0.5)
 
     logger.info("Processing dev data...")
