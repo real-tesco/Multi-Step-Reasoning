@@ -141,6 +141,8 @@ def eval_base_line(args):
     )
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
     bm25searcher = BM25Retriever(args.bm25_index)
+    if args.use_rm3:
+        bm25searcher.set_rm3(10, 10, 0.5)
 
     logger.info("Processing dev data...")
     for idx, dev_batch in enumerate(dev_loader):
@@ -351,6 +353,7 @@ def main():
     parser.add_argument('-number_ideal_runs', type=int, default=10)
     parser.add_argument('-number_ideal_samples', type=int, default=0)
     parser.add_argument('-bm25_index', type=str, default='./data/indexes/anserini/index-msmarco-doc-20201117-f87c94')
+    parser.add_argument('-use_rm3', type='bool', default=False)
 
     parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
     parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
