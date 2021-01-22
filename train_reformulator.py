@@ -142,7 +142,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 sorted_docs = document_embeddings[
                     torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
             else:
-                sorted_docs = document_embeddings
+                sorted_docs = document_embeddings.to(device)
                 scores_sorted = torch.tensor(distances)
 
             # load relevant documents for current queries
