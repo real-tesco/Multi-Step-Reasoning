@@ -414,6 +414,8 @@ def main():
     parser.add_argument('-print_embeddings', type='bool', default=False)
     parser.add_argument('-vector_file_format', type=str,
                         default='./data/embeddings/embeddings_with_random_examples/qid_{}_judged_docs.tsv')
+    parser.add_argument('-vector_meta_format', type=str,
+                        default='./data/embeddings/embeddings_with_random_examples/qid_{}_meta.tsv')
 
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
