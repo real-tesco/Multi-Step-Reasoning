@@ -358,10 +358,10 @@ def print_embeddings(args, knn_index):
             break
         with open(args.vector_file_format.format(qid), "w") as out_vector, open(args.vector_meta_format.format(qid), "w") as out_meta:
             out_meta.write('doc id\tlabel\n')
-            out_meta.write(qid + '\t' + 'QUERY')
-            out_vector.write('\t'.join([str(x) for x in queries[qid]]))
+            out_meta.write(qid + '\t' + 'QUERY\n')
+            out_vector.write('\t'.join([str(x) for x in queries[qid]]) + '\n')
             for did, label in qrels[qid]:
-                out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]))
+                out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]) + '\n')
                 out_meta.write(did + '\t' + str(label) + '\n')
     logger.info("finished printing vectors to files.")
     sys.exit(0)
