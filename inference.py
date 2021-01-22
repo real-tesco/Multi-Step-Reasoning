@@ -346,7 +346,7 @@ def print_embeddings(args, knn_index):
                 qrels[qid] = [(did, label)]
 
     queries = {}
-    with open(args.test_embeddings, "r") as f_emb, open(args.test_ids, "r") as f_ind:
+    with open(args.test_embeddings, "rb") as f_emb, open(args.test_ids, "rb") as f_ind:
         qids = np.load(f_ind)
         qs = np.load(f_emb)
         for idy, qid in qids:
