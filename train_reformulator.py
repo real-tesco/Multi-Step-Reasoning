@@ -134,14 +134,16 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
 
             query_embeddings = query_embeddings.to(device)
 
-            batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
-            #batch_score = batch_score.detach().cpu().tolist()
-
-            # sort doc embeddings according score and reformulate
-            scores_sorted, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
-            #scores_sorted, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
-            sorted_docs = document_embeddings[
-                torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+            if not args.reformulate_before_ranking:
+                batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
+                # sort doc embeddings according score and reformulate
+                scores_sorted, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
+                # scores_sorted, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
+                sorted_docs = document_embeddings[
+                    torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+            else:
+                sorted_docs = document_embeddings
+                scores_sorted = torch.tensor(distances)
 
             # load relevant documents for current queries
             # new_queries should match document representation of relevant document
@@ -208,10 +210,12 @@ def main():
     parser.register('type', 'bool', str2bool)
 
     parser.add_argument('-reformulation_type',
-                        type=str, default='neural', choices=['neural', 'weighted_avg', 'lstm', 'transformer'],
+                        type=str, default='neural', choices=['neural', 'weighted_avg', 'transformer'],
                         help='type of reformulator to train')
     parser.add_argument('-top_k_reformulator', type=int, default=5)
     parser.add_argument('-reformulator_checkpoint', type=str)
+    parser.add_argument('-reformulate_before_ranking', type='bool', default=False)
+
 
     # transformer reformulator args
     parser.add_argument('-nhead', type=int, default=4)
