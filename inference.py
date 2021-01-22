@@ -333,6 +333,37 @@ def exact_knn(args, knn_index, metric, device, k=1000):
     exit(0)
 
 
+# generate tsv files for first 10 queries with relevant and not relevant documents
+def print_embeddings(args, knn_index):
+    qrels = {}
+    with open(args.test_qrels, "r") as f:
+        for line in f:
+            qid, _, did, label = line.split()
+            # if int(label) > 0:
+            if qid in qrels:
+                qrels[qid].append((did, label))
+            else:
+                qrels[qid] = [(did, label)]
+
+    queries = {}
+    with open(args.test_embeddings, "r") as f_emb, open(args.test_ids, "r") as f_ind:
+        qids = np.load(f_ind)
+        qs = np.load(f_emb)
+        for idy, qid in qids:
+            queries[qid] = qs[idy]
+
+    for i, qid in enumerate(qrels):
+        if i == 10:
+            break
+        with open(args.vector_file_format.format(qid), "w") as out_vector, open(args.vector_meta_format.format(qid), "w") as out_meta:
+            out_meta.write('doc id\tlabel\n')
+            out_meta.write(qid + '\t' + 'QUERY')
+            out_vector.write('\t'.join([str(x) for x in queries[qid]]))
+            for did, label in qrels[qid]:
+                out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]))
+                out_meta.write(did + '\t' + str(label) + '\n')
+    logger.info("finished printing vectors to files.")
+
 def main():
     # setting args
     parser = argparse.ArgumentParser()
@@ -380,6 +411,10 @@ def main():
     parser.add_argument('-train', type='bool', default=False)
     parser.add_argument('-full_ranking', type='bool', default=True)
 
+    parser.add_argument('-print_embeddings', type='bool', default=False)
+    parser.add_argument('-vector_file_format', type=str,
+                        default='./data/embeddings/embeddings_with_random_examples/qid_{}_judged_docs.tsv')
+
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
     parser.add_argument('-exact_knn', type='bool', default=False)
@@ -425,6 +460,9 @@ def main():
 
     if args.exact_knn:
         exact_knn(args, knn_index, metric, device, k=1000)
+    if args.print_embeddings:
+        logger.info("Start printing vectors to files...")
+        print_embeddings(args, knn_index)
 
     if args.reformulation_type is not None:
         logger.info('Loading Reformulator...')
