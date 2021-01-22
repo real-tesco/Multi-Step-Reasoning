@@ -1,5 +1,6 @@
 import argparse
 import torch
+import sys
 import msr
 import hnswlib
 from msr.data.dataloader import DataLoader
@@ -186,7 +187,7 @@ def eval_base_line(args):
     _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
     logger.info("Eval for Test:")
     _ = metric.eval_run(args.test_qrels, args.res + ".test")
-    exit(0)
+    sys.exit(0)
 
 
 def eval_ideal(args, knn_index, ranking_model, device, k):
@@ -298,7 +299,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
     for key in avg_stats:
         avg_stats[key] = avg_stats[key] / args.number_ideal_runs
         logger.info(f"{key}:\t{avg_stats[key]}")
-    exit(0)
+    sys.exit(0)
 
 
 def exact_knn(args, knn_index, metric, device, k=1000):
@@ -330,7 +331,7 @@ def exact_knn(args, knn_index, metric, device, k=1000):
     logger.info("save trec file and evaluate")
     msr.utils.save_trec_inference(args.res, rst_dict)
     metric.eval_run(args.test_qrels, args.res)
-    exit(0)
+    sys.exit(0)
 
 
 # generate tsv files for first 10 queries with relevant and not relevant documents
@@ -363,6 +364,7 @@ def print_embeddings(args, knn_index):
                 out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]))
                 out_meta.write(did + '\t' + str(label) + '\n')
     logger.info("finished printing vectors to files.")
+    sys.exit(0)
 
 def main():
     # setting args
