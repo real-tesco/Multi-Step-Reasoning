@@ -390,7 +390,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
         original_query = torch.tensor(queries[qid])
         document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(original_query, k=k)
 
-        batch_score = ranking_model.rerank_documents(original_query.to(device), document_embeddings.to(device))
+        batch_score = ranking_model.rerank_documents(original_query.to(device), document_embeddings.to(device), device)
 
         sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
         sorted_docs = document_embeddings[
