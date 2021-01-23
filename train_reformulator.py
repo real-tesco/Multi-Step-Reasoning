@@ -200,8 +200,6 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                             torch.save(reformulator.layer.state_dict(), args.model_name)
                         else:
                             torch.save(reformulator.state_dict(), args.model_name)
-        # Eval run and print
-        _ = metric.eval_run(args.qrels, args.res + '.best')
 
 
 def main():
