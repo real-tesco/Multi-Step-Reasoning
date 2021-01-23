@@ -403,15 +403,15 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
                                                                                 "w") as out_meta:
             out_meta.write('doc id\tlabel\n')
             out_meta.write(qid + '\t' + 'original query\n')
-            out_vector.write('\t'.join([str(x) for x in original_query]) + '\n')
+            out_vector.write('\t'.join([str(x) for x in original_query.detach().item()]) + '\n')
             out_meta.write(qid + '_' + '\t' + 'reformulated query\n')
-            out_vector.write('\t'.join([str(x) for x in new_query]) + '\n')
+            out_vector.write('\t'.join([str(x) for x in new_query.detach().item()]) + '\n')
 
             judged_docs = [item[0] for item in qrels[qid]]
             labels = [item[1] for item in qrels[qid]]
 
             for did, doc_embed in zip(document_labels[0], document_embeddings.tolist()[0]):
-                out_vector.write('\t'.join([str(x.item()) for x in doc_embed]) + '\n')
+                out_vector.write('\t'.join([str(x) for x in doc_embed]) + '\n')
                 if did in judged_docs:
                     out_meta.write(did + '\t' + labels[judged_docs.index(did)] + '\n')
                 else:
