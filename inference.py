@@ -387,7 +387,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
     for idx, qid in enumerate(qrels):
         if idx == 3:
             break
-        original_query = queries[qid]
+        original_query = torch.tensor(queries[qid])
         document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(original_query, k=k)
 
         batch_score = ranking_model.rerank_documents(original_query.to(device), document_embeddings.to(device))
