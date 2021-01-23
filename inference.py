@@ -411,12 +411,13 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
             labels = [item[1] for item in qrels[qid]]
 
             for did, doc_embed in zip(document_labels[0], document_embeddings.tolist()[0]):
-                out_vector.write('\t'.join([str(x) for x in doc_embed]) + '\n')
+                out_vector.write('\t'.join([str(x.item()) for x in doc_embed]) + '\n')
                 if did in judged_docs:
                     out_meta.write(did + '\t' + labels[judged_docs.index(did)] + '\n')
                 else:
                     out_meta.write(did + '\t' + 'unjudged' + '\n')
     logger.info("finished printing vectors to files.")
+    sys.exit(0)
 
 
 def main():
