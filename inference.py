@@ -366,6 +366,59 @@ def print_embeddings(args, knn_index):
     logger.info("finished printing vectors to files.")
     sys.exit(0)
 
+
+def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, device, k):
+    qrels = {}
+    with open(args.test_qrels, "r") as f:
+        for line in f:
+            qid, _, did, label = line.split()
+            # if int(label) > 0:
+            if qid in qrels:
+                qrels[qid].append((did, label))
+            else:
+                qrels[qid] = [(did, label)]
+    queries = {}
+    with open(args.test_embeddings, "rb") as f_emb, open(args.test_ids, "rb") as f_ind:
+        qids = np.load(f_ind)
+        qs = np.load(f_emb)
+        for idy, qid in enumerate(qids):
+            queries[qid] = qs[idy]
+
+    for idx, qid in enumerate(qrels):
+        if idx == 3:
+            break
+        original_query = queries[qid]
+        document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(original_query, k=k)
+
+        batch_score = ranking_model.rerank_documents(original_query.to(device), document_embeddings.to(device))
+
+        sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
+        sorted_docs = document_embeddings[
+            torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+
+        new_query = reformulator(original_query.to(device), sorted_docs)
+        document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(new_query, k=k)
+
+        with open(args.vector_file_format.format(qid), "w") as out_vector, open(args.vector_meta_format.format(qid),
+                                                                                "w") as out_meta:
+            out_meta.write('doc id\tlabel\n')
+            out_meta.write(qid + '\t' + 'original query\n')
+            out_vector.write('\t'.join([str(x) for x in original_query]) + '\n')
+            out_meta.write(qid + '_' + '\t' + 'reformulated query\n')
+            out_vector.write('\t'.join([str(x) for x in new_query]) + '\n')
+
+            judged_docs = [item[0] for item in qrels[qid]]
+            labels = [item[1] for item in qrels[qid]]
+
+            for did, doc_embed in zip(document_labels, document_embeddings):
+                out_vector.write('\t'.join([str(x) for x in doc_embed]) + '\n')
+                if did in judged_docs:
+                    out_meta.write(did + '\t' + labels[judged_docs.index(did)] + '\n')
+                else:
+                    out_meta.write(did + '\t' + 'unjudged' + '\n')
+    logger.info("finished printing vectors to files.")
+
+
 def main():
     # setting args
     parser = argparse.ArgumentParser()
@@ -414,6 +467,7 @@ def main():
     parser.add_argument('-full_ranking', type='bool', default=True)
 
     parser.add_argument('-print_embeddings', type='bool', default=False)
+    parser.add_argument('-print_reformulated_embeddings', type='bool', default=False)
     parser.add_argument('-vector_file_format', type=str,
                         default='./data/embeddings/embeddings_random_examples/qid_{}_judged_docs.tsv')
     parser.add_argument('-vector_meta_format', type=str,
@@ -505,6 +559,8 @@ def main():
 
     if args.ideal:
         eval_ideal(args, knn_index, ranking_model, device, k=args.k)
+    if args.print_reformulated_embeddings:
+        print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, device, k=args.k)
 
     # DataLoaders for dev
     logger.info("Loading dev data...")
