@@ -410,7 +410,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
             judged_docs = [item[0] for item in qrels[qid]]
             labels = [item[1] for item in qrels[qid]]
 
-            for did, doc_embed in zip(document_labels, document_embeddings):
+            for did, doc_embed in zip(document_labels.tolist()[0], document_embeddings.tolist()[0]):
                 out_vector.write('\t'.join([str(x) for x in doc_embed]) + '\n')
                 if did in judged_docs:
                     out_meta.write(did + '\t' + labels[judged_docs.index(did)] + '\n')
