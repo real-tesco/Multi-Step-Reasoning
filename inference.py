@@ -396,7 +396,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
         sorted_docs = document_embeddings[
             torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
 
-        new_query = reformulator(original_query.to(device), sorted_docs.unsqueeze(dim=0))
+        new_query = reformulator(original_query.to(device).unsqueeze(dim=0), sorted_docs)
         document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(new_query, k=k)
 
         with open(args.vector_file_format.format(qid), "w") as out_vector, open(args.vector_meta_format.format(qid),
