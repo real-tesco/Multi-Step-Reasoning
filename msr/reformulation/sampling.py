@@ -13,7 +13,7 @@ def random_sampling(documents, number_samples=10):
         tmp = random.sample(range(documents.shape[1]), k=number_samples)
         indice[b] = torch.tensor(tmp)
 
-    sampled_docs = documents[indice]
+    sampled_docs = documents[indice.long()]
     return sampled_docs
 
 
