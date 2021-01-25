@@ -146,14 +146,19 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
     timer = Timer()
     rst_dict_dev = {}
     rst_dict_test = {}
-    logger.info("processing dev data...")
-    for idx, dev_batch in enumerate(dev_loader):
-        if dev_batch is None:
-            continue
-        process_batch(args, rst_dict_dev, knn_index, ranking_model, reformulator, dev_batch, device, k)
+    if not args.skip_dev:
+        logger.info("processing dev data...")
+        for idx, dev_batch in enumerate(dev_loader):
+            if dev_batch is None:
+                continue
+            process_batch(args, rst_dict_dev, knn_index, ranking_model, reformulator, dev_batch, device, k)
 
-        if (idx+1) % args.print_every == 0:
-            logger.info(f"{idx+1} / {len(dev_loader)}")
+            if (idx+1) % args.print_every == 0:
+                logger.info(f"{idx+1} / {len(dev_loader)}")
+        msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
+        logger.info(f"Time needed for {(len(dev_loader) + len(dev_loader)) * args.batch_size} examples: {timer.time()} s")
+        logger.info("Eval for Dev:")
+        _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
 
     logger.info("processing test data...")
     for idx, test_batch in enumerate(test_loader):
@@ -164,7 +169,7 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(test_loader)}")
     timer.stop()
-    msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
+
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
     # duplicate calculation only interesting for first+last passage without duplicate detection
     #for key in rst_dict_dev:
@@ -176,10 +181,7 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
     #                                if any(j == docid for j, _ in rst_dict_test[key][:i])])
 
     # logger.info(f"Number duplicates dev {number_duplicate_dev} - number duplicates test {number_duplicate_test}")
-    logger.info(f"Time needed for {(len(dev_loader) + len(dev_loader)) * args.batch_size} examples: {timer.time()} s")
     logger.info(f"Time needed per query: {timer.time() / ((len(dev_loader) + len(test_loader)) * args.batch_size)} s")
-    logger.info("Eval for Dev:")
-    _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
     logger.info("Eval for Test:")
     _ = metric.eval_run(args.test_qrels, args.res + ".test")
 
