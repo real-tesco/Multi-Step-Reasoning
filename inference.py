@@ -51,15 +51,25 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
         dev_batch['q_segment_ids'].to(device),
         k=k)
 
-    if args.full_ranking:
-        batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
+    # if args.full_ranking:
+    #  batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
+    # else:
+    #    batch_score = torch.tensor(distances)
+
+    if not args.reformulate_before_ranking:
+        batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
+        # sort doc embeddings according score and reformulate
+        sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
+        sorted_docs = document_embeddings[
+            torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
     else:
-        batch_score = torch.tensor(distances)
+        sorted_docs = document_embeddings.to(device)
+        sorted_scores = torch.tensor(distances)
 
     # sort doc embeddings according score and reformulate
-    sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
-    sorted_docs = document_embeddings[
-        torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+    # sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
+    # sorted_docs = document_embeddings[
+    #    torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
 
     if args.reformulation_type == 'neural':
         new_queries = reformulator(query_embeddings.to(device), sorted_docs)
