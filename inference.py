@@ -75,6 +75,8 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
                 sampled_docs = rank_sampling(sorted_docs, args.number_samples)
             elif args.sampling == 'random':
                 sampled_docs = random_sampling(sorted_docs, args.number_samples)
+                print("sampled docs shape: ")
+                print(sampled_docs.shape)
             elif args.sampling == 'score':
                 sampled_docs = score_sampling(sorted_docs, sorted_scores, args.number_samples)
 
