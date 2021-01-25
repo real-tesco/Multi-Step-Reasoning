@@ -30,10 +30,12 @@ def save_trec_inference(rst_file, rst_dict):
             res = sorted(scores, key=lambda x: x[1], reverse=True)
             ranked_docids = []
             cnt = 0
+            current_rank = 1
             for rank, value in enumerate(res):
                 if value[0] not in ranked_docids:
-                    writer.write(q_id+' Q0 '+str(value[0])+' '+str(rank+1)+' '+str(value[1])+' twotower_full\n')
+                    writer.write(q_id+' Q0 '+str(value[0])+' '+str(current_rank)+' '+str(value[1])+' twotower_full\n')
                     ranked_docids.append(value[0])
+                    current_rank += 1
                 else:
                     cnt += 1
     print("Number deleted duplicate doids: ", cnt)

@@ -8,12 +8,11 @@ def random_sampling(documents, number_samples=10):
 
     returns sampled documents and scores with shape batch_size x number_samples x dim_hidden
     """
-    indice = torch.empty(documents.shape[0], number_samples)
+    sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
     for b in range(documents.shape[0]):
-        tmp = random.sample(range(documents.shape[1]), k=number_samples)
-        indice[b] = torch.tensor(tmp)
+        tmp = random.choices(documents[b], k=number_samples)
+        sampled_docs[b] = torch.stack(tmp)
 
-    sampled_docs = documents[indice.long()]
     return sampled_docs
 
 
