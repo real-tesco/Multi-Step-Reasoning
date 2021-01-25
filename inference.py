@@ -6,6 +6,7 @@ import hnswlib
 from prettytable import PrettyTable
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
+from msr.reformulation.sampling import random_sampling, score_sampling, rank_sampling
 from msr.data.datasets.rankingdataset import RankingDataset
 from transformers import AutoTokenizer
 from msr.knn_retriever.retriever import KnnIndex
@@ -66,44 +67,71 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
         sorted_docs = document_embeddings.to(device)
         sorted_scores = torch.tensor(distances)
 
-    # sort doc embeddings according score and reformulate
-    # sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
-    # sorted_docs = document_embeddings[
-    #    torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+    # do sampling regarding chosen strategy
+    if args.sampling != 'none':
+        # for each sample do the reformulation and retrieval step
+        for idx in range(args.number_samples):
+            if args.sampling == 'rank':
+                sampled_docs = rank_sampling(sorted_docs, args.number_samples)
+            elif args.sampling == 'random':
+                sampled_docs = random_sampling(sorted_docs, args.number_samples)
+            elif args.sampling == 'score':
+                sampled_docs = score_sampling(sorted_docs, sorted_scores, args.number_samples)
 
-    if args.reformulation_type == 'neural':
-        new_queries = reformulator(query_embeddings.to(device), sorted_docs)
-    elif args.reformulation_type == 'weighted_avg':
-        new_queries = reformulator(sorted_docs, sorted_scores.to(device))
-    elif args.reformulation_type == 'transformer':
-        new_queries = reformulator(query_embeddings.to(device), sorted_docs)
-    else:
-        # baseline
-        second_run = False
+            # reformulate the queries with sampled documents
+            if args.reformulation_type == 'neural':
+                new_queries = reformulator(query_embeddings.to(device), sampled_docs)
+            elif args.reformulation_type == 'transformer':
+                new_queries = reformulator(query_embeddings.to(device), sampled_docs)
+            else:
+                raise Exception(f"unsupported reformulation type for sampling: {args.reformulation_type}...")
 
-    if second_run:
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
+                new_queries.cpu(), k=args.retrieves_per_sample)
 
-        # do another run with the reformulated queries
-
-        # average over original query embedding and new calculated query embedding
-        if args.avg_new_qs:
-            new_queries = torch.mean(torch.stack([query_embeddings, new_queries], dim=-1), dim=-1)
-
-        document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
-            new_queries.cpu(), k=k)
-
-        # use the new retrieved documents in retrieved order
-        if args.use_ranker_in_next_round:
             batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
-        else:
-            batch_score = torch.tensor(distances)
-    batch_score = batch_score.detach().cpu().tolist()
+            batch_score = batch_score.detach().cpu().tolist()
 
-    for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-        # rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
-        rst_list = [(docid, score) for docid, score in zip(d_id, b_s)]
-        rst_dict[q_id] = [(docid, score) for i, (docid, score) in enumerate(rst_list)
-                          if not any(j == docid for j, _ in rst_list[:i])]
+            for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
+                if q_id in rst_dict:
+                    rst_dict[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
+                else:
+                    rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+    else:
+        # reformulate the queries with top ranked documents
+        if args.reformulation_type == 'neural':
+            new_queries = reformulator(query_embeddings.to(device), sorted_docs)
+        elif args.reformulation_type == 'weighted_avg':
+            new_queries = reformulator(sorted_docs, sorted_scores.to(device))
+        elif args.reformulation_type == 'transformer':
+            new_queries = reformulator(query_embeddings.to(device), sorted_docs)
+        else:
+            # baseline
+            second_run = False
+
+        if second_run:
+
+            # do another run with the reformulated queries
+
+            # average over original query embedding and new calculated query embedding
+            if args.avg_new_qs:
+                new_queries = torch.mean(torch.stack([query_embeddings, new_queries], dim=-1), dim=-1)
+
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
+                new_queries.cpu(), k=k)
+
+            # use the new retrieved documents in retrieved order
+            if args.use_ranker_in_next_round:
+                batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
+            else:
+                batch_score = torch.tensor(distances)
+        batch_score = batch_score.detach().cpu().tolist()
+
+        for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
+            # rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+            rst_list = [(docid, score) for docid, score in zip(d_id, b_s)]
+            rst_dict[q_id] = [(docid, score) for i, (docid, score) in enumerate(rst_list)
+                              if not any(j == docid for j, _ in rst_list[:i])]
 
 
 def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loader, metric, device, k=100):
@@ -473,6 +501,12 @@ def main():
     parser.add_argument('-dim_embedding', type=int, default=768)
     parser.add_argument('-hidden1', type=int, default=2500)
     parser.add_argument('-hidden2', type=int, default=0)
+
+    # sampling
+    parser.add_argument('-sampling', type=str, default='none', choices=['none', 'rank', 'score', 'random'], help=
+                        'type of sampling to use before reformulation, default is none, just use top documents')
+    parser.add_argument('-retrieves_per_sample', type=int, default=100, help='the number of retrieves per sample')
+    parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
 
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
     parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
