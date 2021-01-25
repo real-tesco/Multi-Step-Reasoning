@@ -497,6 +497,7 @@ def main():
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-train', type='bool', default=False)
     parser.add_argument('-full_ranking', type='bool', default=True)
+    parser.add_argument('-reformulate_before_ranking', type='bool', default=True)
 
     parser.add_argument('-print_embeddings', type='bool', default=False)
     parser.add_argument('-print_reformulated_embeddings', type='bool', default=False)
