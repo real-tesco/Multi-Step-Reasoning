@@ -3,6 +3,7 @@ import torch
 import sys
 import msr
 import hnswlib
+from prettytable import PrettyTable
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
 from msr.data.datasets.rankingdataset import RankingDataset
@@ -26,6 +27,19 @@ logger = logging.getLogger()
 
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
+
+
+def print_number_parameters(model):
+    table = PrettyTable(["Modules", "Parameters"])
+    total_params = 0
+    for name, parameter in model.named_parameters():
+        if not parameter.requires_grad: continue
+        param = parameter.numel()
+        table.add_row([name, param])
+        total_params += param
+    print(table)
+    print(f"Total Trainable Params: {total_params}")
+    return total_params
 
 
 def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_batch, device, k):
@@ -538,11 +552,13 @@ def main():
             reformulator.load_state_dict(checkpoint)
             reformulator.to(device)
             reformulator.eval()
+            print_number_parameters(reformulator)
         elif args.reformulation_type == 'weighted_avg':
             reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
             reformulator.layer.load_state_dict(checkpoint)
             reformulator.layer.to(device)
             reformulator.layer.eval()
+            print_number_parameters(reformulator.layer)
         elif args.reformulation_type == 'transformer':
             reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
                                                    args.dim_feedforward)
@@ -550,6 +566,7 @@ def main():
             reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
             reformulator.to_device(device)
             reformulator.eval()
+            print_number_parameters(reformulator)
     else:
         reformulator = None
 
