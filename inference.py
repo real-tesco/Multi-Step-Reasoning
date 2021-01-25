@@ -90,6 +90,12 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
                 new_queries.cpu(), k=args.retrieves_per_sample)
 
             batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
+
+            # normalize batch score for comparability across different queries
+            for idy in range(0, batch_score.shape[0]):
+                batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
+                                   (batch_score[idy].max() - batch_score[idy].min())
+
             batch_score = batch_score.detach().cpu().tolist()
 
             for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
