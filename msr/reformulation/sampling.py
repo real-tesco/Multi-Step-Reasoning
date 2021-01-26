@@ -1,5 +1,15 @@
 import torch
 import random
+from sklearn.cluster import KMeans
+import numpy as np
+
+
+def cluster_sampling(documents, number_samples=10):
+    documents = documents.numpy()
+    kmeans = KMeans(n_clusters=number_samples, random_state=0).fit(documents)
+    centers = torch.from_numpy(kmeans.cluster_centers_)
+
+    return centers
 
 
 def random_sampling(documents, number_samples=10):

@@ -6,7 +6,7 @@ import hnswlib
 from prettytable import PrettyTable
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
-from msr.reformulation.sampling import random_sampling, score_sampling, rank_sampling
+from msr.reformulation.sampling import random_sampling, score_sampling, rank_sampling, cluster_sampling
 from msr.data.datasets.rankingdataset import RankingDataset
 from transformers import AutoTokenizer
 from msr.knn_retriever.retriever import KnnIndex
@@ -69,20 +69,23 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
 
     # do sampling regarding chosen strategy
     if args.sampling != 'none':
+        if args.sampling == 'rank':
+            sampled_docs = rank_sampling(sorted_docs, args.number_samples)
+        elif args.sampling == 'random':
+            sampled_docs = random_sampling(sorted_docs, args.number_samples)
+        elif args.sampling == 'score':
+            sampled_docs = score_sampling(sorted_docs, sorted_scores, args.number_samples)
+        elif args.sampling == 'cluster':
+            sampled_docs = cluster_sampling(sorted_docs, args.number_samples)
+
         # for each sample do the reformulation and retrieval step
         for idx in range(args.number_samples):
-            if args.sampling == 'rank':
-                sampled_docs = rank_sampling(sorted_docs, args.number_samples)
-            elif args.sampling == 'random':
-                sampled_docs = random_sampling(sorted_docs, args.number_samples)
-            elif args.sampling == 'score':
-                sampled_docs = score_sampling(sorted_docs, sorted_scores, args.number_samples)
 
             # reformulate the queries with sampled documents
             if args.reformulation_type == 'neural':
-                new_queries = reformulator(query_embeddings.to(device), sampled_docs.to(device))
+                new_queries = reformulator(query_embeddings.to(device), sampled_docs[idx].to(device))
             elif args.reformulation_type == 'transformer':
-                new_queries = reformulator(query_embeddings.to(device), sampled_docs.to(device))
+                new_queries = reformulator(query_embeddings.to(device), sampled_docs[idx].to(device))
             else:
                 raise Exception(f"unsupported reformulation type for sampling: {args.reformulation_type}...")
 
@@ -511,8 +514,8 @@ def main():
     parser.add_argument('-hidden2', type=int, default=0)
 
     # sampling
-    parser.add_argument('-sampling', type=str, default='none', choices=['none', 'rank', 'score', 'random'], help=
-                        'type of sampling to use before reformulation, default is none, just use top documents')
+    parser.add_argument('-sampling', type=str, default='none', choices=['none', 'rank', 'score', 'random', 'cluster'],
+                        help='type of sampling to use before reformulation, default is none, just use top documents')
     parser.add_argument('-retrieves_per_sample', type=int, default=100, help='the number of retrieves per sample')
     parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
 
