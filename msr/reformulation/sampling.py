@@ -5,11 +5,14 @@ import numpy as np
 
 
 def cluster_sampling(documents, number_samples=10):
-    documents = documents.numpy()
-    kmeans = KMeans(n_clusters=number_samples, random_state=0).fit(documents)
-    centers = torch.from_numpy(kmeans.cluster_centers_)
 
-    return centers
+    documents = documents.cpu().numpy()
+    sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
+    for b in range(documents.shape[0]):
+        kmeans = KMeans(n_clusters=number_samples, random_state=0).fit(documents[b])
+        centers = torch.from_numpy(kmeans.cluster_centers_)
+        sampled_docs[b] = centers
+    return sampled_docs
 
 
 def random_sampling(documents, number_samples=10):
