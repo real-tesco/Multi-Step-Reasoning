@@ -84,9 +84,13 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
         for idx in range(args.number_samples):
             # reformulate the queries with sampled documents
             if args.reformulation_type == 'neural':
-                new_queries = reformulator(query_embeddings.to(device), sampled_docs[:, idx].unsqueeze(dim=1).to(device))
+                new_queries = reformulator(query_embeddings.to(device), sampled_docs[:, :idx].unsqueeze(dim=1).to(device))
             elif args.reformulation_type == 'transformer':
-                new_queries = reformulator(query_embeddings.to(device), sampled_docs[:, idx].unsqueeze(dim=1).to(device))
+                if idx == 0:
+                    sampled_doc_input = sampled_docs[:, idx].unsqueeze(dim=1)
+                else:
+                    sampled_doc_input = sampled_docs[:, :idx]
+                new_queries = reformulator(query_embeddings.to(device), sampled_doc_input.to(device))
             else:
                 raise Exception(f"unsupported reformulation type for sampling: {args.reformulation_type}...")
 
