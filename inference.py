@@ -66,6 +66,7 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
     else:
         sorted_docs = document_embeddings.to(device)
         sorted_scores = torch.tensor(distances)
+        batch_score = sorted_scores
 
     # do sampling regarding chosen strategy
     if args.sampling != 'none':
