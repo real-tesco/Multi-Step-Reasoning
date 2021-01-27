@@ -24,7 +24,8 @@ def spectral_cluster_sampling(documents, number_samples=10):
     delta = 0.1
     sim_matrix = 1.0 - np.matmul(documents, np.transpose(documents, (0, 2, 1)))
     sim_matrix = np.exp(- sim_matrix ** 2 / (2. * delta ** 2))
-    spectral_clustering = SpectralClustering(n_clusters=number_samples, random_state=0, affinity='precomputed')
+    spectral_clustering = SpectralClustering(n_clusters=number_samples, random_state=0, affinity='precomputed',
+                                             n_init=2)
 
     # 2. for every batch get clustering labels
     for b in range(documents.shape[0]):
