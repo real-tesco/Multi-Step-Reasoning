@@ -628,7 +628,7 @@ def main():
             reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
             reformulator.to_device(device)
             reformulator.eval()
-            print_number_parameters(reformulator)
+            # print_number_parameters(reformulator)
     else:
         reformulator = None
 
