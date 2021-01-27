@@ -1,6 +1,6 @@
 import torch
 import random
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, SpectralClustering
 import numpy as np
 
 
@@ -8,10 +8,35 @@ def cluster_sampling(documents, number_samples=10):
 
     documents = documents.cpu().numpy()
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
+    kmeans = KMeans(n_clusters=number_samples, random_state=0)
     for b in range(documents.shape[0]):
-        kmeans = KMeans(n_clusters=number_samples, random_state=0).fit(documents[b])
+        kmeans.fit(documents[b])
         centers = torch.from_numpy(kmeans.cluster_centers_)
         sampled_docs[b] = centers
+    return sampled_docs
+
+
+def spectral_cluster_sampling(documents, number_samples=10):
+    documents = documents.cpu().numpy()
+    sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
+
+    # 1. compute similarity matrix
+    delta = 0.1
+    sim_matrix = 1.0 - torch.matmul(documents, documents.transpose(1, 2))
+    sim_matrix = np.exp(- sim_matrix ** 2 / (2. * delta ** 2))
+    spectral_clustering = SpectralClustering(n_clusters=number_samples, random_state=0, affinity='precomputed')
+
+    # 2. for every batch get clustering labels
+    for b in range(documents.shape[0]):
+        labels = spectral_clustering.fit_predict(sim_matrix[b])
+
+        # 3. for each label calculate centroid
+        member_count = torch.zeros(number_samples)
+        for idx, lbl in enumerate(labels):
+            sampled_docs[b, lbl] += documents[b, idx]
+            member_count[lbl] += 1
+        sampled_docs[b] = sampled_docs[b] / member_count.unsqueeze(1)
+
     return sampled_docs
 
 
