@@ -224,8 +224,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=args.retrieves_per_sample)
 
-            batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
-                                                         device)
+            #batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
+            batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
 
             # normalize batch score for comparability across different queries
             for idy in range(0, batch_score.shape[0]):
@@ -249,6 +249,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
     logger.info(f"Time needed per query: {timer.time() / (len(test_loader) * args.batch_size)} s")
     logger.info("Eval for Test:")
     _ = metric.eval_run(args.test_qrels, args.res + ".test")
+    sys.exit(0)
 
 
 def eval_base_line(args):
