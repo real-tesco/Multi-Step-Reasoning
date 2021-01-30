@@ -21,8 +21,13 @@ def cluster_sampling(documents, number_samples=10, check_metrics=False):
             sil_score = silhouette_score(documents[b], kmeans.labels_, metric='cosine')
             print(f"Silhoutte Score for minibatch {b}: {sil_score}")
             if b == 0:
-                sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
-                print(f"silhoutte score per sample in minibatch 0\n: {sil_score_per_sample.tolist()}")
+                # sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
+                # print(f"silhoutte score per sample in minibatch 0\n: {sil_score_per_sample.tolist()}")
+                sil_score_per_cluster = []
+                for lbl in range(number_samples):
+                    sil_score_per_cluster.append(silhouette_samples(documents[b][kmeans.labels_ == lbl],
+                                                                    kmeans.labels_[kmeans.labels_ == lbl], metric='cosine'))
+                print(f'sil score per cluster: {sil_score_per_cluster}')
     return sampled_docs
 
 
