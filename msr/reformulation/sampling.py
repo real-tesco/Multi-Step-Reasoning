@@ -16,7 +16,10 @@ def cluster_sampling(documents, number_samples=10, check_metrics=False):
         sampled_docs[b] = centers
         if check_metrics:
             sil_score = silhouette_score(documents[b], kmeans.labels_, metric='cosine')
-            print(f"Silhoutte Score for sample {b}: {sil_score}")
+            print(f"Silhoutte Score for minibatch {b}: {sil_score}")
+            if b == 0:
+                sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
+                print(f"silhoutte score per sample in minibatch 0\n: {sil_score_per_sample}")
     return sampled_docs
 
 
