@@ -1,10 +1,11 @@
 import torch
 import random
 from sklearn.cluster import KMeans, SpectralClustering
+from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
-def cluster_sampling(documents, number_samples=10):
+def cluster_sampling(documents, number_samples=10, check_metrics=False):
 
     documents = documents.cpu().numpy()
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
@@ -13,6 +14,9 @@ def cluster_sampling(documents, number_samples=10):
         kmeans.fit(documents[b])
         centers = torch.from_numpy(kmeans.cluster_centers_)
         sampled_docs[b] = centers
+        if check_metrics:
+            sil_score = silhouette_score(documents[b], kmeans.labels_, metric='cosine')
+            print(f"Silhoutte Score for sample {b}: {sil_score}")
     return sampled_docs
 
 

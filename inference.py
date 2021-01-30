@@ -178,17 +178,75 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
     timer.stop()
 
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
-    # duplicate calculation only interesting for first+last passage without duplicate detection
-    #for key in rst_dict_dev:
-    #    number_duplicate_dev = len([i for i, (docid, score) in enumerate(rst_dict_dev[key])
-    #                                if any(j == docid for j, _ in rst_dict_dev[key][:i])])
 
-    # for key in rst_dict_test:
-    #    number_duplicate_test = len([i for i, (docid, score) in enumerate(rst_dict_test[key])
-    #                                if any(j == docid for j, _ in rst_dict_test[key][:i])])
-
-    # logger.info(f"Number duplicates dev {number_duplicate_dev} - number duplicates test {number_duplicate_test}")
     logger.info(f"Time needed per query: {timer.time() / ((len(dev_loader) + len(test_loader)) * args.batch_size)} s")
+    logger.info("Eval for Test:")
+    _ = metric.eval_run(args.test_qrels, args.res + ".test")
+
+
+def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, metric, device, k=100):
+    timer = Timer()
+    rst_dict_test = {}
+    logger.info("processing test data...")
+    for idx, test_batch in enumerate(test_loader):
+        if test_batch is None:
+            continue
+
+        query_id = test_batch['query_id']
+        document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
+            test_batch['q_input_ids'].to(device),
+            test_batch['q_input_mask'].to(device),
+            test_batch['q_segment_ids'].to(device),
+            k=k)
+
+        if not args.reformulate_before_ranking:
+            batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
+            # sort doc embeddings according score and reformulate
+            sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
+            sorted_docs = document_embeddings[
+                torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+        else:
+            sorted_docs = document_embeddings.to(device)
+            sorted_scores = torch.tensor(distances)
+
+        # do sampling regarding chosen strategy
+
+        if args.sampling == 'cluster_kmeans':
+            if idx < 2:
+                sampled_docs = cluster_sampling(sorted_docs, args.number_samples, check_metrics=True)
+            else:
+                sampled_docs = cluster_sampling(sorted_docs, args.number_samples)
+        elif args.sampling == 'cluster_spectral':
+            sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
+
+        for step_s in range(args.number_samples):
+            new_queries = sampled_docs[:, step_s]
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
+                new_queries.cpu(), k=args.retrieves_per_sample)
+
+            batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
+                                                         device)
+
+            # normalize batch score for comparability across different queries
+            for idy in range(0, batch_score.shape[0]):
+                batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
+                                   (batch_score[idy].max() - batch_score[idy].min())
+
+            batch_score = batch_score.detach().cpu().tolist()
+
+            for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
+                if q_id in rst_dict_test:
+                    rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
+                else:
+                    rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+
+        if (idx + 1) % args.print_every == 0:
+            logger.info(f"{idx + 1} / {len(test_loader)}")
+    timer.stop()
+
+    msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
+
+    logger.info(f"Time needed per query: {timer.time() / (len(test_loader) * args.batch_size)} s")
     logger.info("Eval for Test:")
     _ = metric.eval_run(args.test_qrels, args.res + ".test")
 
@@ -525,6 +583,7 @@ def main():
                         help='type of sampling to use before reformulation, default is none, just use top documents')
     parser.add_argument('-retrieves_per_sample', type=int, default=100, help='the number of retrieves per sample')
     parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
+    parser.add_argument('-test_clustering', default=False, help='test clustering and eval clustering metrics')
 
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
     parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
@@ -673,6 +732,9 @@ def main():
         max_input=args.max_input
     )
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
+
+    if args.test_clustering:
+        test_clustering(args, knn_index, ranking_model, reformulator, test_loader, metric, device, args.k)
 
     # starting inference
     logger.info("Starting inference...")
