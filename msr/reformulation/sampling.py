@@ -5,7 +5,7 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
-def cluster_sampling(queries, documents, number_samples=10, check_metrics=False):
+def cluster_sampling(documents, number_samples=10, check_metrics=False):
 
     documents = documents.cpu().numpy()
     # queries = queries.cpu().numpy()
