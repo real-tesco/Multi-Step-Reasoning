@@ -212,7 +212,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
         # do sampling regarding chosen strategy
 
         if args.sampling == 'cluster_kmeans':
-            if idx < 2:
+            if idx == 0:
                 sampled_docs = cluster_sampling(sorted_docs, args.number_samples, check_metrics=True)
             else:
                 sampled_docs = cluster_sampling(sorted_docs, args.number_samples)
@@ -225,7 +225,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
                 new_queries.cpu(), k=args.retrieves_per_sample)
 
             #batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
-            batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
+            batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
 
             # normalize batch score for comparability across different queries
             for idy in range(0, batch_score.shape[0]):
