@@ -34,7 +34,7 @@ def cluster_sampling(documents, queries, number_samples=10, stats=None, check_me
                 print(f"query cluster lbl: {kmeans.labels_[0]}")
                 print(f'sil score per cluster: {sil_score_per_cluster}')
                 print(f"sil score of query: {sil_score_per_sample[0]}")
-    print(f"mean query silhoutte score: {query_sil_score / documents.shape[0]}")
+    # print(f"mean query silhoutte score: {query_sil_score / documents.shape[0]}")
     return sampled_docs
 
 

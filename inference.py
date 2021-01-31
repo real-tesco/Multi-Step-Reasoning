@@ -245,7 +245,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(test_loader)}")
     timer.stop()
-
+    for k, v in stats:
+        print(f"{k}: {v}")
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
 
     logger.info(f"Time needed per query: {timer.time() / (len(test_loader) * args.batch_size)} s")
