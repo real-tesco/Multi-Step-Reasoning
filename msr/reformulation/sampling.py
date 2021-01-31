@@ -8,7 +8,7 @@ import numpy as np
 def cluster_sampling(documents, queries, number_samples=10, check_metrics=False):
 
     documents = documents.cpu().numpy()
-    queries = queries.detach().cpu().numpy()
+    queries = queries.unsqueeze(dim=1).detach().cpu().numpy()
     documents = np.concatenate((queries, documents), axis=1) # B x 1001 x 768
     # print(f"shape of documents after stack: {documents}")
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
