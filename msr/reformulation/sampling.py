@@ -9,7 +9,7 @@ def cluster_sampling(documents, queries, number_samples=10, check_metrics=False)
 
     documents = documents.cpu().numpy()
     # queries = queries.cpu().numpy()
-    documents = np.concatenate(queries, documents, axis=1) # B x 1001 x 768
+    documents = np.concatenate((queries, documents), axis=1) # B x 1001 x 768
     # print(f"shape of documents after stack: {documents}")
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
     kmeans = KMeans(n_clusters=number_samples, random_state=0)
