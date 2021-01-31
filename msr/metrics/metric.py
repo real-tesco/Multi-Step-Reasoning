@@ -81,7 +81,7 @@ class Metric():
 
     def eval_run(self, qrels: str, trec: str, print_graphs=False) -> Dict[str, float]:
         query_measure_to_check = ['ndcg', 'map', 'P_10', 'recall_5', 'recall_10', 'recall_30', 'recall_100',
-                                  'recall_1000', 'recall_1500', 'recall_2000', 'recall_3000']
+                                  'recall_1000']
         with open(qrels, 'r') as f_qrel:
             qrel = pytrec_eval.parse_qrel(f_qrel)
         with open(trec, 'r') as f_run:
