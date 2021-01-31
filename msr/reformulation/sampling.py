@@ -9,7 +9,7 @@ def cluster_sampling(documents, queries, number_samples=10, stats=None, check_me
 
     documents = documents.cpu().numpy()
     queries = queries.unsqueeze(dim=1).detach().cpu().numpy()
-    documents = np.concatenate((queries, documents), axis=1) # B x 1001 x 768
+    documents = np.concatenate((queries, documents), axis=1)    # B x 1001 x 768
     # print(f"shape of documents after stack: {documents}")
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
     kmeans = KMeans(n_clusters=number_samples, random_state=0)
@@ -41,6 +41,7 @@ def cluster_sampling(documents, queries, number_samples=10, stats=None, check_me
                     stats['sil_score_cluster_max'] = sil_score_cluster
                 if sil_score_cluster < stats['sil_score_cluster_min']:
                     stats['sil_score_cluster_min'] = sil_score_cluster
+                stats['sil_score_cluster'] += sil_score_cluster
 
             if b == 0:
                 for lbl in range(number_samples):
