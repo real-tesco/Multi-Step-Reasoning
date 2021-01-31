@@ -26,12 +26,21 @@ def cluster_sampling(documents, queries, number_samples=10, stats=None, check_me
             query_sil_score += sil_score_per_sample[0]
 
             stats['query_sil_score'] += sil_score_per_sample[0]
+            stats['sil_score'] += sil_score
             stats['count'] += 1
             if sil_score_per_sample[0] > stats['sil_max']:
                 stats['sil_max'] = sil_score_per_sample[0]
 
             if sil_score_per_sample[0] < stats['sil_min']:
                 stats['sil_min'] = sil_score_per_sample[0]
+
+            for lbl in range(number_samples):
+                sil_score_cluster = np.mean(sil_score_per_sample[kmeans.labels_ == lbl])
+                sil_score_per_cluster.append(sil_score_cluster)
+                if sil_score_cluster > stats['sil_score_cluster_max']:
+                    stats['sil_score_cluster_max'] = sil_score_cluster
+                if sil_score_cluster < stats['sil_score_cluster_min']:
+                    stats['sil_score_cluster_min'] = sil_score_cluster
 
             if b == 0:
                 for lbl in range(number_samples):
