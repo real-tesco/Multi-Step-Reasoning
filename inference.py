@@ -3,6 +3,7 @@ import torch
 import sys
 import msr
 import hnswlib
+from collections import defaultdict
 from prettytable import PrettyTable
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
@@ -188,6 +189,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
     timer = Timer()
     rst_dict_test = {}
     logger.info("processing test data...")
+    stats = defaultdict(float)
     for idx, test_batch in enumerate(test_loader):
         if test_batch is None:
             continue
@@ -212,10 +214,10 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
         # do sampling regarding chosen strategy
 
         if args.sampling == 'cluster_kmeans':
-            if idx == 0:
-                sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, check_metrics=True)
-            else:
-                sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples)
+            #if idx == 0:
+            #    sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
+            #else:
+            sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
 

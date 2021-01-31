@@ -5,7 +5,7 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
-def cluster_sampling(documents, queries, number_samples=10, check_metrics=False):
+def cluster_sampling(documents, queries, number_samples=10, stats=None, check_metrics=False):
 
     documents = documents.cpu().numpy()
     queries = queries.unsqueeze(dim=1).detach().cpu().numpy()
@@ -20,16 +20,20 @@ def cluster_sampling(documents, queries, number_samples=10, check_metrics=False)
         sampled_docs[b] = centers
         if check_metrics:
             sil_score = silhouette_score(documents[b], kmeans.labels_, metric='cosine')
-            print(f"Silhoutte Score for minibatch {b}: {sil_score}")
-            print(f"query cluster lbl: {kmeans.labels_[0]}")
             sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
-            print(f"sil score of query: {sil_score_per_sample[0]}")
             # print(f"silhoutte score per sample in minibatch 0\n: {sil_score_per_sample.tolist()}")
             sil_score_per_cluster = []
             query_sil_score += sil_score_per_sample[0]
-            for lbl in range(number_samples):
-                sil_score_per_cluster.append(np.mean(sil_score_per_sample[kmeans.labels_ == lbl]))
-            print(f'sil score per cluster: {sil_score_per_cluster}')
+
+            stats['query_sil_score'] += sil_score_per_sample[0]
+            stats['count'] += 1
+            if b == 0:
+                for lbl in range(number_samples):
+                    sil_score_per_cluster.append(np.mean(sil_score_per_sample[kmeans.labels_ == lbl]))
+                print(f"Silhoutte Score for minibatch {b}: {sil_score}")
+                print(f"query cluster lbl: {kmeans.labels_[0]}")
+                print(f'sil score per cluster: {sil_score_per_cluster}')
+                print(f"sil score of query: {sil_score_per_sample[0]}")
     print(f"mean query silhoutte score: {query_sil_score / documents.shape[0]}")
     return sampled_docs
 
