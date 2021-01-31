@@ -13,6 +13,7 @@ def cluster_sampling(documents, queries, number_samples=10, check_metrics=False)
     # print(f"shape of documents after stack: {documents}")
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
     kmeans = KMeans(n_clusters=number_samples, random_state=0)
+    query_sil_score = 0
     for b in range(documents.shape[0]):
         kmeans.fit(documents[b])
         centers = torch.from_numpy(kmeans.cluster_centers_)
@@ -20,15 +21,16 @@ def cluster_sampling(documents, queries, number_samples=10, check_metrics=False)
         if check_metrics:
             sil_score = silhouette_score(documents[b], kmeans.labels_, metric='cosine')
             print(f"Silhoutte Score for minibatch {b}: {sil_score}")
-            if b < 4:
-                print(f"query cluster lbl: {kmeans.labels_[0]}")
-                sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
-                print(f"sil score of query: {sil_score_per_sample[0]}")
-                # print(f"silhoutte score per sample in minibatch 0\n: {sil_score_per_sample.tolist()}")
-                sil_score_per_cluster = []
-                for lbl in range(number_samples):
-                    sil_score_per_cluster.append(np.mean(sil_score_per_sample[kmeans.labels_ == lbl]))
-                print(f'sil score per cluster: {sil_score_per_cluster}')
+            print(f"query cluster lbl: {kmeans.labels_[0]}")
+            sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
+            print(f"sil score of query: {sil_score_per_sample[0]}")
+            # print(f"silhoutte score per sample in minibatch 0\n: {sil_score_per_sample.tolist()}")
+            sil_score_per_cluster = []
+            query_sil_score += sil_score_per_sample[0]
+            for lbl in range(number_samples):
+                sil_score_per_cluster.append(np.mean(sil_score_per_sample[kmeans.labels_ == lbl]))
+            print(f'sil score per cluster: {sil_score_per_cluster}')
+    print(f"mean query silhoutte score: {query_sil_score / documents.shape[0]}")
     return sampled_docs
 
 
