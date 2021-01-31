@@ -230,9 +230,9 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             #batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
 
             # normalize batch score for comparability across different queries
-            for idy in range(0, batch_score.shape[0]):
-                batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
-                                   (batch_score[idy].max() - batch_score[idy].min())
+            #for idy in range(0, batch_score.shape[0]):
+            #    batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
+            #                       (batch_score[idy].max() - batch_score[idy].min())
 
             batch_score = batch_score.detach().cpu().tolist()
 
