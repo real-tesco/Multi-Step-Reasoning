@@ -5,11 +5,11 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
-def cluster_sampling(documents, number_samples=10, check_metrics=False):
+def cluster_sampling(documents, queries, number_samples=10, check_metrics=False):
 
     documents = documents.cpu().numpy()
     # queries = queries.cpu().numpy()
-    # documents = np.concatenate(queries, documents, axis=1) # B x 1001 x 768
+    documents = np.concatenate(queries, documents, axis=1) # B x 1001 x 768
     # print(f"shape of documents after stack: {documents}")
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
     kmeans = KMeans(n_clusters=number_samples, random_state=0)
@@ -20,8 +20,10 @@ def cluster_sampling(documents, number_samples=10, check_metrics=False):
         if check_metrics:
             sil_score = silhouette_score(documents[b], kmeans.labels_, metric='cosine')
             print(f"Silhoutte Score for minibatch {b}: {sil_score}")
-            if b == 0:
+            if b < 4:
+                print(f"query cluster lbl: {kmeans.labels_[0]}")
                 sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
+                print(f"sil score of query: {sil_score_per_sample[0]}")
                 # print(f"silhoutte score per sample in minibatch 0\n: {sil_score_per_sample.tolist()}")
                 sil_score_per_cluster = []
                 for lbl in range(number_samples):
