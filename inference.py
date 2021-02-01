@@ -224,7 +224,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
         for step_s in range(args.number_samples):
             new_queries = sampled_docs[:, step_s]
             if args.avg_new_qs:
-                new_queries = (query_embeddings + new_queries) / 2
+                new_queries = (query_embeddings + new_queries.to(device)) / 2
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=args.retrieves_per_sample)
 
