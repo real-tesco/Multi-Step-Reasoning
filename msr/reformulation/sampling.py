@@ -45,6 +45,7 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
             qid = query_labels[b, 0]
             if qid in qrels:
                 rel_docids = qrels[qid]
+                cnt_rel_in_cluster = [[] for _ in range(number_samples)]
 
             for lbl in range(number_samples):
                 sil_score_cluster = np.mean(sil_score_per_sample[kmeans.labels_ == lbl])
@@ -55,17 +56,14 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
                     stats['sil_score_cluster_min'] = sil_score_cluster
                 stats['sil_score_cluster'] += sil_score_cluster
                 if rel_docids is not None:
-                    print(f"docs: {document_labels[b].shape}")
                     docs = document_labels[b]
-                    print(f"bool lbls: {(kmeans.labels_ == lbl).shape}")
                     retrieved_docs = docs[kmeans.labels_ == lbl]
-                    cnt_rel_in_cluster = [[] for _ in range(number_samples)]
                     for retrieved_doc_lbl in retrieved_docs:
                         if retrieved_doc_lbl in rel_docids:
                             cnt_rel_in_cluster[lbl].append(retrieved_doc_lbl)
 
             if rel_docids is not None:
-                print(f"rel docs (total={len(qrels[qid])})in clusters: "
+                print(f"rel docs (total={len(rel_docids)})in clusters: "
                       f"{[len(cnt_rel_in_cluster[i]) for i in range(len(cnt_rel_in_cluster))]}")
 
             if b == 0:
