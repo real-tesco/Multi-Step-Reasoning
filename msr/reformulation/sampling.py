@@ -7,9 +7,14 @@ import numpy as np
 
 def cluster_sampling(documents, queries, qrels, document_labels, query_labels, number_samples=10, stats=None, check_metrics=False):
     document_labels = np.asarray(document_labels)
+    query_labels = np.asarray(query_labels)
+
     documents = documents.cpu().numpy()
     queries = queries.unsqueeze(dim=1).detach().cpu().numpy()
     documents = np.concatenate((queries, documents), axis=1)    # B x 1001 x 768
+
+    document_labels = np.concatenate((query_labels, document_labels), axis=1)
+
     # print(f"shape of documents after stack: {documents}")
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
     q_clusters = torch.empty(documents.shape[0], documents.shape[2])
