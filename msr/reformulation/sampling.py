@@ -7,7 +7,7 @@ import numpy as np
 
 def cluster_sampling(documents, queries, qrels, document_labels, query_labels, number_samples=10, stats=None, check_metrics=False):
     document_labels = np.asarray(document_labels)
-    query_labels = np.asarray(query_labels.unsqueeze(dim=1))
+    query_labels = np.expand_dims(np.asarray(query_labels), axis=1)
 
     documents = documents.cpu().numpy()
     queries = queries.unsqueeze(dim=1).detach().cpu().numpy()
