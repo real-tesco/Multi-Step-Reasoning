@@ -207,13 +207,6 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
 
         query_id = test_batch['query_id']
 
-        rel_docs = []
-        for qid in query_id:
-            if qid in qrels:
-                rel_docs.append(qrels[qid])
-            else:
-                print(f"qid {qid} not in qrels...")
-
         document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
             test_batch['q_input_ids'].to(device),
             test_batch['q_input_mask'].to(device),
@@ -236,8 +229,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             #if idx == 0:
             #    sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
             #else:
-            sampled_docs, q_clusters = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, qrels,
-                                                        document_labels, query_id, stats=stats, check_metrics=True)
+            sampled_docs, q_clusters = cluster_sampling(sorted_docs, query_embeddings, qrels, document_labels, query_id,
+                                                        args.number_samples, stats=stats, check_metrics=True)
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
 
