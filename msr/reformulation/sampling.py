@@ -42,7 +42,7 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
                 stats['sil_min'] = sil_score_per_sample[0]
 
             rel_docids = None
-            qid = query_labels[b]
+            qid = query_labels[b, 0]
             if qid in qrels:
                 rel_docids = qrels[qid]
 
