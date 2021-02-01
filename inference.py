@@ -190,11 +190,30 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
     rst_dict_test = {}
     logger.info("processing test data...")
     stats = defaultdict(float)
+
+    qrels = {}
+    with open(args.test_qrels, "r") as f:
+        for line in f:
+            qid, _, did, label = line.split()
+            if int(label) > 0:
+                if qid in qrels:
+                    qrels[qid].append(did)
+                else:
+                    qrels[qid] = [did]
+
     for idx, test_batch in enumerate(test_loader):
         if test_batch is None:
             continue
 
         query_id = test_batch['query_id']
+
+        rel_docs = []
+        for qid in query_id:
+            if qid in qrels:
+                rel_docs.append(qrels[qid])
+            else:
+                print(f"qid {qid} not in qrels...")
+
         document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
             test_batch['q_input_ids'].to(device),
             test_batch['q_input_mask'].to(device),
@@ -217,7 +236,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             #if idx == 0:
             #    sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
             #else:
-            sampled_docs, q_clusters = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
+            sampled_docs, q_clusters = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, qrels,
+                                                        document_labels, query_id, stats=stats, check_metrics=True)
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
 
@@ -254,8 +274,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
                     rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
                 else:
                     rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
-
-        # args.number_samples = tmp
+        if args.use_q_cluster_as_q:
+            args.number_samples = tmp
 
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(test_loader)}")
@@ -264,7 +284,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
         print(f"{k}: {v}")
     print(f"mean_query_sil_score: {stats['query_sil_score'] / stats['count']}")
     print(f"mean_sil_score: {stats['sil_score'] / stats['count']}")
-    print(f"mean_sil_score_cluster: {stats['sil_score_cluster'] / stats['count']}")
+    print(f"mean_sil_score_cluster: {stats['sil_score_cluster'] / (stats['count'] * args.number_samples)}")
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
 
     logger.info(f"Time needed per query: {timer.time() / (len(test_loader) * args.batch_size)} s")

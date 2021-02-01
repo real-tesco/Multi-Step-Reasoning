@@ -5,7 +5,7 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
-def cluster_sampling(documents, queries, number_samples=10, stats=None, check_metrics=False):
+def cluster_sampling(documents, queries, qrels, document_labels, query_labels, number_samples=10, stats=None, check_metrics=False):
 
     documents = documents.cpu().numpy()
     queries = queries.unsqueeze(dim=1).detach().cpu().numpy()
@@ -36,6 +36,11 @@ def cluster_sampling(documents, queries, number_samples=10, stats=None, check_me
             if sil_score_per_sample[0] < stats['sil_min']:
                 stats['sil_min'] = sil_score_per_sample[0]
 
+            rel_docids = None
+            qid = query_labels[b]
+            if qid in qrels:
+                rel_docids = qrels[qid]
+
             for lbl in range(number_samples):
                 sil_score_cluster = np.mean(sil_score_per_sample[kmeans.labels_ == lbl])
                 sil_score_per_cluster.append(sil_score_cluster)
@@ -44,10 +49,17 @@ def cluster_sampling(documents, queries, number_samples=10, stats=None, check_me
                 if sil_score_cluster < stats['sil_score_cluster_min']:
                     stats['sil_score_cluster_min'] = sil_score_cluster
                 stats['sil_score_cluster'] += sil_score_cluster
+                if rel_docids is not None:
+                    retrieved_docs = document_labels[b][kmeans.labels_ == lbl]
+                    cnt_rel_in_cluster = [[] for _ in range(number_samples)]
+                    for retrieved_doc_lbl in retrieved_docs:
+                        cnt_rel_in_cluster[lbl].append(retrieved_doc_lbl)
+
+            if rel_docids is not None:
+                print(f"rel docs (total={len(qrels[qid])})in clusters: "
+                      f"{[len(cnt_rel_in_cluster[i]) for i in range(len(cnt_rel_in_cluster))]}")
 
             if b == 0:
-                for lbl in range(number_samples):
-                    sil_score_per_cluster.append(np.mean(sil_score_per_sample[kmeans.labels_ == lbl]))
                 print(f"Silhoutte Score for minibatch {b}: {sil_score}")
                 print(f"query cluster lbl: {kmeans.labels_[0]}")
                 print(f'sil score per cluster: {sil_score_per_cluster}')
