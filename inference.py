@@ -217,14 +217,22 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             #if idx == 0:
             #    sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
             #else:
-            sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
+            sampled_docs, q_clusters = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
 
+        if args.use_q_cluster_as_q:
+            new_queries = q_clusters
+            args.number_samples = 1
+
         for step_s in range(args.number_samples):
-            new_queries = sampled_docs[:, step_s]
+            if not args.use_q_cluster_as_q:
+                # use sampled docs
+                new_queries = sampled_docs[:, step_s]
+
             if args.avg_new_qs:
                 new_queries = (query_embeddings + new_queries.to(device)) / 2
+
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=args.retrieves_per_sample)
 
@@ -595,6 +603,8 @@ def main():
     parser.add_argument('-retrieves_per_sample', type=int, default=100, help='the number of retrieves per sample')
     parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
     parser.add_argument('-test_clustering', default=False, help='test clustering and eval clustering metrics')
+    parser.add_argument('-use_q_cluster_as_q', default=False, help='test clustering and eval clustering metrics')
+
 
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
     parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')

@@ -12,12 +12,14 @@ def cluster_sampling(documents, queries, number_samples=10, stats=None, check_me
     documents = np.concatenate((queries, documents), axis=1)    # B x 1001 x 768
     # print(f"shape of documents after stack: {documents}")
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
+    q_clusters = torch.empty(documents.shape[0], documents.shape[2])
     kmeans = KMeans(n_clusters=number_samples, random_state=0)
     query_sil_score = 0
     for b in range(documents.shape[0]):
         kmeans.fit(documents[b])
         centers = torch.from_numpy(kmeans.cluster_centers_)
         sampled_docs[b] = centers
+        q_clusters[b] = centers[kmeans.labels_[0]]
         if check_metrics:
             sil_score = silhouette_score(documents[b], kmeans.labels_, metric='cosine')
             sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
@@ -51,7 +53,7 @@ def cluster_sampling(documents, queries, number_samples=10, stats=None, check_me
                 print(f'sil score per cluster: {sil_score_per_cluster}')
                 print(f"sil score of query: {sil_score_per_sample[0]}")
     # print(f"mean query silhoutte score: {query_sil_score / documents.shape[0]}")
-    return sampled_docs
+    return sampled_docs, q_clusters
 
 
 def spectral_cluster_sampling(documents, number_samples=10):
