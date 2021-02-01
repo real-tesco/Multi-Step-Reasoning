@@ -50,10 +50,12 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
                     stats['sil_score_cluster_min'] = sil_score_cluster
                 stats['sil_score_cluster'] += sil_score_cluster
                 if rel_docids is not None:
-                    retrieved_docs = document_labels[b, kmeans.labels_ == lbl]
+                    docs = document_labels[b]
+                    retrieved_docs = docs[kmeans.labels_ == lbl]
                     cnt_rel_in_cluster = [[] for _ in range(number_samples)]
                     for retrieved_doc_lbl in retrieved_docs:
-                        cnt_rel_in_cluster[lbl].append(retrieved_doc_lbl)
+                        if retrieved_doc_lbl in rel_docids:
+                            cnt_rel_in_cluster[lbl].append(retrieved_doc_lbl)
 
             if rel_docids is not None:
                 print(f"rel docs (total={len(qrels[qid])})in clusters: "
