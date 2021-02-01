@@ -26,10 +26,10 @@ def check_dir(path):
 
 def save_trec_inference(rst_file, rst_dict):
     with open(rst_file, 'w') as writer:
+        cnt = 0
         for q_id, scores in rst_dict.items():
             res = sorted(scores, key=lambda x: x[1], reverse=True)
             ranked_docids = []
-            cnt = 0
             current_rank = 1
             for rank, value in enumerate(res):
                 if value[0] not in ranked_docids:
@@ -38,7 +38,7 @@ def save_trec_inference(rst_file, rst_dict):
                     current_rank += 1
                 else:
                     cnt += 1
-    print("Number deleted duplicate doids: ", cnt)
+        print("Number avg deleted duplicate doids: ", cnt / len(rst_dict))
     return
 
 
