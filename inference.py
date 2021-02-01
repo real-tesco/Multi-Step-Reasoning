@@ -223,6 +223,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
 
         if args.use_q_cluster_as_q:
             new_queries = q_clusters
+            tmp = args.number_samples
             args.number_samples = 1
 
         for step_s in range(args.number_samples):
@@ -253,6 +254,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
                     rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
                 else:
                     rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+
+        args.number_samples = tmp
 
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(test_loader)}")
