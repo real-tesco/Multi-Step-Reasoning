@@ -63,8 +63,9 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
                             cnt_rel_in_cluster[lbl].append(retrieved_doc_lbl)
 
             if rel_docids is not None:
-                print(f"rel docs (total={len(rel_docids)})in clusters: "
-                      f"{[len(cnt_rel_in_cluster[i]) for i in range(len(cnt_rel_in_cluster))]}")
+                rels_in_cluster = [len(cnt_rel_in_cluster[i]) for i in range(len(cnt_rel_in_cluster))]
+                print(f"rel docs (total={len(rel_docids)}, retrieved={sum(rels_in_cluster)}, recall for qid={qid}: "
+                      f"{sum(rels_in_cluster) / len(rel_docids)}) in clusters: {rels_in_cluster}")
 
             if b == 0:
                 print(f"Silhoutte Score for minibatch {b}: {sil_score}")
