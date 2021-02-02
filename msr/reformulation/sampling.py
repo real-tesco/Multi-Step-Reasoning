@@ -36,11 +36,11 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
             stats['query_sil_score'] += sil_score_per_sample[0]
             stats['sil_score'] += sil_score
             stats['count'] += 1
-            if sil_score_per_sample[0] > stats['sil_max']:
-                stats['sil_max'] = sil_score_per_sample[0]
+            if sil_score_per_sample[0] > stats['q_sil_max']:
+                stats['q_sil_max'] = sil_score_per_sample[0]
 
-            if sil_score_per_sample[0] < stats['sil_min']:
-                stats['sil_min'] = sil_score_per_sample[0]
+            if sil_score_per_sample[0] < stats['q_sil_min']:
+                stats['q_sil_min'] = sil_score_per_sample[0]
 
             rel_docids = None
             qid = query_labels[b, 0]

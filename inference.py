@@ -219,6 +219,21 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
             sorted_docs = document_embeddings[
                 torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+
+            # test if adding original query scores improve overall
+            for idy in range(0, batch_score.shape[0]):
+                batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
+                                   (batch_score[idy].max() - batch_score[idy].min())
+
+            batch_score = batch_score.detach().cpu().tolist()
+
+            for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
+                if q_id in rst_dict_test:
+                    rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
+                else:
+                    rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+            # test end
+
         else:
             sorted_docs = document_embeddings.to(device)
             sorted_scores = torch.tensor(distances)
