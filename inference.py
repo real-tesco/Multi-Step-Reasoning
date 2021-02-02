@@ -230,7 +230,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             #    sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
             #else:
             sampled_docs, q_clusters = cluster_sampling(sorted_docs, query_embeddings, qrels, document_labels, query_id,
-                                                        args.number_samples, stats=stats, check_metrics=True)
+                                                        args.number_samples, stats=stats, check_metrics=True, print_info=args.print_info)
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
 
@@ -252,8 +252,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
 
             if args.use_ranker_in_next_round:
                 if args.avg_new_qs_for_ranking:
-                    query_embeddings = (query_embeddings + new_queries.to(device)) / 2
-                # batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
+                    new_queries = (query_embeddings + new_queries.to(device)) / 2
+
                 if args.rerank_to_new_qs:
                     batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
                                                                  device)
@@ -625,11 +625,11 @@ def main():
                         help='type of sampling to use before reformulation, default is none, just use top documents')
     parser.add_argument('-retrieves_per_sample', type=int, default=100, help='the number of retrieves per sample')
     parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
-    parser.add_argument('-test_clustering', default=False, help='test clustering and eval clustering metrics')
-    parser.add_argument('-use_q_cluster_as_q', default=False, help='test clustering and eval clustering metrics')
-    parser.add_argument('-avg_new_qs_for_ranking', default=False, help='test clustering and eval clustering metrics')
-    parser.add_argument('-rerank_to_new_qs', default=False, help='test clustering and eval clustering metrics')
-
+    parser.add_argument('-test_clustering', type='bool', default=False, help='test clustering and eval clustering metrics')
+    parser.add_argument('-use_q_cluster_as_q', type='bool', default=False, help='test clustering and eval clustering metrics')
+    parser.add_argument('-avg_new_qs_for_ranking', type='bool', default=False, help='test clustering and eval clustering metrics')
+    parser.add_argument('-rerank_to_new_qs', type='bool', default=False, help='test clustering and eval clustering metrics')
+    parser.add_argument('-print_info', type='bool', default=False, help='test clustering and eval clustering metrics')
 
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
     parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')

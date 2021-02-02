@@ -5,7 +5,8 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
-def cluster_sampling(documents, queries, qrels, document_labels, query_labels, number_samples=10, stats=None, check_metrics=False):
+def cluster_sampling(documents, queries, qrels, document_labels, query_labels, number_samples=10, stats=None,
+                     check_metrics=False, print_info=True):
     document_labels = np.asarray(document_labels)
     query_labels = np.expand_dims(np.asarray(query_labels), axis=1)
 
@@ -61,14 +62,14 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
                     for retrieved_doc_lbl in retrieved_docs:
                         if retrieved_doc_lbl in rel_docids:
                             cnt_rel_in_cluster[lbl].append(retrieved_doc_lbl)
-
-            if rel_docids is not None:
-                rels_in_cluster = [len(cnt_rel_in_cluster[i]) for i in range(len(cnt_rel_in_cluster))]
-                print(f"rel docs (total={len(rel_docids)}, retrieved={sum(rels_in_cluster)}, recall for qid={qid}: "
-                      f"{sum(rels_in_cluster) / len(rel_docids)}) in clusters: {rels_in_cluster}")
-                print(f'sil score per cluster: {sil_score_per_cluster}')
-                print(f"sil score of query: {sil_score_per_sample[0]}")
-                print(f"query cluster lbl: {kmeans.labels_[0]}")
+            if print_info:
+                if rel_docids is not None:
+                    rels_in_cluster = [len(cnt_rel_in_cluster[i]) for i in range(len(cnt_rel_in_cluster))]
+                    print(f"rel docs (total={len(rel_docids)}, retrieved={sum(rels_in_cluster)}, recall for qid={qid}: "
+                          f"{sum(rels_in_cluster) / len(rel_docids)}) in clusters: {rels_in_cluster}")
+                    print(f'sil score per cluster: {sil_score_per_cluster}')
+                    print(f"sil score of query: {sil_score_per_sample[0]}")
+                    print(f"query cluster lbl: {kmeans.labels_[0]}")
             #if b == 0:
             #    print(f"Silhoutte Score for minibatch {b}: {sil_score}")
             #    print(f"query cluster lbl: {kmeans.labels_[0]}")
