@@ -251,8 +251,10 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
                 new_queries.cpu(), k=args.retrieves_per_sample)
 
             if args.use_ranker_in_next_round:
-                batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
-                # batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
+                if args.avg_new_qs_for_ranking:
+                    query_embeddings = (query_embeddings + new_queries.to(device)) / 2
+                # batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
+                batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
                 # normalize batch score for comparability across different queries
                 for idy in range(0, batch_score.shape[0]):
                     batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
@@ -620,6 +622,7 @@ def main():
     parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
     parser.add_argument('-test_clustering', default=False, help='test clustering and eval clustering metrics')
     parser.add_argument('-use_q_cluster_as_q', default=False, help='test clustering and eval clustering metrics')
+    parser.add_argument('-avg_new_qs_for_ranking', default=False, help='test clustering and eval clustering metrics')
 
 
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
