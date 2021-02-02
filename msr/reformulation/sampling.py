@@ -66,13 +66,14 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
                 rels_in_cluster = [len(cnt_rel_in_cluster[i]) for i in range(len(cnt_rel_in_cluster))]
                 print(f"rel docs (total={len(rel_docids)}, retrieved={sum(rels_in_cluster)}, recall for qid={qid}: "
                       f"{sum(rels_in_cluster) / len(rel_docids)}) in clusters: {rels_in_cluster}")
-
-            if b == 0:
-                print(f"Silhoutte Score for minibatch {b}: {sil_score}")
-                print(f"query cluster lbl: {kmeans.labels_[0]}")
                 print(f'sil score per cluster: {sil_score_per_cluster}')
                 print(f"sil score of query: {sil_score_per_sample[0]}")
-    # print(f"mean query silhoutte score: {query_sil_score / documents.shape[0]}")
+                print(f"query cluster lbl: {kmeans.labels_[0]}")
+            #if b == 0:
+            #    print(f"Silhoutte Score for minibatch {b}: {sil_score}")
+            #    print(f"query cluster lbl: {kmeans.labels_[0]}")
+            #    print(f'sil score per cluster: {sil_score_per_cluster}')
+            #    print(f"sil score of query: {sil_score_per_sample[0]}")
     return sampled_docs, q_clusters
 
 
