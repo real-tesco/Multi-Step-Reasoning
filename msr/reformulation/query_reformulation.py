@@ -98,6 +98,7 @@ class TransformerReformulator(nn.Module):
         self.d_model = d_model
         self.topk = topk
         self.nhead = nhead
+        self.num_encoder_layers = num_encoder_layers
 
         self.pos_enc = PositionalEncoding(d_model=d_model, max_len=topk + 1)   # query on index 0
         encoder_layer = TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward)
@@ -135,6 +136,9 @@ class TransformerReformulator(nn.Module):
         output = source
         for layer in self.layers:
             output = layer(output)
+            print("Attention mechanism")
+            print(layer.self_attn)
+
         # output at index 0 is the cls token representation
         print("Attention Sampling Debug:")
         print(f"output shape {output.shape}")
