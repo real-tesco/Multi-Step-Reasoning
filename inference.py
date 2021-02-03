@@ -26,7 +26,10 @@ from msr.data.datasets.bm25dataset import BM25Dataset
 import random
 
 logger = logging.getLogger()
+attention_weights = []
 
+def save_attention_hook(module, i, o):
+    attention_weights.append(module.weight)
 
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
@@ -747,9 +750,15 @@ def main():
             reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
             reformulator.to_device(device)
             reformulator.eval()
+
+            # register hook to encoder layers, to get attention weights
             state_dict = reformulator.state_dict()
             for k, v in state_dict.items():
                 print(f"Key: {k}")
+            if args.sampling == 'attention':
+                for layer in reformulator.modules():
+                    print(layer)
+
             # print_number_parameters(reformulator)
     else:
         reformulator = None
