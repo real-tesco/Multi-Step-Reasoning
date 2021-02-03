@@ -28,8 +28,10 @@ import random
 logger = logging.getLogger()
 attention_weights = []
 
+
 def save_attention_hook(module, i, o):
     attention_weights.append(module.weight)
+
 
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')
@@ -86,7 +88,7 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
         elif args.sampling == 'attention':
-            sampled_docs = attention_sampling(query_embeddings, sorted_docs, reformulator)
+            sampled_docs = attention_sampling(query_embeddings, sorted_docs, reformulator, attention_weights)
 
         # for each sample do the reformulation and retrieval step
         for idx in range(args.number_samples):
@@ -757,12 +759,11 @@ def main():
                 print(f"Key: {k}")
             if args.sampling == 'attention':
                 for name, layer in reformulator.named_modules():
-                    print("name: ", name)
-                    print("layer: ", layer)
+                    # print("name: ", name)
+                    # print("layer: ", layer)
                     if name == f'layers.{args.num_encoder_layers-1}.self_attn.out_proj':
                         layer.register_forward_hook(save_attention_hook)
                         print('added hook on layer: ', layer)
-            # print_number_parameters(reformulator)
     else:
         reformulator = None
 

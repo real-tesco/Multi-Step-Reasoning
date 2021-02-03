@@ -5,8 +5,10 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
-def attention_sampling(queries, documents, reformulator):
-    sampled_docs = reformulator.attention_sampling(queries, documents)
+def attention_sampling(queries, documents, reformulator, attention_weights):
+    sampled_docs = reformulator(queries, documents)
+    print(attention_weights)
+    print(attention_weights[0].shape)
     return sampled_docs
 
 
