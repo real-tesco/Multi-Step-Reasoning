@@ -83,7 +83,7 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
         elif args.sampling == 'attention':
-            sampled_docs = attention_sampling(sorted_docs, query_embeddings, reformulator)
+            sampled_docs = attention_sampling(query_embeddings, sorted_docs, reformulator)
 
         # for each sample do the reformulation and retrieval step
         for idx in range(args.number_samples):
