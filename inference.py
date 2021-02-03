@@ -749,7 +749,7 @@ def main():
             reformulator.eval()
             state_dict = reformulator.state_dict()
             for k, v in state_dict.items():
-                print(f"Key: {k} value: {v[:10]}")
+                print(f"Key: {k}")
             # print_number_parameters(reformulator)
     else:
         reformulator = None
