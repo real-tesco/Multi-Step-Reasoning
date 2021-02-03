@@ -757,7 +757,9 @@ def main():
                 print(f"Key: {k}")
             if args.sampling == 'attention':
                 cnt = 0
-                for layer in reformulator.modules():
+                for name, layer in reformulator.named_modules():
+                    print("name: ", name)
+                    print("layer: ", layer)
                     if isinstance(layer, torch.nn.MultiheadAttention):
                         cnt += 1
                         if cnt == args.nhead:
