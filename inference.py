@@ -30,9 +30,8 @@ attention_weights = []
 
 
 def save_attention_hook(model, i, o):
-    print("INPUT: ", i)
-    print("OUTPUT: ", o)
-    attention_weights.append(model.weight)
+    print("added weights to hook")
+    attention_weights.append(model.out_proj)
 
 
 def str2bool(v):
