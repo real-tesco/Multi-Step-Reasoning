@@ -29,10 +29,10 @@ logger = logging.getLogger()
 attention_weights = []
 
 
-def save_attention_hook(module, i, o):
+def save_attention_hook(model, i, o):
     print("INPUT: ", i)
     print("OUTPUT: ", o)
-    attention_weights.append(module.weight)
+    attention_weights.append(model.weight)
 
 
 def str2bool(v):
@@ -764,6 +764,9 @@ def main():
                     # print("name: ", name)
                     # print("layer: ", layer)
                     if name == f'layers.{args.num_encoder_layers-1}.self_attn.out_proj':
+                        layer.register_forward_hook(save_attention_hook)
+                        print('added hook on layer: ', layer)
+                    elif name == f"layers.{args.num_encoder_layer-1}.self_attn":
                         layer.register_forward_hook(save_attention_hook)
                         print('added hook on layer: ', layer)
     else:
