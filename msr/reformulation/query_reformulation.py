@@ -136,8 +136,11 @@ class TransformerReformulator(nn.Module):
         output = source
         for layer in self.layers:
             output = layer(output)
-            print("Attention mechanism")
+            print("Attention mechanism: ")
+            print(type(layer.self_attn))
             print(layer.self_attn)
+            print(len(layer.self_attn))
+
 
         # output at index 0 is the cls token representation
         print("Attention Sampling Debug:")
