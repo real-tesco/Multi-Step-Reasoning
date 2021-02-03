@@ -9,13 +9,16 @@ from transformers import AutoConfig, AutoModel
 
 
 class TwoTowerBert(nn.Module):
-    def __init__(self, pretrained: str):
+    def __init__(self, pretrained: str, projection_dim=0):
         super(TwoTowerBert, self).__init__()
         self._pretrained = pretrained
+        self._projection_dim = projection_dim
 
         self._config = AutoConfig.from_pretrained(self._pretrained)
         self._document_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
         self._query_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
+        if projection_dim > 0:
+            self._projection_layer = nn.Linear(768, projection_dim)
 
     def calculate_embedding(self, d_input_ids, d_input_mask, d_segment_ids, doc=True):
         if doc:
@@ -23,6 +26,10 @@ class TwoTowerBert(nn.Module):
         else:
             embedding = self._query_model(d_input_ids, attention_mask=d_input_mask, token_type_ids=d_segment_ids)
         rst = F.normalize(embedding[0][:, 0, :], p=2, dim=1)
+
+        if self._projection_dim > 0:
+            rst = self._projection_layer(rst)
+
         return rst
 
     def forward(self, q_input_ids: torch.Tensor, d_input_ids: torch.Tensor, q_input_mask: torch.Tensor = None, q_segment_ids: torch.Tensor = None,
@@ -40,6 +47,10 @@ class TwoTowerBert(nn.Module):
         #query = query - query.min()
         document = F.normalize(document, p=2, dim=1)
         query = F.normalize(query, p=2, dim=1)
+
+        if self._projection_dim > 0:
+            document = self._projection_layer(document)
+            query = self._projection_layer(query)
 
         score = (document * query).sum(dim=1)
         score = torch.clamp(score, min=0.0, max=1.0)

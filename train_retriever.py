@@ -295,7 +295,7 @@ def main(args):
         )
     logger.info("loading model...")
 
-    model = msr.knn_retriever.TwoTowerBert(pretrained=args.pretrain)
+    model = msr.knn_retriever.TwoTowerBert(pretrained=args.pretrain, projection_dim=args.projection_dim)
 
     if args.two_tower_checkpoint is not None:
         logger.info("Loading model from checkpoint")

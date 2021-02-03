@@ -26,6 +26,8 @@ def get_args(parser=None):
     parser.add_argument('-index_mapping', type=str, default='./data/indexes/mapping_docid2indexid.json')
     parser.add_argument('-index_file', type=str, default='./data/indexes/msmarco_knn_index_M_84_efc_500.bin')
     parser.add_argument('-remainP', type='bool', default=False)
+    parser.add_argument('-projection_dim', type=int, default=0,
+                        help='if > 0 then a projection is learned with given dim')
 
     args = parser.parse_args()
 
