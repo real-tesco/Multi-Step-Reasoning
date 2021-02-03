@@ -760,11 +760,9 @@ def main():
                 for name, layer in reformulator.named_modules():
                     print("name: ", name)
                     print("layer: ", layer)
-                    if isinstance(layer, torch.nn.MultiheadAttention):
-                        cnt += 1
-                        if cnt == args.nhead:
-                            layer.register_forward_hook(save_attention_hook)
-                            print('added hook on layer: ', layer)
+                    if name == f'layers.{args.nhead-1}.self_attn.out_proj':
+                        layer.register_forward_hook(save_attention_hook)
+                        print('added hook on layer: ', layer)
             # print_number_parameters(reformulator)
     else:
         reformulator = None
