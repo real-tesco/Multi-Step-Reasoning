@@ -747,7 +747,7 @@ def main():
             reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
             reformulator.to_device(device)
             reformulator.eval()
-            state_dict = reformulator.get_state_dict()
+            state_dict = reformulator.state_dict()
             for k, v in state_dict.items():
                 print(f"Key: {k} value: {v[:10]}")
             # print_number_parameters(reformulator)
