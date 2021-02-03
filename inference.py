@@ -30,6 +30,8 @@ attention_weights = []
 
 
 def save_attention_hook(module, i, o):
+    print("INPUT: ", i)
+    print("OUTPUT: ", o)
     attention_weights.append(module.weight)
 
 
