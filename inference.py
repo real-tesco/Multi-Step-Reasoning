@@ -756,11 +756,10 @@ def main():
             for k, v in state_dict.items():
                 print(f"Key: {k}")
             if args.sampling == 'attention':
-                cnt = 0
                 for name, layer in reformulator.named_modules():
                     print("name: ", name)
                     print("layer: ", layer)
-                    if name == f'layers.{args.nhead-1}.self_attn.out_proj':
+                    if name == f'layers.{args.num_encoder_layers-1}.self_attn.out_proj':
                         layer.register_forward_hook(save_attention_hook)
                         print('added hook on layer: ', layer)
             # print_number_parameters(reformulator)
