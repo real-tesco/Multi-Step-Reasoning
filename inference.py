@@ -633,7 +633,8 @@ def main():
 
     # sampling
     parser.add_argument('-sampling', type=str, default='none', choices=['none', 'rank', 'score', 'random',
-                                                                        'cluster_kmeans', 'cluster_spectral'],
+                                                                        'cluster_kmeans', 'cluster_spectral',
+                                                                        'attention'],
                         help='type of sampling to use before reformulation, default is none, just use top documents')
     parser.add_argument('-retrieves_per_sample', type=int, default=100, help='the number of retrieves per sample')
     parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
