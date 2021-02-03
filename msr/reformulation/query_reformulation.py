@@ -93,13 +93,14 @@ class NeuralReformulator(nn.Module):
 
 
 class TransformerReformulator(nn.Module):
-    def __init__(self, topk, nhead=4, num_encoder_layers=1, dim_feedforward=3072, dropout=0.1):
+    def __init__(self, topk, nhead=4, num_encoder_layers=1, dim_feedforward=3072, dropout=0.1, d_model=768):
         super(TransformerReformulator, self).__init__()
-        self.d_model = 768
+        self.d_model = d_model
         self.topk = topk
+        self.nhead = nhead
 
-        self.pos_enc = PositionalEncoding(d_model=768, max_len=topk + 1)   # query on index 0
-        encoder_layer = TransformerEncoderLayer(d_model=768, nhead=nhead, dim_feedforward=dim_feedforward)
+        self.pos_enc = PositionalEncoding(d_model=d_model, max_len=topk + 1)   # query on index 0
+        encoder_layer = TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward)
         self.layers = _get_clones(encoder_layer, num_encoder_layers)
         self.dropout = nn.Dropout(p=dropout)
         # self.decoder = nn.Linear(768, 768)
@@ -123,6 +124,24 @@ class TransformerReformulator(nn.Module):
         output = output[0, :]
         output = nn.functional.normalize(output, p=2, dim=1)
         return output
+
+    def attention_sampling(self, query, documents):
+        source = documents[:, :self.topk].transpose(0, 1)
+        query = query.unsqueeze(dim=0)
+
+        source = torch.cat([query, source])
+
+        samples = torch.empty(query.shape[0], self.nhead, self.d_model)
+        output = source
+        for layer in self.layers:
+            output = layer(output)
+        # output at index 0 is the cls token representation
+        print("Attention Sampling Debug:")
+        print(f"output shape {output.shape}")
+        output = output[0, :]
+        output = nn.functional.normalize(output, p=2, dim=1)
+
+        return samples
 
     # refactor needed
     # hack to not retrain the reformulators

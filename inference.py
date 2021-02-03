@@ -7,7 +7,8 @@ from collections import defaultdict
 from prettytable import PrettyTable
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
-from msr.reformulation.sampling import random_sampling, score_sampling, rank_sampling, cluster_sampling, spectral_cluster_sampling
+from msr.reformulation.sampling import random_sampling, score_sampling, rank_sampling, cluster_sampling, \
+    spectral_cluster_sampling, attention_sampling
 from msr.data.datasets.rankingdataset import RankingDataset
 from transformers import AutoTokenizer
 from msr.knn_retriever.retriever import KnnIndex
@@ -77,14 +78,18 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             sampled_docs = random_sampling(sorted_docs, args.number_samples)
         elif args.sampling == 'score':
             sampled_docs = score_sampling(sorted_docs, sorted_scores, args.number_samples)
-        elif args.sampling == 'cluster_kmeans':
-            sampled_docs = cluster_sampling(sorted_docs, args.number_samples)
+        #elif args.sampling == 'cluster_kmeans':
+        #    sampled_docs = cluster_sampling(sorted_docs, args.number_samples)
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
+        elif args.sampling == 'attention':
+            sampled_docs = attention_sampling(sorted_docs, query_embeddings, reformulator)
 
         # for each sample do the reformulation and retrieval step
         for idx in range(args.number_samples):
+            '''
             # reformulate the queries with sampled documents
+            # freestyle test for transformer reformulator and sampling
             if args.reformulation_type == 'neural':
                 new_queries = reformulator(query_embeddings.to(device), sampled_docs[:, :idx].unsqueeze(dim=1).to(device))
             elif args.reformulation_type == 'transformer':
@@ -95,16 +100,13 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
                 new_queries = reformulator(query_embeddings.to(device), sampled_doc_input.to(device))
             else:
                 raise Exception(f"unsupported reformulation type for sampling: {args.reformulation_type}...")
-
+            # freestyle test end
+            '''
+            new_queries = sampled_docs[:, idx]
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=args.retrieves_per_sample)
 
-            batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
-
-            # normalize batch score for comparability across different queries
-            for idy in range(0, batch_score.shape[0]):
-                batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
-                                   (batch_score[idy].max() - batch_score[idy].min())
+            batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
 
             batch_score = batch_score.detach().cpu().tolist()
 
@@ -788,6 +790,9 @@ def main():
         max_input=args.max_input
     )
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
+
+    if args.sampling == 'attention':
+        args.number_samples = args.nhead
 
     if args.test_clustering:
         test_clustering(args, knn_index, ranking_model, reformulator, test_loader, metric, device, args.k)

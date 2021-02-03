@@ -5,6 +5,11 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
+def attention_sampling(queries, documents, reformulator):
+    sampled_docs = reformulator.attention_sampling(queries, documents)
+    return sampled_docs
+
+
 def cluster_sampling(documents, queries, qrels, document_labels, query_labels, number_samples=10, stats=None,
                      check_metrics=False, print_info=True):
     document_labels = np.asarray(document_labels)
