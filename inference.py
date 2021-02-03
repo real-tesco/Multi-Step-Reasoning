@@ -766,7 +766,7 @@ def main():
                     if name == f'layers.{args.num_encoder_layers-1}.self_attn.out_proj':
                         layer.register_forward_hook(save_attention_hook)
                         print('added hook on layer: ', layer)
-                    elif name == f"layers.{args.num_encoder_layer-1}.self_attn":
+                    elif name == f"layers.{args.num_encoder_layers-1}.self_attn":
                         layer.register_forward_hook(save_attention_hook)
                         print('added hook on layer: ', layer)
     else:
