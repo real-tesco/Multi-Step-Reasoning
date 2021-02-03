@@ -758,6 +758,7 @@ def main():
             if args.sampling == 'attention':
                 for layer in reformulator.modules():
                     print(layer)
+                    print("_____")
 
             # print_number_parameters(reformulator)
     else:
