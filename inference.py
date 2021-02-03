@@ -756,10 +756,13 @@ def main():
             for k, v in state_dict.items():
                 print(f"Key: {k}")
             if args.sampling == 'attention':
+                cnt = 0
                 for layer in reformulator.modules():
-                    print(layer)
-                    print("_____")
-
+                    if isinstance(layer, torch.nn.MultiheadAttention):
+                        cnt += 1
+                        if cnt == args.nhead:
+                            layer.register_forward_hook(save_attention_hook)
+                            print('added hook on layer: ', layer)
             # print_number_parameters(reformulator)
     else:
         reformulator = None
