@@ -36,6 +36,9 @@ def save_attention_hook(model, i, o):
     print(f"Input of model: {len(i)}")
     print(f"shape of 0 of input of model: {i[0].shape}")
     print(f"shape of 0 of output of model: {o[0].shape}")
+    print(f"shape of 1 of input of model: {i[1].shape}")
+    print(f"shape of 1 of output of model: {o[1].shape}")
+    print(f"shape of 2 of input of model: {i[2].shape}")
 
 
 def str2bool(v):
