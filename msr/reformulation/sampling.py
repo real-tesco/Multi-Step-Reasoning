@@ -9,6 +9,7 @@ def attention_sampling(queries, documents, reformulator, attention_weights):
     sampled_docs = reformulator(queries, documents)
     print(attention_weights)
     print(attention_weights[0].weight)
+    print(attention_weights[0].weight.shape)
     return sampled_docs
 
 
