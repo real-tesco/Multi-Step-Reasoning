@@ -32,6 +32,8 @@ attention_weights = []
 def save_attention_hook(model, i, o):
     print("added weights to hook")
     attention_weights.append(model.out_proj)
+    print(f"Output of model: {o}")
+    print(f"Input of model: {i}")
 
 
 def str2bool(v):
@@ -765,9 +767,9 @@ def main():
                     if name == f'layers.{args.num_encoder_layers-1}.self_attn.in_proj_weight':
                         layer.register_forward_hook(save_attention_hook)
                         print('added hook on layer: ', layer)
-                    #if name == f"layers.{args.num_encoder_layers-1}.self_attn":
-                    #    layer.register_forward_hook(save_attention_hook)
-                    #    print('added hook on layer: ', layer)
+                    if name == f"layers.{args.num_encoder_layers-1}.self_attn":
+                        layer.register_forward_hook(save_attention_hook)
+                        print('added hook on layer: ', layer)
     else:
         reformulator = None
 
