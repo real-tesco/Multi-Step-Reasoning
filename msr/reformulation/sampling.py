@@ -8,7 +8,7 @@ import numpy as np
 def attention_sampling(queries, documents, reformulator, attention_weights):
     sampled_docs = reformulator(queries, documents)
     print(attention_weights)
-    print(attention_weights[0].weights)
+    print(attention_weights[0].weight)
     return sampled_docs
 
 
