@@ -14,6 +14,7 @@ class TwoTowerBert(nn.Module):
         self._pretrained = pretrained
         self._projection_dim = projection_dim
 
+        # TODO: check if is_decoder breaks
         self._config = AutoConfig.from_pretrained(self._pretrained, is_decoder=True)
         self._document_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
         self._query_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
@@ -35,17 +36,19 @@ class TwoTowerBert(nn.Module):
     def get_attention_heads(self, q_input_ids, q_input_mask, q_segment_ids):
         output = self._query_model(q_input_ids, attention_mask=q_input_mask, token_type_ids=q_segment_ids,
                                    output_attentions=True, return_dict=True, use_cache=True)
-        print(type(output))
+        #print(type(output))
 
         for k, v in output.items():
             print(f"{k}: {type(v)}")
         attention = output['attentions']
-        print(type(attention))
-        for i in range(len(attention)):
-            print(f"{i}: {type(attention[i])}")
+        #print(type(attention))
+        #for i in range(len(attention)):
+        #    print(f"{i}: {type(attention[i])}")
 
         keys = output['past_key_values']
-        print(f"shape keys: {type(keys)}")
+        #print(f"shape keys: {type(keys)}")
+        for i in range(keys):
+            print(f"{i}: {keys[i]}")
 
         return attention
 
