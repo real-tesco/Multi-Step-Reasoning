@@ -39,12 +39,13 @@ class TwoTowerBert(nn.Module):
 
         for k, v in output.items():
             print(f"{k}: {type(v)}")
-        attention = output[2]
+        attention = output['attention']
         print(type(attention))
         for i in range(len(attention)):
             print(f"{i}: {type(attention[i])}")
-        # keys = output[3]
-        #print(f"shape keys: {keys.shape}")
+
+        keys = output['past_key_values']
+        print(f"shape keys: {type(keys)}")
 
         return attention
 
