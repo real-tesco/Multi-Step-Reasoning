@@ -39,7 +39,7 @@ class TwoTowerBert(nn.Module):
 
         for k, v in output.items():
             print(f"{k}: {type(v)}")
-        attention = output['attention']
+        attention = output['attentions']
         print(type(attention))
         for i in range(len(attention)):
             print(f"{i}: {type(attention[i])}")
