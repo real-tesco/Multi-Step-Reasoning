@@ -47,7 +47,9 @@ class TwoTowerBert(nn.Module):
 
         embeddings = self._query_model.get_input_embeddings()
         print(type(embeddings))
-        print(embeddings.shape)
+        token_embeddings = embeddings(q_input_ids)
+        print(type(token_embeddings))
+        print(token_embeddings.shape)
 
         keys = output['past_key_values']
         #print(f"shape keys: {type(keys)}")
