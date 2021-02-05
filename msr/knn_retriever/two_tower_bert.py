@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.spatial.distance import cosine
+from msr.reformulation.query_reformulation import PositionalEncoding
 
 from transformers import AutoConfig, AutoModel
 
@@ -50,6 +51,9 @@ class TwoTowerBert(nn.Module):
         token_embeddings = embeddings(q_input_ids)
         print(type(token_embeddings))
         print(token_embeddings.shape)
+
+        pos_encoding = PositionalEncoding(max_len=attention.shape[-1])
+        token_embeddings = pos_encoding(token_embeddings)
 
         keys = output['past_key_values']
         #print(f"shape keys: {type(keys)}")
