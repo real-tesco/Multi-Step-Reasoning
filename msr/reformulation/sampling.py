@@ -5,11 +5,12 @@ from sklearn.metrics import silhouette_score, silhouette_samples
 import numpy as np
 
 
-def attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index, n_heads=12):
+def attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index):
     attention = knn_index.get_attention_heads(q_input_ids, q_input_mask, q_segment_ids)
     for i in range(len(attention)):
         print(f"{i}: {attention[i].shape}")
     return attention
+
 
 def cluster_sampling(documents, queries, qrels, document_labels, query_labels, number_samples=10, stats=None,
                      check_metrics=False, print_info=True):
