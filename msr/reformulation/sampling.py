@@ -7,8 +7,9 @@ import numpy as np
 
 def attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index):
     attention = knn_index.get_attention_heads(q_input_ids, q_input_mask, q_segment_ids)
+    print(len(attention))
     for i in range(len(attention)):
-        print(f"{i}: {attention[i].shape}")
+        print(f"{i}: {type(attention[i])}")
     return attention
 
 
