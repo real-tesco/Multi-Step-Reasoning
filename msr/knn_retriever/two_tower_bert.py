@@ -47,7 +47,7 @@ class TwoTowerBert(nn.Module):
 
         keys = output['past_key_values']
         #print(f"shape keys: {type(keys)}")
-        for i in range(keys):
+        for i in range(len(keys)):
             print(f"{i}: {keys[i]}")
 
         return attention
