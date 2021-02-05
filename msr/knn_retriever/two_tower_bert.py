@@ -45,6 +45,10 @@ class TwoTowerBert(nn.Module):
         #for i in range(len(attention)):
         #    print(f"{i}: {type(attention[i])}")
 
+        embeddings = self._query_model.get_input_embeddings()
+        print(type(embeddings))
+        print(embeddings.shape)
+
         keys = output['past_key_values']
         #print(f"shape keys: {type(keys)}")
         for i in range(len(keys)):
