@@ -35,8 +35,11 @@ class TwoTowerBert(nn.Module):
 
     def get_attention_heads(self, q_input_ids, q_input_mask, q_segment_ids):
         output = self._query_model(q_input_ids, attention_mask=q_input_mask, token_type_ids=q_segment_ids,
-                                         output_attentions=True)
+                                   output_attentions=True, use_cache=True)
         attention = output[2]
+        keys = output[3]
+        print(f"shape keys: {keys.shape}")
+
         return attention
 
     def forward(self, q_input_ids: torch.Tensor, d_input_ids: torch.Tensor, q_input_mask: torch.Tensor = None, q_segment_ids: torch.Tensor = None,
