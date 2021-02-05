@@ -240,16 +240,16 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
 
             batch_score = batch_score.detach().cpu().tolist()
 
-            # add initial retrieved set to result
-            for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-                if q_id in rst_dict_test:
-                    rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
-                else:
-                    rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
-
         else:
             sorted_docs = document_embeddings.to(device)
-            sorted_scores = torch.tensor(distances)
+            batch_score = torch.tensor(distances)
+
+        # add initial retrieved set to result
+        for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
+            if q_id in rst_dict_test:
+                rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
+            else:
+                rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
 
         # do sampling regarding chosen strategy
 
