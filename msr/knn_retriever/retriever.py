@@ -79,6 +79,10 @@ class KnnIndex:
         assert len(segment_ids) == self._seq_max_len
         return torch.tensor(input_ids).view(1, self._seq_max_len), torch.tensor(segment_ids).view(1, self._seq_max_len), torch.tensor(input_mask).view(1, self._seq_max_len)
 
+    def get_attention_heads(self, q_input_ids, q_input_mask, q_segment_ids):
+        heads = self._model.get_attention_heads(q_input_ids, q_input_mask, q_segment_ids)
+        return heads
+
     def load_index(self):
         logger.info('Loading KNN index...')
         self._index.load_index(self._args.index_file)

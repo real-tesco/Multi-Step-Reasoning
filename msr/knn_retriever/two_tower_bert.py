@@ -14,6 +14,7 @@ class TwoTowerBert(nn.Module):
         self._pretrained = pretrained
         self._projection_dim = projection_dim
 
+
         self._config = AutoConfig.from_pretrained(self._pretrained)
         self._document_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
         self._query_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
@@ -31,6 +32,11 @@ class TwoTowerBert(nn.Module):
             rst = self._projection_layer(rst)
 
         return rst
+
+    def get_attention_heads(self, q_input_ids, q_input_mask, q_segment_ids):
+        _, attention = self._query_model(q_input_ids, attention_mask=q_input_mask, token_type_ids=q_segment_ids,
+                                         output_attentions=True)
+        return attention
 
     def forward(self, q_input_ids: torch.Tensor, d_input_ids: torch.Tensor, q_input_mask: torch.Tensor = None, q_segment_ids: torch.Tensor = None,
                 d_input_mask: torch.Tensor = None, d_segment_ids: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

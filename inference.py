@@ -8,7 +8,7 @@ from prettytable import PrettyTable
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
 from msr.reformulation.sampling import random_sampling, score_sampling, rank_sampling, cluster_sampling, \
-    spectral_cluster_sampling, attention_sampling
+    spectral_cluster_sampling, attention_sampling, attention_sampling
 from msr.data.datasets.rankingdataset import RankingDataset
 from transformers import AutoTokenizer
 from msr.knn_retriever.retriever import KnnIndex
@@ -221,11 +221,14 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             continue
 
         query_id = test_batch['query_id']
+        q_input_ids = test_batch['q_input_ids'].to(device)
+        q_input_mask = test_batch['q_input_mask'].to(device)
+        q_segment_ids = test_batch['q_segment_ids'].to(device)
 
         document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
-            test_batch['q_input_ids'].to(device),
-            test_batch['q_input_mask'].to(device),
-            test_batch['q_segment_ids'].to(device),
+            q_input_ids,
+            q_input_mask,
+            q_segment_ids,
             k=k)
 
         if not args.reformulate_before_ranking:
@@ -258,6 +261,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
                                                         args.number_samples, stats=stats, check_metrics=True, print_info=args.print_info)
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
+        elif args.sampling == 'attention':
+            sampled_docs = attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index)
 
         if args.use_q_cluster_as_q:
             new_queries = q_clusters
