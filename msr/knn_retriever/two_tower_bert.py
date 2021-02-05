@@ -52,7 +52,7 @@ class TwoTowerBert(nn.Module):
         print(type(token_embeddings))
         print(token_embeddings.shape)
 
-        pos_encoding = PositionalEncoding(max_len=attention.shape[-1])
+        pos_encoding = PositionalEncoding(max_len=attention[-1].shape[-1])
         token_embeddings = pos_encoding(token_embeddings)
 
         keys = output['past_key_values']
