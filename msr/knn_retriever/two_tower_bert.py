@@ -15,7 +15,6 @@ class TwoTowerBert(nn.Module):
         self._pretrained = pretrained
         self._projection_dim = projection_dim
 
-        # TODO: check if is_decoder breaks
         self._config = AutoConfig.from_pretrained(self._pretrained)
         self._document_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
         self._query_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
@@ -36,15 +35,18 @@ class TwoTowerBert(nn.Module):
 
     def get_attention_heads(self, q_input_ids, q_input_mask, q_segment_ids):
         output = self._query_model(q_input_ids, attention_mask=q_input_mask, token_type_ids=q_segment_ids,
-                                   output_attentions=True, return_dict=True, use_cache=True)
+                                   output_attentions=True, outpur_hidden_states=True,  return_dict=True)
         #print(type(output))
 
         for k, v in output.items():
             print(f"{k}: {type(v)}")
-        attention = output['attentions']
+        attention = output['attentions']   # B x nheads x seq_len x seq_len
         #print(type(attention))
         #for i in range(len(attention)):
         #    print(f"{i}: {type(attention[i])}")
+        hidden_states = output['hidden_states']
+
+        print(hidden_states.shape)
 
         embeddings = self._query_model.get_input_embeddings()
         print(type(embeddings))
@@ -53,14 +55,13 @@ class TwoTowerBert(nn.Module):
         print(token_embeddings.shape)
 
         pos_encoding = PositionalEncoding(max_len=attention[-1].shape[-1])
+        pos_encoding.pe.cuda()
+        # token_embeddings = pos_encoding(token_embeddings.cpu()).cuda()
         token_embeddings = pos_encoding(token_embeddings.cpu()).cuda()
 
         print(token_embeddings.shape)
 
-        keys = output['past_key_values']
-        #print(f"shape keys: {type(keys)}")
-        for i in range(len(keys)):
-            print(f"{i}: len: {len(keys[i])} : 0 shape {keys[i][1].shape}")
+
 
         return attention
 
