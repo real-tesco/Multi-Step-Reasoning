@@ -76,7 +76,7 @@ class TwoTowerBert(nn.Module):
         for i in range(attention.shape[1]):
             mult = torch.bmm(attention[:, i], last_hidden).mean(dim=1)
             print("multshape", mult.shape)
-            heads[i] = mult
+            heads[:, i] = mult
 
         return heads
 
