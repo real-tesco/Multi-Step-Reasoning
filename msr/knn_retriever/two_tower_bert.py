@@ -70,7 +70,10 @@ class TwoTowerBert(nn.Module):
 
         print(token_embeddings.shape)
         '''
+        # hidden -1:  torch.Size([32, 64, 768])
         last_hidden = hidden_states[-1]
+
+        # attention -1:  torch.Size([32, 12, 64, 64])
         attention = attention[-1]
         heads = torch.empty(attention.shape[0], attention.shape[1], last_hidden.shape[2])
         for i in range(attention.shape[1]):
@@ -78,6 +81,7 @@ class TwoTowerBert(nn.Module):
             print("multshape", mult.shape)
             heads[:, i] = mult
 
+        print("shape of heads: ", heads.shape)
         return heads
 
     def forward(self, q_input_ids: torch.Tensor, d_input_ids: torch.Tensor, q_input_mask: torch.Tensor = None, q_segment_ids: torch.Tensor = None,

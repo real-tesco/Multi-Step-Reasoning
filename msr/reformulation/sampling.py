@@ -9,11 +9,6 @@ def attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index):
     # attention of all 12 layers of bert model
     attention = knn_index.get_attention_heads(q_input_ids, q_input_mask, q_segment_ids)
 
-    #getting attention from last layer
-    attention = attention[-1]
-
-    # print(f"attention shape {attention.shape}")
-
     return attention
 
 
