@@ -12,7 +12,7 @@ def attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index):
     #getting attention from last layer
     attention = attention[-1]
 
-    print(f"attention shape {attention.shape}")
+    # print(f"attention shape {attention.shape}")
 
     return attention
 

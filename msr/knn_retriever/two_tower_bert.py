@@ -41,15 +41,21 @@ class TwoTowerBert(nn.Module):
         for k, v in output.items():
             print(f"{k}: {type(v)}")
         attention = output['attentions']   # B x nheads x seq_len x seq_len
-        #print(type(attention))
-        #for i in range(len(attention)):
-        #    print(f"{i}: {type(attention[i])}")
+
+        print("attention:")
+        print(type(attention))
+        print("len: ", len(attention))
+        print("attention -1: ", attention[-1].shape)
+
+
+        print("hiddenstates")
         hidden_states = output['hidden_states']
 
-        print(len(hidden_states))
-        print(hidden_states[-1].shape)
+        print("len: ", len(hidden_states))
+        print("hidden -1: ", hidden_states[-1].shape)
         print("hiddenstate -2", hidden_states[-2].shape)
 
+        '''
         embeddings = self._query_model.get_input_embeddings()
         print(type(embeddings))
         token_embeddings = embeddings(q_input_ids)
@@ -62,6 +68,7 @@ class TwoTowerBert(nn.Module):
         token_embeddings = pos_encoding(token_embeddings.cpu()).cuda()
 
         print(token_embeddings.shape)
+        '''
 
 
 
