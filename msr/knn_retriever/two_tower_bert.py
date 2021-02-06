@@ -46,7 +46,8 @@ class TwoTowerBert(nn.Module):
         #    print(f"{i}: {type(attention[i])}")
         hidden_states = output['hidden_states']
 
-        print(hidden_states.shape)
+        print(len(hidden_states))
+        print(hidden_states[-1].shape)
 
         embeddings = self._query_model.get_input_embeddings()
         print(type(embeddings))
