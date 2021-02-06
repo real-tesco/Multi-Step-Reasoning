@@ -72,8 +72,11 @@ class TwoTowerBert(nn.Module):
         '''
         last_hidden = hidden_states[-1]
         attention = attention[-1]
-
-        heads = torch.bmm(attention, last_hidden)
+        heads = torch.empty(attention.shape[0], attention.shape[1], last_hidden.shape[2])
+        for i in range(attention.shape[1]):
+            mult = torch.bmm(attention[:, i], last_hidden).mean(dim=1)
+            print("multshape", mult.shape)
+            heads[i] = mult
 
         return heads
 
