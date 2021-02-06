@@ -16,7 +16,7 @@ class TwoTowerBert(nn.Module):
         self._projection_dim = projection_dim
 
         # TODO: check if is_decoder breaks
-        self._config = AutoConfig.from_pretrained(self._pretrained, is_decoder=True)
+        self._config = AutoConfig.from_pretrained(self._pretrained)
         self._document_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
         self._query_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
         if projection_dim > 0:
