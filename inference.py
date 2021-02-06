@@ -310,11 +310,13 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(test_loader)}")
     timer.stop()
-    for k, v in stats.items():
-        print(f"{k}: {v}")
-    print(f"mean_query_sil_score: {stats['query_sil_score'] / stats['count']}")
-    print(f"mean_sil_score: {stats['sil_score'] / stats['count']}")
-    print(f"mean_sil_score_cluster: {stats['sil_score_cluster'] / (stats['count'] * args.number_samples)}")
+
+    if args.sampling == 'cluster_kmeans':
+        for k, v in stats.items():
+            print(f"{k}: {v}")
+        print(f"mean_query_sil_score: {stats['query_sil_score'] / stats['count']}")
+        print(f"mean_sil_score: {stats['sil_score'] / stats['count']}")
+        print(f"mean_sil_score_cluster: {stats['sil_score_cluster'] / (stats['count'] * args.number_samples)}")
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
 
     logger.info(f"Time needed per query: {timer.time() / (len(test_loader) * args.batch_size)} s")

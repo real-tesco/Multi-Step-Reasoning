@@ -38,22 +38,22 @@ class TwoTowerBert(nn.Module):
                                    output_attentions=True, output_hidden_states=True,  return_dict=True)
         #print(type(output))
 
-        for k, v in output.items():
-            print(f"{k}: {type(v)}")
+        #for k, v in output.items():
+        #    print(f"{k}: {type(v)}")
         attention = output['attentions']   # B x nheads x seq_len x seq_len
 
-        print("attention:")
-        print(type(attention))
-        print("len: ", len(attention))
-        print("attention -1: ", attention[-1].shape)
+        #print("attention:")
+        #print(type(attention))
+        #print("len: ", len(attention))
+        #print("attention -1: ", attention[-1].shape)
 
 
-        print("hiddenstates")
+        #print("hiddenstates")
         hidden_states = output['hidden_states']
 
-        print("len: ", len(hidden_states))
-        print("hidden -1: ", hidden_states[-1].shape)
-        print("hiddenstate -2", hidden_states[-2].shape)
+        #print("len: ", len(hidden_states))
+        #print("hidden -1: ", hidden_states[-1].shape)
+        #print("hiddenstate -2", hidden_states[-2].shape)
 
 
         '''
@@ -78,10 +78,10 @@ class TwoTowerBert(nn.Module):
         heads = torch.empty(attention.shape[0], attention.shape[1], last_hidden.shape[2])
         for i in range(attention.shape[1]):
             mult = torch.bmm(attention[:, i], last_hidden).mean(dim=1)
-            print("multshape", mult.shape)
+             # print("multshape", mult.shape)
             heads[:, i] = mult
 
-        print("shape of heads: ", heads.shape)
+        # print("shape of heads: ", heads.shape)
         return heads
 
     def forward(self, q_input_ids: torch.Tensor, d_input_ids: torch.Tensor, q_input_mask: torch.Tensor = None, q_segment_ids: torch.Tensor = None,
