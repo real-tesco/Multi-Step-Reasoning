@@ -55,6 +55,7 @@ class TwoTowerBert(nn.Module):
         print("hidden -1: ", hidden_states[-1].shape)
         print("hiddenstate -2", hidden_states[-2].shape)
 
+
         '''
         embeddings = self._query_model.get_input_embeddings()
         print(type(embeddings))
@@ -69,10 +70,12 @@ class TwoTowerBert(nn.Module):
 
         print(token_embeddings.shape)
         '''
+        last_hidden = hidden_states[-1]
+        attention = attention[-1]
 
+        heads = torch.bmm(attention, last_hidden)
 
-
-        return attention
+        return heads
 
     def forward(self, q_input_ids: torch.Tensor, d_input_ids: torch.Tensor, q_input_mask: torch.Tensor = None, q_segment_ids: torch.Tensor = None,
                 d_input_mask: torch.Tensor = None, d_segment_ids: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
