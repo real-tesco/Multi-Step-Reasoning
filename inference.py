@@ -598,6 +598,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
             break
         if args.print_attention_sampled_embeddings:
             document_labels, document_embeddings, distances, original_query = knn_index.knn_query_text(queries[qid], device, k=k)
+            original_query = original_query[0]
         else:
             original_query = torch.tensor(queries[qid])
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(original_query, k=k)
@@ -627,7 +628,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
                 relevant_docs = [item[0] for item in qrels[qid] if int(item[1]) > 0]
 
                 for step_s in range(args.number_samples):
-                    out_meta.write(qid + '_' + '\t' + f'sampled query {step_s}\n')
+                    out_meta.write(qid + f'_{step_s}' + '\t' + f'sampled query {step_s}\n')
                     out_vector.write('\t'.join([str(x) for x in sampled_qs[step_s].tolist()]) + '\n')
 
                     document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
