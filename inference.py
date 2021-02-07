@@ -244,12 +244,13 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             sorted_docs = document_embeddings.to(device)
             batch_score = torch.tensor(distances)
 
-        # add initial retrieved set to result
-        for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-            if q_id in rst_dict_test:
-                rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
-            else:
-                rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+        if args.add_initial_retrieved:
+            # add initial retrieved set to result
+            for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
+                if q_id in rst_dict_test:
+                    rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
+                else:
+                    rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
 
         # do sampling regarding chosen strategy
 
@@ -663,6 +664,8 @@ def main():
     parser.add_argument('-avg_new_qs_for_ranking', type='bool', default=False, help='test clustering and eval clustering metrics')
     parser.add_argument('-rerank_to_new_qs', type='bool', default=False, help='test clustering and eval clustering metrics')
     parser.add_argument('-print_info', type='bool', default=False, help='test clustering and eval clustering metrics')
+    parser.add_argument('add_initial_retrieved', type='bool', default=True,
+                        help='whether to add the first step retrieval to result')
 
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
     parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
