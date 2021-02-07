@@ -34,6 +34,12 @@ class TwoTowerBert(nn.Module):
         return rst
 
     def get_attention_heads(self, q_input_ids, q_input_mask, q_segment_ids):
+        print(type(q_segment_ids))
+        print(type(q_input_mask))
+        print(type(q_segment_ids))
+        print(q_segment_ids.device())
+        print(q_input_mask.device())
+        print(q_segment_ids.device())
         output = self._query_model(q_input_ids, attention_mask=q_input_mask, token_type_ids=q_segment_ids,
                                    output_attentions=True, output_hidden_states=True,  return_dict=True)
         #print(type(output))
