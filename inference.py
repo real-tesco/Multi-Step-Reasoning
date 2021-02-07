@@ -599,32 +599,68 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
         sorted_docs = document_embeddings[
             torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
 
-        new_query = reformulator(original_query.to(device).unsqueeze(dim=0), sorted_docs)
-        document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(new_query.cpu(), k=k)
+        # sampled or reformulated
+        if args.print_attention_sampled_embeddings:
+            q_input_ids, q_input_mask, q_segment_ids = knn_index.tokenize(original_query)
+            sampled_qs = attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index)
 
-        with open(args.vector_file_format.format(qid), "w") as out_vector, open(args.vector_meta_format.format(qid),
-                                                                                "w") as out_meta:
-            out_meta.write('doc id\tlabel\n')
-            out_meta.write(qid + '\t' + 'original query\n')
-            out_vector.write('\t'.join([str(x) for x in original_query.tolist()]) + '\n')
-            out_meta.write(qid + '_' + '\t' + 'reformulated query\n')
-            out_vector.write('\t'.join([str(x) for x in new_query[0].tolist()]) + '\n')
+            with open(args.vector_file_format.format(qid), "w") as out_vector, open(
+                    args.vector_meta_format.format(qid),
+                    "w") as out_meta:
 
-            judged_docs = [item[0] for item in qrels[qid]]
-            labels = [item[1] for item in qrels[qid]]
-            relevant_docs = [item[0] for item in qrels[qid] if int(item[1]) > 0]
+                out_meta.write('doc id\tlabel\n')
+                out_meta.write(qid + '\t' + 'original query\n')
+                out_vector.write('\t'.join([str(x) for x in original_query.tolist()]) + '\n')
 
-            for did, doc_embed in zip(document_labels[0], document_embeddings.tolist()[0]):
-                out_vector.write('\t'.join([str(x) for x in doc_embed]) + '\n')
-                if did in judged_docs:
-                    out_meta.write(did + '\t' + labels[judged_docs.index(did)] + '\n')
-                else:
-                    out_meta.write(did + '\t' + 'unjudged' + '\n')
-                if did in relevant_docs:
-                    relevant_docs.remove(did)
-            for did in relevant_docs:
-                out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]) + '\n')
-                out_meta.write(did + '\t' + 'relevant but not retrieved' + '\n')
+                judged_docs = [item[0] for item in qrels[qid]]
+                labels = [item[1] for item in qrels[qid]]
+                relevant_docs = [item[0] for item in qrels[qid] if int(item[1]) > 0]
+
+                for step_s in range(args.number_samples):
+                    out_meta.write(qid + '_' + '\t' + f'sampled query {step_s}\n')
+                    out_vector.write('\t'.join([str(x) for x in sampled_qs[step_s].tolist()]) + '\n')
+
+                    document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
+                        sampled_qs.cpu(), k=args.retrieves_per_sample)
+
+                    for did, doc_embed in zip(document_labels[0], document_embeddings.tolist()[0]):
+                        out_vector.write('\t'.join([str(x) for x in doc_embed]) + '\n')
+                        if did in judged_docs:
+                            out_meta.write(did + '\t' + labels[judged_docs.index(did)] + '\n')
+                        else:
+                            out_meta.write(did + '\t' + 'unjudged' + '\n')
+                        if did in relevant_docs:
+                            relevant_docs.remove(did)
+                    for did in relevant_docs:
+                        out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]) + '\n')
+                        out_meta.write(did + '\t' + 'relevant but not retrieved' + '\n')
+        else:
+            new_query = reformulator(original_query.to(device).unsqueeze(dim=0), sorted_docs)
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(new_query.cpu(), k=k)
+
+            with open(args.vector_file_format.format(qid), "w") as out_vector, open(args.vector_meta_format.format(qid),
+                                                                                    "w") as out_meta:
+                out_meta.write('doc id\tlabel\n')
+                out_meta.write(qid + '\t' + 'original query\n')
+                out_vector.write('\t'.join([str(x) for x in original_query.tolist()]) + '\n')
+                out_meta.write(qid + '_' + '\t' + 'reformulated query\n')
+                out_vector.write('\t'.join([str(x) for x in new_query[0].tolist()]) + '\n')
+
+                judged_docs = [item[0] for item in qrels[qid]]
+                labels = [item[1] for item in qrels[qid]]
+                relevant_docs = [item[0] for item in qrels[qid] if int(item[1]) > 0]
+
+                for did, doc_embed in zip(document_labels[0], document_embeddings.tolist()[0]):
+                    out_vector.write('\t'.join([str(x) for x in doc_embed]) + '\n')
+                    if did in judged_docs:
+                        out_meta.write(did + '\t' + labels[judged_docs.index(did)] + '\n')
+                    else:
+                        out_meta.write(did + '\t' + 'unjudged' + '\n')
+                    if did in relevant_docs:
+                        relevant_docs.remove(did)
+                for did in relevant_docs:
+                    out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]) + '\n')
+                    out_meta.write(did + '\t' + 'relevant but not retrieved' + '\n')
 
     logger.info("finished printing vectors to files.")
     sys.exit(0)
@@ -695,6 +731,7 @@ def main():
 
     parser.add_argument('-print_embeddings', type='bool', default=False)
     parser.add_argument('-print_reformulated_embeddings', type='bool', default=False)
+    parser.add_argument('-print_attention_sampled_embeddings', type='bool', default=False)
     parser.add_argument('-vector_file_format', type=str,
                         default='./data/embeddings/embeddings_random_examples/qid_{}_judged_docs.tsv')
     parser.add_argument('-vector_meta_format', type=str,
