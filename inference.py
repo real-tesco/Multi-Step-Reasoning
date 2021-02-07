@@ -581,17 +581,26 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
             else:
                 qrels[qid] = [(did, label)]
     queries = {}
-    with open(args.test_embeddings, "rb") as f_emb, open(args.test_ids, "rb") as f_ind:
-        qids = np.load(f_ind)
-        qs = np.load(f_emb)
-        for idy, qid in enumerate(qids):
-            queries[qid] = qs[idy]
+    if args.print_attention_sampled_embeddings:
+        with open(args.test_data, "rb") as qs:
+            for line in qs:
+                qid, query = line.split()
+                queries[qid] = query
+    else:
+        with open(args.test_embeddings, "rb") as f_emb, open(args.test_ids, "rb") as f_ind:
+            qids = np.load(f_ind)
+            qs = np.load(f_emb)
+            for idy, qid in enumerate(qids):
+                queries[qid] = qs[idy]
 
     for idx, qid in enumerate(qrels):
         if idx == 3:
             break
-        original_query = torch.tensor(queries[qid])
-        document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(original_query, k=k)
+        if args.print_attention_sampled_embeddings:
+            document_labels, document_embeddings, distances, original_query = knn_index.knn_query_text(queries[qid], k=k)
+        else:
+            original_query = torch.tensor(queries[qid])
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(original_query, k=k)
 
         batch_score = ranking_model.rerank_documents(original_query.to(device), document_embeddings.to(device), device)
 
@@ -601,7 +610,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
 
         # sampled or reformulated
         if args.print_attention_sampled_embeddings:
-            q_input_ids, q_input_mask, q_segment_ids = knn_index.tokenize(original_query)
+            q_input_ids, q_input_mask, q_segment_ids = knn_index.tokenize(queries[qid])
             sampled_qs = attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index)
 
             with open(args.vector_file_format.format(qid), "w") as out_vector, open(
