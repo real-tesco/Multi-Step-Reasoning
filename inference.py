@@ -611,7 +611,8 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
         # sampled or reformulated
         if args.print_attention_sampled_embeddings:
             q_input_ids, q_input_mask, q_segment_ids = knn_index.tokenize(queries[qid])
-            sampled_qs = attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index)
+            sampled_qs = attention_sampling(q_input_ids.to(device), q_input_mask.to(device), q_segment_ids.to(device),
+                                            knn_index)
 
             with open(args.vector_file_format.format(qid), "w") as out_vector, open(
                     args.vector_meta_format.format(qid),
