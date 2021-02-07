@@ -242,7 +242,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
 
         else:
             sorted_docs = document_embeddings.to(device)
-            batch_score = torch.tensor(distances)
+            batch_score = distances
 
         if args.add_initial_retrieved:
             # add initial retrieved set to result
@@ -251,6 +251,7 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
                     rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
                 else:
                     rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+
 
         # do sampling regarding chosen strategy
 
