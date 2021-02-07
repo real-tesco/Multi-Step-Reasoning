@@ -664,7 +664,7 @@ def main():
     parser.add_argument('-avg_new_qs_for_ranking', type='bool', default=False, help='test clustering and eval clustering metrics')
     parser.add_argument('-rerank_to_new_qs', type='bool', default=False, help='test clustering and eval clustering metrics')
     parser.add_argument('-print_info', type='bool', default=False, help='test clustering and eval clustering metrics')
-    parser.add_argument('add_initial_retrieved', type='bool', default=True,
+    parser.add_argument('-add_initial_retrieved', type='bool', default=True,
                         help='whether to add the first step retrieval to result')
 
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
