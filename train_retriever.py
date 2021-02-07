@@ -304,7 +304,8 @@ def main(args):
     elif args.bert_checkpoint is not None:
         logger.info("Loading model from checkpoint")
         state_dict = torch.load(args.bert_checkpoint)
-        model.load_bert_model_state_dict(state_dict)
+        model.load_state_dict(state_dict)
+        # model.load_bert_model_state_dict(state_dict)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
