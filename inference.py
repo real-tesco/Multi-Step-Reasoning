@@ -582,9 +582,9 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
                 qrels[qid] = [(did, label)]
     queries = {}
     if args.print_attention_sampled_embeddings:
-        with open(args.test_data, "rb") as qs:
+        with open(args.test_data, "r") as qs:
             for line in qs:
-                qid, query = line.split()
+                qid, query = line.split('\t')
                 queries[qid] = query
     else:
         with open(args.test_embeddings, "rb") as f_emb, open(args.test_ids, "rb") as f_ind:
