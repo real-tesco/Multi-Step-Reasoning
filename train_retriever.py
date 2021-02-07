@@ -233,7 +233,7 @@ def build_index(args):
 def test_bert_checkpoint(args, model, metric, dev_loader, device):
     rst_dict = dev(args, model, dev_loader, device)
     msr.utils.save_trec(args.res, rst_dict)
-    mes, _ = metric.eval_run(args.qrels, args.res)
+    _ = metric.eval_run(args.qrels, args.res)
 
 
 def main(args):
