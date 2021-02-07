@@ -613,7 +613,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
             q_input_ids, q_input_mask, q_segment_ids = knn_index.tokenize(queries[qid])
             sampled_qs = attention_sampling(q_input_ids.to(device), q_input_mask.to(device), q_segment_ids.to(device),
                                             knn_index)
-
+            print(sampled_qs.shape)
             with open(args.vector_file_format.format(qid), "w") as out_vector, open(
                     args.vector_meta_format.format(qid),
                     "w") as out_meta:
@@ -631,7 +631,7 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
                     out_vector.write('\t'.join([str(x) for x in sampled_qs[step_s].tolist()]) + '\n')
 
                     document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
-                        sampled_qs.cpu(), k=args.retrieves_per_sample)
+                        sampled_qs[step_s].cpu(), k=args.retrieves_per_sample)
 
                     for did, doc_embed in zip(document_labels[0], document_embeddings.tolist()[0]):
                         out_vector.write('\t'.join([str(x) for x in doc_embed]) + '\n')
