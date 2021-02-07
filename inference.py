@@ -643,9 +643,9 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
                             out_meta.write(did + '\t' + 'unjudged' + '\n')
                         if did in relevant_docs:
                             relevant_docs.remove(did)
-                    for did in relevant_docs:
-                        out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]) + '\n')
-                        out_meta.write(did + '\t' + 'relevant but not retrieved' + '\n')
+                for did in relevant_docs:
+                    out_vector.write('\t'.join([str(x) for x in knn_index.get_document(did)]) + '\n')
+                    out_meta.write(did + '\t' + 'relevant but not retrieved' + '\n')
         else:
             new_query = reformulator(original_query.to(device).unsqueeze(dim=0), sorted_docs)
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(new_query.cpu(), k=k)
