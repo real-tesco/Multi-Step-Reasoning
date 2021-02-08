@@ -311,6 +311,7 @@ def main(args):
     model.to(device)
 
     if args.learn_projection:
+        logger.info("Freezing two tower BERTs, only learn projection layer")
         model.freeze_berts()
 
     metric = msr.metrics.Metric()
