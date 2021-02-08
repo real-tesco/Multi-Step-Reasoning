@@ -307,9 +307,6 @@ def main(args):
         model.load_state_dict(state_dict)
         # model.load_bert_model_state_dict(state_dict)
 
-    if args.learn_projection:
-        model.freeze_berts()
-
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
 
@@ -378,8 +375,6 @@ if __name__ == '__main__':
     parser.add_argument('-start_chunk', type=int, default=0)
     parser.add_argument('-reverse_passage', type='bool', default=False)
     parser.add_argument('-max_elems', type=int)
-    parser.add_argument('-learn_projection', type='bool', default=False,
-                        help="learn a projection on top of existing model")
 
     args = get_args(parser)
 
