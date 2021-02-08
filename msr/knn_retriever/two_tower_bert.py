@@ -20,16 +20,21 @@ class TwoTowerBert(nn.Module):
         self._query_model = AutoModel.from_pretrained(self._pretrained, config=self._config)
         if projection_dim > 0:
             self._projection_layer = nn.Linear(768, projection_dim)
+            self._activation = nn.Tanh()
 
     def calculate_embedding(self, d_input_ids, d_input_mask, d_segment_ids, doc=True):
         if doc:
             embedding = self._document_model(d_input_ids, attention_mask=d_input_mask, token_type_ids=d_segment_ids)
         else:
             embedding = self._query_model(d_input_ids, attention_mask=d_input_mask, token_type_ids=d_segment_ids)
-        rst = F.normalize(embedding[0][:, 0, :], p=2, dim=1)
+
+        rst = embedding[0][:, 0, :]
 
         if self._projection_dim > 0:
             rst = self._projection_layer(rst)
+            rst = self._activation(rst)
+
+        rst = F.normalize(rst, p=2, dim=1)
 
         return rst
 
@@ -83,6 +88,8 @@ class TwoTowerBert(nn.Module):
 
             # only use the CLS token
             mult = torch.bmm(attention[:, i], last_hidden)[:, 0]
+            mult = F.normalize(mult, p=2, dim=1)
+
              # print("multshape", mult.shape)
             heads[:, i] = mult
 
@@ -102,12 +109,15 @@ class TwoTowerBert(nn.Module):
 
         #document = document - document.min()
         #query = query - query.min()
-        document = F.normalize(document, p=2, dim=1)
-        query = F.normalize(query, p=2, dim=1)
 
         if self._projection_dim > 0:
             document = self._projection_layer(document)
+            document = self._activation(document)
             query = self._projection_layer(query)
+            query = self._activation(query)
+
+        document = F.normalize(document, p=2, dim=1)
+        query = F.normalize(query, p=2, dim=1)
 
         score = (document * query).sum(dim=1)
         score = torch.clamp(score, min=0.0, max=1.0)
@@ -116,6 +126,10 @@ class TwoTowerBert(nn.Module):
         # score = torch.sigmoid(score)
 
         return score, query, document
+
+    def freeze_berts(self):
+        self._query_model.eval()
+        self._document_model.eval()
 
     def load_bert_model_state_dict(self, state_dict):
         st = {}
