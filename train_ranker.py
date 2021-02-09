@@ -1,18 +1,14 @@
 import argparse
-import os
 import torch
+import torch.optim as optim
+import logging
+import math
+
 import msr
-from msr.data.datasets.rankingdataset import RankingDataset
-from msr.reranker.ranking_model import NeuralRanker
 import msr.utils as utils
 import msr.reranker.ranker_config as config
-from torch.utils.data.sampler import SequentialSampler, RandomSampler
-import torch.optim as optim
-import numpy as np
-import logging
-import json
-from torch.autograd import Variable
-import math
+from msr.data.datasets.rankingdataset import RankingDataset
+from msr.reranker.ranking_model import NeuralRanker
 
 
 def str2bool(v):
@@ -35,22 +31,10 @@ def make_dataloader(doc_list, docid_list, query_list, query_id_list, triples, mo
     return loader
 
 
-def save(args, model, optimizer, filename):
-    params = {'state_dict': {
-        'model': model.state_dict(),
-        'optimizer': optimizer.state_dict()
-    }}
-    try:
-        torch.save(params, filename)
-    except BaseException:
-        logger.warn('[ WARN: Saving failed... continuing anyway. ]')
-
-
 def init_from_checkpoint(args):
     logger.info('Loading model from saved checkpoint {}'.format(args.checkpoint))
     checkpoint = torch.load(args.checkpoint)
     ranker = NeuralRanker(args)
-    # ranker.load_state_dict(checkpoint['state_dict']['model'])
     ranker.load_state_dict(checkpoint)
 
     parameters = ranker.parameters()
@@ -63,7 +47,6 @@ def init_from_checkpoint(args):
                                  weight_decay=args.weight_decay)
     else:
         raise RuntimeError('Unsupported optimizer: %s' % args.optimizer)
-    # optimizer.load_state_dict(checkpoint['state_dict']['optimizer'])
     logger.info('Model loaded...')
 
     return ranker, optimizer
@@ -90,14 +73,11 @@ def init_from_scratch(args):
     return ranker, optimizer
 
 
-# TODO: look here
 def train(args, loss, ranking_model, metric, optimizer, device, train_loader, dev_loader):
     para_loss = utils.AverageMeter()
     mes = 0.0
     best_mes = 0.0
-    best_mrr = 0.0
     best_ndcg = 0.0
-    mrr = 0.0
     ndcg = 0.0
     for epoch in range(0, args.epochs):
         for idx, ex in enumerate(train_loader):
@@ -106,12 +86,14 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
             scores_p, scores_n = ranking_model.score_documents(ex['query'].to(device),
                                                                ex['positive_doc'].to(device),
                                                                ex['negative_doc'].to(device))
+
             batch_loss = loss(scores_p, scores_n, torch.ones(scores_p.size()).to(device))
+
             optimizer.zero_grad()
             batch_loss.backward()
-            # torch.nn.utils.clip_grad_norm(ranking_model.parameters(), 2.0)
             optimizer.step()
             para_loss.update(batch_loss.data.item())
+
             if math.isnan(para_loss.avg):
                 import pdb
                 pdb.set_trace()
@@ -139,16 +121,16 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                     if mes > best_mes:
                         msr.utils.save_trec(args.res + '.best', rst_dict)
                         best_mes = mes
-                        #best_mrr = mrr if mrr > best_mrr else best_mrr
-                        #best_ndcg = ndcg if ndcg > best_ndcg else best_ndcg
-                        logger.info('New best mes = {:2.4f}'.format(best_mes))
+                        logger.info('New best metric = {:2.4f}'.format(best_mes))
                         logger.info('checkpointing  model at {}.ckpt'.format(args.checkpoint))
                         torch.save(ranking_model.state_dict(), args.checkpoint + ".ckpt")
+
+        # eval at the end of each epoch
         _ = metric.eval_run(args.qrels, args.res + '.best')
 
 
 def process_batch(model, batch, rst_dict, device):
-    query_id, doc_id = batch['query_id'], batch['doc_id']   #, batch['label'], batch['retrieval_score']
+    query_id, doc_id = batch['query_id'], batch['doc_id']
     with torch.no_grad():
         batch_score = model.score_documents(batch['query'].to(device),
                                             batch['doc'].to(device))
@@ -159,16 +141,9 @@ def process_batch(model, batch, rst_dict, device):
                 rst_dict[q_id] = [(b_s[0], d_id)]
             else:
                 rst_dict[q_id].append((b_s[0], d_id))
-            # for d, s in (zip(d_id, b_s)):
-            #    rst_dict[q_id].append((s, d))
-
-#            if q_id in rst_dict:
-#                rst_dict[q_id].append((b_s, d_id, l))
-#            else:
-#                rst_dict[q_id] = [(b_s, d_id, l)]
 
 
-def eval_ranker(args, model,  dev_loader, device, test_loader=None):
+def eval_ranker(args, model, dev_loader, device, test_loader=None):
     logger.info("Evaluating trec metrics for dev set...")
     rst_dict_dev = {}
     rst_dict_test = None
@@ -196,12 +171,15 @@ def main(args):
 
     if args.train:
         logger.info("Loading train data...")
+
+        # ranker training/dev data is in form of triple with ids and doc/query embeddings and ids as chunked numpy files
         doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
         doc_ids_list = (args.doc_ids_format.format(i) for i in range(0, args.num_doc_files))
         query_embedding_list = (args.query_embedding_format.format(i) for i in range(0, args.num_query_files))
         query_ids_list = (args.query_ids_format.format(i) for i in range(0, args.num_query_files))
 
-        train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list, args.triples,
+        train_loader = make_dataloader(doc_embedding_list, doc_ids_list, query_embedding_list, query_ids_list,
+                                       args.triples,
                                        mode='train', model='ranker')
 
         logger.info("Loading dev data...")
@@ -258,17 +236,35 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # training options
+
     parser.register('type', 'bool', str2bool)
 
+    # run options
+    parser.add_argument('-train', type='bool', default=True, help='train document ranker')
+    parser.add_argument('-eval', type='bool', default=False, help='eval ranker ')
+    parser.add_argument('-print_every', type=int, default=25)
+    parser.add_argument('-eval_every', type=int, default=10000)
+    parser.add_argument('-cuda', type=bool, default=torch.cuda.is_available(), help='use cuda and gpu')
+    parser.add_argument('-data_workers', type=int, default=5, help='number of data workers to use')
+    parser.add_argument('-res', type=str, default='./results/ranking_result.trec',
+                        help='metric to evaluate ranker with')
+
+    # training options
     parser.add_argument('-epochs', type=int, default=30,
                         help='number of epochs to train the retriever')
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-learning_rate', type=float, default=0.1, help='Learning rate for SGD (default 0.1)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
-    parser.add_argument('-cuda', type=bool, default=torch.cuda.is_available(), help='use cuda and gpu')
     parser.add_argument('-batch_size', type=int, default=64, help='batch size to use')
-    parser.add_argument('-data_workers', type=int, default=5, help='number of data workers to use')
+    parser.add_argument('-optimizer', type=str, default='adamax',
+                        help='optimizer to use for training [sgd, adamax]')
+    parser.add_argument('-checkpoint', type=str, default=None, help='Checkpoint name of ranker model')
+    parser.add_argument('-metric', type=str, default='ndcg_cut_10', help='metric to evaluate ranker with')
+
+    # data settings
+    parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv',
+                        help='dev qrels file')
+    parser.add_argument('-qrels_test', type=str, default='./data/msmarco-test-qrels.tsvs')
     parser.add_argument('-doc_embedding_format', type=str,
                         default='./data/embeddings/embeddings_random_examples/marco_doc_embeddings_{}.npy',
                         help='folder with chunks of document embeddings, with format brackets for idx')
@@ -285,36 +281,17 @@ if __name__ == '__main__':
     parser.add_argument('-num_query_files', type=int, default=1, help='number of chunks of training triples')
     parser.add_argument('-triples', type=str, default='./data/trids_marco-doc-10.tsv',
                         help='number of chunks of training triples')
-
     parser.add_argument('-dev_file', type=str, default='./data/msmarco-doc.dev.jsonl')
     parser.add_argument('-dev_query_embedding_file', type=str,
                         default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-dev_query_ids_file', type=str,
                         default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_indices_0.npy')
     parser.add_argument('-dev_data', type=str, default='./data/results/inference_bm25_baseline_1000.trec.dev')
-
-    parser.add_argument('-test_file', type=str, default='./result/')
     parser.add_argument('-test_query_embedding_file', type=str,
                         default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_0.npy')
     parser.add_argument('-test_query_ids_file', type=str,
                         default='./data/embeddings/embeddings_random_examples/marco_dev_query_embeddings_indices_0.npy')
     parser.add_argument('-test_data', type=str, default='./results/inference_bm25_baseline_1000.trec.test')
-
-    parser.add_argument('-print_every', type=int, default=25)
-    parser.add_argument('-eval_every', type=int, default=10000)
-    # run options
-    parser.add_argument('-train', type='bool', default=True, help='train document ranker')
-    parser.add_argument('-eval', type='bool', default=False, help='eval ranker ')
-
-    parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv',
-                        help='dev qrels file')
-    parser.add_argument('-qrels_test', type=str, default='./data/msmarco-test-qrels.tsvs')
-    parser.add_argument('-optimizer', type=str, default='adamax',
-                        help='optimizer to use for training [sgd, adamax]')
-    parser.add_argument('-pretrained', type=str, default='ranker.ckpt', help='checkpoint file to load checkpoint')
-    parser.add_argument('-checkpoint', type=str, default=None, help='Checkpoint name of ranker model')
-    parser.add_argument('-metric', type=str, default='ndcg_cut_10', help='metric to evaluate ranker with')
-    parser.add_argument('-res', type=str, default='./results/ranking_result.trec', help='metric to evaluate ranker with')
 
     args = config.get_args(parser)
 
