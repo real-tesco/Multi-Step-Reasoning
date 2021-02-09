@@ -6,24 +6,23 @@ import numpy as np
 
 
 def attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index):
-    # attention of all 12 layers of bert model
     attention = knn_index.get_attention_heads(q_input_ids, q_input_mask, q_segment_ids)
-
     return attention
 
 
-def cluster_sampling(documents, queries, qrels, document_labels, query_labels, number_samples=10, stats=None,
-                     check_metrics=False, print_info=True):
-    document_labels = np.asarray(document_labels)
-    query_labels = np.expand_dims(np.asarray(query_labels), axis=1)
+def cluster_sampling(documents, queries, number_samples=10, qrels=None, document_labels=None, query_labels=None,
+                     stats=None, check_metrics=False, print_info=True):
+    # add qrels, doc_labes, query_labels, stats dict and check_metrics flag to get stats saved in dict for clustering
+    # print_info controls the print for the clustering
+    if check_metrics:
+        query_labels = np.expand_dims(np.asarray(query_labels), axis=1)
+        document_labels = np.asarray(document_labels)
+        document_labels = np.concatenate((query_labels, document_labels), axis=1)
 
     documents = documents.cpu().numpy()
     queries = queries.unsqueeze(dim=1).detach().cpu().numpy()
-    documents = np.concatenate((queries, documents), axis=1)    # B x 1001 x 768
+    documents = np.concatenate((queries, documents), axis=1)    # B x initial_retrieved +1 x embedd_dim
 
-    document_labels = np.concatenate((query_labels, document_labels), axis=1)
-
-    # print(f"shape of documents after stack: {documents}")
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
     q_clusters = torch.empty(documents.shape[0], documents.shape[2])
     kmeans = KMeans(n_clusters=number_samples, random_state=0)
@@ -33,10 +32,10 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
         centers = torch.from_numpy(kmeans.cluster_centers_)
         sampled_docs[b] = centers
         q_clusters[b] = centers[kmeans.labels_[0]]
+
         if check_metrics:
             sil_score = silhouette_score(documents[b], kmeans.labels_, metric='cosine')
             sil_score_per_sample = silhouette_samples(documents[b], kmeans.labels_, metric='cosine')
-            # print(f"silhoutte score per sample in minibatch 0\n: {sil_score_per_sample.tolist()}")
             sil_score_per_cluster = []
             query_sil_score += sil_score_per_sample[0]
 
@@ -77,11 +76,7 @@ def cluster_sampling(documents, queries, qrels, document_labels, query_labels, n
                     print(f'sil score per cluster: {sil_score_per_cluster}')
                     print(f"sil score of query: {sil_score_per_sample[0]}")
                     print(f"query cluster lbl: {kmeans.labels_[0]}")
-            #if b == 0:
-            #    print(f"Silhoutte Score for minibatch {b}: {sil_score}")
-            #    print(f"query cluster lbl: {kmeans.labels_[0]}")
-            #    print(f'sil score per cluster: {sil_score_per_cluster}')
-            #    print(f"sil score of query: {sil_score_per_sample[0]}")
+
     return sampled_docs, q_clusters
 
 
@@ -111,11 +106,6 @@ def spectral_cluster_sampling(documents, number_samples=10):
 
 
 def random_sampling(documents, number_samples=10):
-    """
-    documents and scores have shape batch_size x K x dim_hidden
-
-    returns sampled documents and scores with shape batch_size x number_samples x dim_hidden
-    """
     sampled_docs = torch.empty(documents.shape[0], number_samples, documents.shape[2])
     for b in range(documents.shape[0]):
         tmp = random.choices(documents[b], k=number_samples)
