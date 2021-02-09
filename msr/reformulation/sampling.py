@@ -1,8 +1,9 @@
 import torch
 import random
+import numpy as np
 from sklearn.cluster import KMeans, SpectralClustering
 from sklearn.metrics import silhouette_score, silhouette_samples
-import numpy as np
+
 
 
 def attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index):
