@@ -1,11 +1,6 @@
-from typing import List, Tuple, Dict, Any
-
-import json
+from typing import Dict, Any
 import numpy as np
-import torch
 from torch.utils.data import Dataset
-
-from transformers import AutoTokenizer
 
 
 class IndexDataset(Dataset):
