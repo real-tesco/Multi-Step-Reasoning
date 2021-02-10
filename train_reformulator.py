@@ -271,9 +271,7 @@ def main():
     args = parser.parse_args()
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
-    ranker_args.train = False
     args.dim_hidden = index_args.dim_hidden
-
 
     tokenizer = AutoTokenizer.from_pretrained(index_args.pretrain)
     logger.info("Load training data...")
@@ -323,11 +321,12 @@ def main():
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
     two_tower_bert.load_state_dict(checkpoint, strict=False)
+    two_tower_bert.eval()
+
     knn_index = KnnIndex(index_args, two_tower_bert)
     logger.info("Load Index File and set ef")
     knn_index.load_index()
     knn_index.set_ef(index_args.efc)
-    # Transformer to big if all is on GPU
     knn_index.set_device(device)
 
     #   2. Load Ranker
@@ -336,6 +335,7 @@ def main():
     checkpoint = torch.load(args.ranker_checkpoint)
     ranking_model.load_state_dict(checkpoint)
     ranking_model.to(device)
+    ranking_model.eval()
 
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
