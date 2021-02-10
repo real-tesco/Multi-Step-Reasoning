@@ -2,22 +2,18 @@
 
 import os
 os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64/"
-
-import argparse
-import csv
-import random
-import gzip
-import os
-from collections import defaultdict
-import numpy as np
-import json
-import pyserini
-from pyserini.search import SimpleSearcher
-import logging
-from tqdm import tqdm
-import hnswlib
-from msr.knn_retriever.retriever import KnnIndex
 import torch
+import argparse
+import random
+import os
+import logging
+from collections import defaultdict
+
+from tqdm import tqdm
+import numpy as np
+from pyserini.search import SimpleSearcher
+
+from msr.knn_retriever.retriever import KnnIndex
 from msr.knn_retriever.two_tower_bert import TwoTowerBert
 
 logger = logging.getLogger()
@@ -94,18 +90,15 @@ def generate_triples(args):
             hits = searcher.search(query_text)
             if len(hits) == 0:
                 stats['skipped_hits_len_0'] += 1
-                #logger.info("skipped another one")
                 continue
             best_pid = -1
             for i in range(0, min(args.topk, len(hits))):
                 if hits[i].docid in positive_pids:
                     best_pid = hits[i].docid
                     stats['best_pid_in_bm25'] += 1
-                    #logger.info("found pid of correct doc writing that to out")
                     break
             if best_pid == -1:
                 best_pid = hits[0].docid
-                #logger.info("not found pid of correct doc, using first passage of positive doc")
                 stats['best_pid_not_in_positive_doc'] += 1
 
             out.write("{}\t{}\t{}\n".format(topicid, best_pid, random.choice(negative_passages)))
@@ -117,6 +110,7 @@ def generate_triples(args):
 
 
 def split_training(args):
+    # converts the list of triples to triples with encodings saved in numpy chunks
     encoded_passages = np.load(args.passages)
     encoded_queries = np.load(args.queries)
     queries_indices = np.load(args.queries_indices)
@@ -201,10 +195,6 @@ def generate_pairs(args):
 
 
 def generate_train(args):
-    # if use passages for document approximation
-    #logger.info("Opening docid2pid...")
-    #with open(args.docid2pid, 'r') as f:
-    #    docid2pid = json.load(f)
 
     # For each topicid, the list of positive docids is qrel[topicid]
     logger.info("Loading qrel file...")
@@ -299,6 +289,31 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
+
+    # run options
+    parser.add_argument('-random_sample', type='bool', default=True,
+                        help='do the negative sampling at random or take top ranked docs by BM25')
+    parser.add_argument('-split_into_numpy', type=int, default=0, help='split generated training data into npy')
+    parser.add_argument('-negative_samples', type=int, default=2, help='how many negative examples per type')
+    parser.add_argument('-pairs', type='bool', default=True, help='create pairs or triples')
+    parser.add_argument('-topk', type=int, default=3, help='check if correct passage is under top k of bm25, '
+                                                           'else take first passage if passages used')
+    parser.add_argument('-use_top_bm25_samples', type='bool', default=True, help='also sample from args.bm25_top_k '
+                                                                                 'best docs per query')
+    parser.add_argument('-use_knn_index_generation', type=str, default=None, help='use hnswlib index to choose hard'
+                                                                                  'examples')
+
+    # hnswlib index options
+    parser.add_argument('-index_mapping', type=str, default='indexes/mapping_docid2indexid.json')
+    parser.add_argument('-similarity', type=str, default='ip')
+    parser.add_argument('-dim_hidden', type=int, default=768)
+    parser.add_argument('-efc', type=int, default=100)
+    parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
+    parser.add_argument('-two_tower_checkpoint', type=str)
+    parser.add_argument('-max_doc_len', type=int, default=64, help='64 if queries are used else max doc len eg 512')
+    parser.add_argument('-max_query_len', type=int, default=64, help='64 if queries are used else max doc len eg 512')
+
+    #data settings
     parser.add_argument('-docid2pid', type=str, default='docid2pids.json',
                         help='the json file with dict for doc id to passage id mapping')
     parser.add_argument('-base_dir', type=str, help='base directory for files')
@@ -308,9 +323,6 @@ if __name__ == '__main__':
     parser.add_argument('-anserini_index', type=str, default=None)#'indexes/msmarco_passaged_150_anserini/')
     parser.add_argument('-query_file', type=str, default='msmarco-doctrain-queries.tsv')
     parser.add_argument('-doc_lookup', type=str, default='msmarco-docs-lookup.tsv')
-    parser.add_argument('-random_sample', type='bool', default=True,
-                        help='do the negative sampling at random or take top ranked docs by BM25')
-    parser.add_argument('-split_into_numpy', type=int, default=0, help='split generated training data into npy')
     parser.add_argument('-generate_train', type='bool', default=True, help='generate training data')
     parser.add_argument('-queries', type=str, default='embeddings/query_embeddings/train.msmarco_queries_normed.npy',
                         help='all encoded queries in npy')
@@ -321,22 +333,6 @@ if __name__ == '__main__':
                         help='all encoded passages in npy')
     parser.add_argument('-passages_indices', type=str, default='input/msmarco_indices.npy')
     parser.add_argument('-out_dir', type=str, help='output directory')
-    parser.add_argument('-negative_samples', type=int, default=2, help='how many negative examples per type')
-    parser.add_argument('-pairs', type='bool', default=True, help='create pairs or triples')
-    parser.add_argument('-topk', type=int, default=3, help='check if correct passage is under top k of bm25, '
-                                                                  'else take first passage if passages used')
-    parser.add_argument('-use_top_bm25_samples', type='bool', default=True, help='also sample from args.bm25_top_k '
-                                                                                 'best docs per query')
-    parser.add_argument('-use_knn_index_generation', type=str, default=None, help='use hnswlib index to choose hard'
-                                                                                     'examples')
-    parser.add_argument('-index_mapping', type=str, default='indexes/mapping_docid2indexid.json')
-    parser.add_argument('-similarity', type=str, default='ip')
-    parser.add_argument('-dim_hidden', type=int, default=768)
-    parser.add_argument('-efc', type=int, default=100)
-    parser.add_argument('-pretrain', type=str, default='bert-base-uncased')
-    parser.add_argument('-two_tower_checkpoint', type=str)
-    parser.add_argument('-max_doc_len', type=int, default=64, help='64 if queries are used else max doc len eg 512')
-    parser.add_argument('-max_query_len', type=int, default=64, help='64 if queries are used else max doc len eg 512')
 
     args = parser.parse_args()
 
