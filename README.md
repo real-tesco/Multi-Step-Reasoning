@@ -4,7 +4,7 @@
 *Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning).
 
 ## Setup
-The requirements are in the [requirements file](requirements.txt). 
+The requirements are in the requirements file. 
 ```
 pip install -r requirements.txt
 ```
