@@ -1,26 +1,24 @@
 #!/usr/bin/python3
 
 import argparse
-import os
+import logging
+import random
+
 import torch
-import torch.optim as optim
 from torch.nn.functional import softmax
+from torch.utils.tensorboard import SummaryWriter
+from transformers import get_linear_schedule_with_warmup, AutoTokenizer
+
 import msr
+import msr.utils as utils
 from msr.data.dataloader import DataLoader
-from msr.data.datasets.rankingdataset import RankingDataset
 from msr.data.datasets import BertDataset
-from transformers import AutoTokenizer
 from msr.knn_retriever.retriever import KnnIndex
 from msr.knn_retriever.retriever_config import get_args as get_knn_args
 from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
-import msr.utils as utils
 from msr.reformulation.query_reformulation import NeuralReformulator, QueryReformulator, TransformerReformulator
-import logging
-import random
-from transformers import get_linear_schedule_with_warmup
-from torch.utils.tensorboard import SummaryWriter
 
 
 logger = logging.getLogger()
@@ -35,7 +33,6 @@ def inner_product(prediction, target):
     return (1 - torch.sigmoid(dot_prod)).mean()
 
 
-# other choice would be inner product
 def cross_entropy(prediction, target):
     prediction = softmax(prediction, dim=1)
     target = softmax(target, dim=1)
@@ -53,7 +50,6 @@ def get_relevant_embeddings(qids, qrels, knn_index):
             targets.append(knn_index.get_document(did))
         else:
             print(f"qid: {qid} is not in qrels...")
-    #print(qrels.items())
     return torch.FloatTensor(targets)
 
 
@@ -130,7 +126,8 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 continue
             query_id = train_batch['query_id']
             document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
-                train_batch['q_input_ids'].to(device), train_batch['q_segment_ids'].to(device), train_batch['q_input_mask'].to(device))
+                train_batch['q_input_ids'].to(device), train_batch['q_segment_ids'].to(device),
+                train_batch['q_input_mask'].to(device), k)
 
             query_embeddings = query_embeddings.to(device)
 
@@ -138,7 +135,6 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
                 # sort doc embeddings according score and reformulate
                 scores_sorted, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
-                # scores_sorted, scores_sorted_indices = torch.sort(torch.tensor(batch_score), dim=1, descending=True)
                 sorted_docs = document_embeddings[
                     torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
             else:
@@ -207,13 +203,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
 
+    # reformulation settings
     parser.add_argument('-reformulation_type',
                         type=str, default='neural', choices=['neural', 'weighted_avg', 'transformer'],
                         help='type of reformulator to train')
     parser.add_argument('-top_k_reformulator', type=int, default=5)
     parser.add_argument('-reformulator_checkpoint', type=str)
-    parser.add_argument('-reformulate_before_ranking', type='bool', default=False)
-
 
     # transformer reformulator args
     parser.add_argument('-nhead', type=int, default=4)
@@ -224,27 +219,20 @@ def main():
     parser.add_argument('-hidden1', type=int, default=3500)
     parser.add_argument('-hidden2', type=int, default=1500)
 
-    # training args
-    parser.add_argument('-loss_fn', type=str, default='ip', help='loss function to use')
+    # run options
+    parser.add_argument('-reformulate_before_ranking', type='bool', default=False)
+    parser.add_argument('-full_ranking', type='bool', default=True)
 
-    # inference args
-    parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
+    # training args
+    parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5'])
+    parser.add_argument('-k', type=int, default=100)
+    parser.add_argument('-loss_fn', type=str, default='ip', help='loss function to use')
     parser.add_argument('-epochs', type=int, default=10)
-    parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
-    parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
-    parser.add_argument('-train_data', action=msr.utils.DictOrStr, default='./data/msmarco-train-queries-inference.jsonl')
-    parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
-    parser.add_argument('-train_qrels', type=str, default='./data/msmarco-doctrain-qrels.tsv')
-    parser.add_argument('-res', type=str, default='./results/reformulator.trec')
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
     parser.add_argument('-batch_size', type=int, default='32')
     parser.add_argument('-max_input', type=int, default=1280000)
     parser.add_argument('-print_every', type=int, default=25)
     parser.add_argument('-eval_every', type=int, default=100)
-    parser.add_argument('-train', type='bool', default=False)
-    parser.add_argument('-full_ranking', type='bool', default=True)
-    parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5'])
-    parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
@@ -252,21 +240,18 @@ def main():
     parser.add_argument('-n_warmup_steps', type=int, default=10000)
     parser.add_argument('-weight_decay', type=float, default=0, help='Weight decay (default 0)')
     parser.add_argument('-momentum', type=float, default=0, help='Momentum (default 0)')
-    parser.add_argument('-model_name', type=str, default='./checkpoints/reformulator.bin')
+
+    # data settings
+    parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
+    parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
+    parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
+    parser.add_argument('-train_data', action=msr.utils.DictOrStr, default='./data/msmarco-train-queries-inference.jsonl')
+    parser.add_argument('-qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
+    parser.add_argument('-train_qrels', type=str, default='./data/msmarco-doctrain-qrels.tsv')
+    parser.add_argument('-res', type=str, default='./results/reformulator.trec')
+    parser.add_argument('-model_name', type=str, default='./checkpoints/reformulator.bin',
+                        help='path to save reformulator model')
     parser.add_argument('-tensorboard_output', type=str)
-
-
-    # Legacy?
-    parser.add_argument('-dataset', type=str, default='./data/reformulator_training_data.tsv')
-    parser.add_argument('-query_embedding_format', type=str, default='./data/embeddings/embeddings_random_examples/'
-                                                                     'marco_train_query_embeddings_{}.npy')
-    parser.add_argument('-query_ids_format', type=str,
-                        default='./data/embeddings/embeddings_random_examples/'
-                                'marco_train_query_embeddings_indices_{}.npy')
-    parser.add_argument('-dev_query_embedding_file', type=str, default='./data/marco_dev_query_embeddings_0.npy')
-    parser.add_argument('-dev_query_ids_file', type=str, default='./data/marco_dev_query_embeddings_indices_0.npy')
-    parser.add_argument('-dev_file', type=str, default='./data/msmarco-docdev-queries.tsv')
-    parser.add_argument('-num_query_files', type=int, default=1)
 
     args = parser.parse_args()
     index_args = get_knn_args(parser)
@@ -310,7 +295,6 @@ def main():
 
     # set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # device = torch.device('cpu')
 
     # setup tensorboard
     writer = SummaryWriter(args.tensorboard_output)
