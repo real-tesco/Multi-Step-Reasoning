@@ -4,70 +4,156 @@
 *Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning).
 
 ## Setup
-The requirements are in the requirements file. 
+The requirements are in the requirements file and the environment file for conda. 
 ```
 pip install -r requirements.txt
+conda env create -f environment.yml
 ```
 
-## Data TODO
-I am making the pre-processed data and paragraph vectors available so that is is easier to get started. They can downloaded from [here](http://iesl.cs.umass.edu/downloads/multi-step-reasoning-iclr19/data.tar.gz). (41GB compressed, 56GB decompressed; user/pass: guest/guest). If you need the pretrained paragraph encoder used to generate the vectors, feel free to get in touch with me.
-After un-taring, you will find a directory corresponding to each dataset. Each directory further contains:
+## Data
+The pre-processed data, index files and checkpoints are available for download so it is easier to get started. They can be downloaded from [here](http://iesl.cs.umass.edu/downloads/multi-step-reasoning-iclr19/data.tar.gz).
+After un-taring, you will find a data directory containing all the data with the following structure:
 ```
-data/ -- Processed data (*.pkl files)
-paragraph_vectors/ -- Saved paragraph vectors of context for each dataset used for nearest-neighbor search
-vocab/ -- int2str mapping
-embeddings/ -- Saved lookup table for faster initialization. The embeddings are essentially saved fast-text embeddings.
-```
-
-If you want to generate your own data here are the steps you have to make and the files you can use.
-
-
-## Paragraph encoder TODO
-If you want to train new paragraph embeddings instead of using the ones we used, please refer to this [readme](paragraph_encoder/README.md)
-
-
-## Training TODO
-```
-python scripts/reader/train.py --data_dir <path-to-downloaded-data> --model_dir <path-to-downloaded-model> --dataset_name searchqa|triviaqa\quasart --saved_para_vectors_dir <path-to-downloaded-data>/dataset_name/paragraph_vectors/web-open 
-```
-Some important command line args
-```
-dataset_name -- searchqa|triviaqa|quasart
-data_dir -- path to dataset that you downloaded
-model_dir -- path where model would be checkpointed
-saved_para_vectors_dir -- path to cached paragraph and query representations in disk. It should be in the data you have downloaded
-multi_step_reasoning_steps -- Number of steps of interaction between retriever and reader
-num_positive_paras -- (Relevant during training) -- Number of "positive" (wrt distant supervision) paragraphs fed to train to the reader model. 
-num_paras_test -- (Relevant during inference time) -- Number of paragraphs to be sent to the reader by the retriever.
-freeze_reader -- when set to 1, the reader parameters are fixed and only the parameters of the GRU (multi-step-reasoner) is trained.
-fine_tune_RL -- fune tune the GRU (multi-step-reasoner) with reward (F1) from the fixed reader
-```
-Training details:
-1. During training, we first train the reader model by setting ```multi_step_reasoning_steps = 1```
-2. After the reader has been trained, we fix the reader and just pretrain the ```multi-step-reasoner``` (```freeze_reader 1```)
-3. Next, we fine tune the reasoner with reinforcement learning (```freeze_reader = 1, fine_tune_RL = 1```)
-
-In our experiments for searchqa and quasart, we found step 2 (pretraining the GRU was not important) and the reasoner was directly able to learn via RL. However, pretraining never hurt the performance as well.
-
-## Pretrained models TODO
-
-We are also providing pretrained models for download and scripts to run them directly. Download the pretrained models from [here](http://iesl.cs.umass.edu/downloads/multi-step-reasoning-iclr19/models.tar.gz).
-```
-Usage: /bin/bash run_pretrained_models.sh dataset_name data_dir model_dir out_dir
-dataset_name -- searchqa|triviaqa|quasart
-data_dir -- path to dataset that you downloaded
-model_dir -- path to pretrained model that you downloaded
-out_dir -- directory for logging
+embeddings/ -- containing the calculated embeddings in chunks (*.npy files)
+indexes/ -- saved hnswlib knn index aswell as anserini index
+checkpoints/ -- containg checkpoints of pretrained models, move to ../checkpoints/ dir
+msmarco document ranking train/dev/test files
 ```
 
-## Citation TODO
+## Train Two Tower Document Encoder
+If you want to train new document embeddings use following script:
+```
+python train_retriever.py \
+        -train  queries=./data/msmarco-doctrain-queries.tsv,docs=./data/msmarco-docs.tsv,qrels=./data/msmarco-doctrain-qrels.tsv,trec=./data/msmarco-train-pairs.tsv \        
+        -save ./checkpoints/twotowerbert.bin \
+        -dev ./data/msmarco-doc.dev.jsonl \
+        -qrels ./data/msmarco-docdev-qrels.tsv \
+        -vocab bert-base-uncased \
+        -pretrain bert-base-uncased \
+        -res ./results/two_tower_train.trec \
+        -metric mrr_cut_100 \
+        -max_query_len 64 \
+        -max_doc_len 512 \
+        -epoch 20 \
+        -batch_size 32 \
+        -lr 3e-6 \
+        -n_warmup_steps 10000 \
+        -eval_every 10000 \
+        -print_every 250 \
+        -tensorboard_output ./runs/train_two_tower
+```
+
+To store the learned embeddings as chunks:
+```
+python train_retriever.py \
+        -vocab bert-base-uncased \
+        -pretrain bert-base-uncased \
+        -max_query_len 64 \
+        -max_doc_len 512 \
+        -batch_size 32 \
+        -two_tower_checkpoint ./checkpoints/twotowerbert.bin \
+        -save_embeddings 1 \
+        -embed ./data/msmarco-docs.jsonl \
+        -docs_per_chunk 250000 \
+        -embed_dir ./data/embeddings/ \
+```
+if you want to encode queries also use the flag: 
+``` 
+-embed_queries 1
+```
+The documents/queries need to be in jsonl format, per line there is one document/query as json object
+```
+{"doc_id": "docid", "doc": "document_content"}  
+```
+## Training Ranker
+
+To train the embedding ranker the documents and the queries need to be encoded as chunks by the retriever model. 
+You can start training with following script: 
+
+```
+python train_ranker.py \
+        -dev_query_embedding_file ./data/embeddings/marco_dev_query_embeddings_0.npy \
+        -dev_query_ids_file ./data/embeddings/marco_dev_query_embeddings_indices_0.npy \
+        -doc_embedding_format ./data/embeddings/marco_doc_embeddings_{}.npy \
+        -doc_ids_format ./data/embeddings/marco_doc_embeddings_indices_{}.npy \
+        -triples ./data/trids_marco-doc-10.tsv \
+        -print_every 250 \
+        -eval_every 10000
+        -save ./checkpoints/ranker_extra_layer_2500.ckpt \
+        -epochs 20 \
+        -metric mrr_cut_100 \
+        -extra_layer 2500
+```
+The ```-document_embedding_format``` and ```-doc_ids_format``` are the formats the document embeddings and their document ids are stored respectively
+
+## Training Reformulator
+
+The pretrained reformulator models are in the downloaded checkpoints folder. If you want to train your own reformulator use following script: 
+
+```
+python train_reformulator.py \
+        -dev_data ./data/msmarco-dev-queries-inference.jsonl \
+        -train_data ./data/msmarco-train-queries-inference.jsonl \
+        -print_every 100 \
+        -model_name ./checkpoints/reformulator.bin \
+        -epochs 20 \
+        -metric mrr_cut_100 \
+        -loss_fn ip \
+        -eval_every 5000 \
+        -batch_size 32 \
+        -k 1000
+        -res ./results/reformulator.trec \
+        -tensorboard_output ./boards/train_reformulator \
+        -top_k_reformulator 10 \
+        -reformulation_type [neural|weighted_avg|transformer]
+```
+and chose one of the ```reformulator_type``` choices and set the corresponding hyper parameters respectively. Every reformulator considers the top top_k_reformulator documents of the retrieved set.
+
+If reformulation_type is left out, default value is None, the base architecture with knn index and ranker is evaluated.
+
+For the neural reformulator set hidden layer dimensions, if hidden2 is 0 don't use second hidden layer:
+``` 
+        -hidden1 3500 \
+        -hidden2 0 \
+```
+
+For the transformer reformulator set the number of attentionheads, the number of encoder layers and the dimension of the feedforward layer in each encoder layer:
+``` 
+        -nhead 4 \
+        -num_encoder_layers 1 \
+        -dim_feedforward 3072
+``` 
+
+For the weighted average there is no additionaly argument necessary. 
+
+## Other Experiments 
+
+With the inference.py script different experiments are possible. The most important flags are:
+
+```
+-baseline True -- evaluates the BM25 baseline with chosen anserini index 
+-exact_knn True -- evaluates the Two Tower model with exact knn, big matrix multiplication of all documents and queries
+-ideal -- evaluates the ideal run where the reformulated query is an actualy relevant document
+-print_embeddings True -- prints the embeddings and meta data of the first 3 queries to use on projector.tensorflow.org 
+-test_clustering True -- clustering method to improve recall is tested, need to set -sampling to [cluster_kmeans|cluster_spectral|attention] 
+```
+There are some other options which can be explored like:
+
+``` 
+-reformulate_before_ranking -- used to reformulate the query before the initial retrieved list is reranked
+-use_ranker_in_next_round -- after reformulation use ranker 
+-rerank_to_new_qs -- rerank the new retrieved documents after reformulation to the reformulated queries 
+-avg_new_qs_for_ranking -- after reformulation average the new queries with the original ones
+```
+
+## Citation
 ```
 @inproceedings{
-2020multistepquerymodeling,
-title={Multi-step Query Modelling for Document Retrieval},
+2021querymodeling_neural_retrieval,
+title={Query Modelling for Neural Retrieval},
 author={L. J. Brandt},
 booktitle={LUH},
-year={2020},
+year={2021},
 }
 ```
 
