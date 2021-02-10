@@ -1,9 +1,6 @@
 import os
-import json
-from argparse import Action
 import time
-from typing import List, Dict
-import pytrec_eval
+from argparse import Action
 
 
 class DictOrStr(Action):
@@ -24,6 +21,8 @@ def check_dir(path):
     return path
 
 
+# only used in inference, takes care of duplicate documents in final ranked list
+# rst_dict has qid as key and list of (doc_id, score)
 def save_trec_inference(rst_file, rst_dict):
     with open(rst_file, 'w') as writer:
         cnt = 0
@@ -42,6 +41,8 @@ def save_trec_inference(rst_file, rst_dict):
     return
 
 
+# used in training of models, doesnt care if duplicates are in result list
+# CARE: rst_dict has keys of qid and value of (score, doc_id)
 def save_trec(rst_file, rst_dict):
     with open(rst_file, 'w') as writer:
         for q_id, scores in rst_dict.items():
@@ -49,34 +50,6 @@ def save_trec(rst_file, rst_dict):
             for rank, value in enumerate(res):
                 writer.write(q_id+' Q0 '+str(value[1])+' '+str(rank+1)+' '+str(value[0])+' twotower_embed\n')
     return
-
-
-def get_mrr(qrels: str, trec: str, metric: str = 'mrr_cut_10') -> float:
-    k = int(metric.split('_')[-1])
-    qrel = {}
-    with open(qrels, 'r') as f_qrel:
-        for line in f_qrel:
-            qid, _, did, label = line.strip().split()
-            if qid not in qrel:
-                qrel[qid] = {}
-            qrel[qid][did] = int(label)
-    run = {}
-    with open(trec, 'r') as f_run:
-        for line in f_run:
-            qid, _, did, _, _, _ = line.strip().split()
-            if qid not in run:
-                run[qid] = []
-            run[qid].append(did)
-    mrr = 0.0
-    for qid in run:
-        rr = 0.0
-        for i, did in enumerate(run[qid][:k]):
-            if qid in qrel and did in qrel[qid] and qrel[qid][did] > 0:
-                rr = 1 / (i + 1)
-                break
-        mrr += rr
-    mrr /= len(run)
-    return mrr
 
 
 class Timer(object):
