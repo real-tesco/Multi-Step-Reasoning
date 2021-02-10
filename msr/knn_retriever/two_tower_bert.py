@@ -3,8 +3,6 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from scipy.spatial.distance import cosine
-from msr.reformulation.query_reformulation import PositionalEncoding
 
 from transformers import AutoConfig, AutoModel
 
@@ -42,41 +40,10 @@ class TwoTowerBert(nn.Module):
 
         output = self._query_model(q_input_ids, attention_mask=q_input_mask, token_type_ids=q_segment_ids,
                                    output_attentions=True, output_hidden_states=True,  return_dict=True)
-        #print(type(output))
 
-        #for k, v in output.items():
-        #    print(f"{k}: {type(v)}")
-        attention = output['attentions']   # B x nheads x seq_len x seq_len
-
-        #print("attention:")
-        #print(type(attention))
-        #print("len: ", len(attention))
-        #print("attention -1: ", attention[-1].shape)
-
-
-        #print("hiddenstates")
+        attention = output['attentions']   # nlayers x B x nheads x seq_len x seq_len
         hidden_states = output['hidden_states']
 
-        #print("len: ", len(hidden_states))
-        #print("hidden -1: ", hidden_states[-1].shape)
-        #print("hiddenstate -2", hidden_states[-2].shape)
-
-
-        '''
-        embeddings = self._query_model.get_input_embeddings()
-        print(type(embeddings))
-        token_embeddings = embeddings(q_input_ids)
-        print(type(token_embeddings))
-        print(token_embeddings.shape)
-
-        pos_encoding = PositionalEncoding(max_len=attention[-1].shape[-1])
-        pos_encoding.pe.cuda()
-        # token_embeddings = pos_encoding(token_embeddings.cpu()).cuda()
-        token_embeddings = pos_encoding(token_embeddings.cpu()).cuda()
-
-        print(token_embeddings.shape)
-        '''
-        # hidden -1:  torch.Size([32, 64, 768])
         last_hidden = hidden_states[-1]
 
         # attention -1:  torch.Size([32, 12, 64, 64])
@@ -90,14 +57,13 @@ class TwoTowerBert(nn.Module):
             mult = torch.bmm(attention[:, i], last_hidden)[:, 0]
             mult = F.normalize(mult, p=2, dim=1)
 
-             # print("multshape", mult.shape)
             heads[:, i] = mult
 
-        # print("shape of heads: ", heads.shape)
         return heads
 
-    def forward(self, q_input_ids: torch.Tensor, d_input_ids: torch.Tensor, q_input_mask: torch.Tensor = None, q_segment_ids: torch.Tensor = None,
-                d_input_mask: torch.Tensor = None, d_segment_ids: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def forward(self, q_input_ids: torch.Tensor, d_input_ids: torch.Tensor, q_input_mask: torch.Tensor = None,
+                q_segment_ids: torch.Tensor = None, d_input_mask: torch.Tensor = None,
+                d_segment_ids: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
 
         query = self._query_model(q_input_ids, attention_mask=q_input_mask, token_type_ids=q_segment_ids)
         document = self._document_model(d_input_ids, attention_mask=d_input_mask, token_type_ids=d_segment_ids)
@@ -106,9 +72,6 @@ class TwoTowerBert(nn.Module):
         #print(query[1].shape)  # [4, 768]  #CLS token with linear layer and tanh activation
         query = query[0][:, 0, :]  # CLS Token
         document = document[0][:, 0, :]
-
-        #document = document - document.min()
-        #query = query - query.min()
 
         if self._projection_dim > 0:
             document = self._projection_layer(document)
@@ -121,9 +84,6 @@ class TwoTowerBert(nn.Module):
 
         score = (document * query).sum(dim=1)
         score = torch.clamp(score, min=0.0, max=1.0)
-
-        # Use Sigmoid instead
-        # score = torch.sigmoid(score)
 
         return score, query, document
 
