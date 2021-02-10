@@ -818,7 +818,7 @@ def main():
         checkpoint = torch.load(args.ranker_checkpoint)
         ranking_model.load_state_dict(checkpoint)
         ranking_model.to(device)
-        ranking_model.train = False
+        ranking_model.eval()
     else:
         logger.info("No ranker is used...")
         ranking_model = None
