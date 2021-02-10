@@ -50,6 +50,7 @@ class Metric():
         mrr /= len(run)
         return mrr
 
+    # like get_mrr but returns a dict with mrr values for each query
     def get_mrr_dict(self, qrels: str, trec: str, metric: str = 'mrr_cut_100'):
         k = int(metric.split('_')[-1])
         query_mrr_dict = {}
@@ -79,6 +80,7 @@ class Metric():
         mrr /= len(run)
         return mrr, query_mrr_dict
 
+    # standard evaluation function used
     def eval_run(self, qrels: str, trec: str, print_graphs=False) -> Dict[str, float]:
         query_measure_to_check = ['ndcg', 'map', 'P_10', 'recall_5', 'recall_10', 'recall_30', 'recall_100',
                                   'recall_1000']
@@ -115,8 +117,8 @@ class Metric():
         mes['std'] = std_dev
         for key in mes:
             print("{}: {:.4f}".format(key, mes[key]))
-        # print(f"\nstd_dev of mrr: {std_dev:2.4f}\n")
 
+        # prints graphs with 6 buckets for some metrics
         if print_graphs:
             query_measure_to_print = ['recall_100', 'recall_30', 'ndcg', 'map', 'P_10', 'mrr_cut_100']
 
