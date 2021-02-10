@@ -1,12 +1,11 @@
-import hnswlib
-import torch
-import torch.nn as nn
 import logging
-import torch.optim as optim
-import copy
-from transformers import AutoTokenizer
+
 import json
 import numpy as np
+import hnswlib
+import torch
+from transformers import AutoTokenizer
+
 
 logger = logging.getLogger()
 
@@ -54,9 +53,8 @@ class KnnIndex:
         query_embedding = self._model.calculate_embedding(q_input_ids, q_segment_ids, q_input_mask, doc=False)
         labels, distances = self._index.knn_query(query_embedding.detach().cpu().numpy(), k=k)
         distances = distances.tolist()
-        #labels = labels.tolist()
-        document_labels = [[self._indexid2docid[labels[j][i]] for i in range(len(labels[j]))] for j in range(len(labels))]
-        #labels = np.asarray(labels)
+        document_labels = [[self._indexid2docid[labels[j][i]] for i in range(len(labels[j]))] for j in
+                           range(len(labels))]
         document_embeddings = torch.tensor(self._index.get_items(labels.flatten()))
         document_embeddings = document_embeddings.reshape(labels.shape[0], labels.shape[1], self._args.dim_hidden)
         return document_labels, document_embeddings, distances, query_embedding
