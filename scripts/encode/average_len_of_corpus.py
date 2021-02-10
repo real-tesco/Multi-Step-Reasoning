@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('corpus')
 args = parser.parse_args()
 
+# prints average length of documents for tsv or jsonl corpus file
 with open(args.corpus, "r") as input_f:
     avg_len = 0
     number_of_docs = 0
