@@ -1,44 +1,31 @@
 import argparse
-import torch
-import sys
-import msr
-import hnswlib
 from collections import defaultdict
+import logging
+import random
+import sys
+
+import numpy as np
 from prettytable import PrettyTable
+import torch
+from transformers import AutoTokenizer
+
+import msr
 from msr.data.dataloader import DataLoader
 from msr.data.datasets import BertDataset
+from msr.data.datasets.bm25dataset import BM25Dataset
 from msr.reformulation.sampling import random_sampling, score_sampling, rank_sampling, cluster_sampling, \
-    spectral_cluster_sampling, attention_sampling, attention_sampling
-from msr.data.datasets.rankingdataset import RankingDataset
-from transformers import AutoTokenizer
+    spectral_cluster_sampling, attention_sampling
 from msr.knn_retriever.retriever import KnnIndex
 from msr.knn_retriever.retriever_config import get_args as get_knn_args
 from msr.knn_retriever.two_tower_bert import TwoTowerBert
 from msr.reranker.ranking_model import NeuralRanker
 from msr.reranker.ranker_config import get_args as get_ranker_args
-from msr.reformulation.reformulator_config import get_args as get_reformulator_args
 from msr.utils import Timer
 from msr.reformulation.query_reformulation import QueryReformulator, TransformerReformulator, NeuralReformulator
-import logging
-import numpy as np
 from msr.retriever.bm25_model import BM25Retriever
-from msr.data.datasets.bm25dataset import BM25Dataset
-import random
+
 
 logger = logging.getLogger()
-attention_weights = []
-
-
-def save_attention_hook(model, i, o):
-    print("added weights to hook")
-    attention_weights.append(model.out_proj)
-    print(f"Output of model: {len(o)}")
-    print(f"Input of model: {len(i)}")
-    print(f"shape of 0 of input of model: {i[0].shape}")
-    print(f"shape of 0 of output of model: {o[0].shape}")
-    print(f"shape of 1 of input of model: {i[1].shape}")
-    print(f"shape of 1 of output of model: {o[1].shape}")
-    print(f"shape of 2 of input of model: {i[2].shape}")
 
 
 def str2bool(v):
@@ -59,6 +46,8 @@ def print_number_parameters(model):
 
 
 def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_batch, device, k):
+    # process batch and write result for each query in rst_dict
+
     second_run = True
     query_id = dev_batch['query_id']
     document_labels, document_embeddings, distances, query_embeddings = knn_index.knn_query_inference(
@@ -67,14 +56,9 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
         dev_batch['q_segment_ids'].to(device),
         k=k)
 
-    # if args.full_ranking:
-    #  batch_score = ranking_model.rerank_documents(query_embeddings.to(device), document_embeddings.to(device), device)
-    # else:
-    #    batch_score = torch.tensor(distances)
-
     if not args.reformulate_before_ranking:
         batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
-        # sort doc embeddings according score and reformulate
+        # sort doc embeddings according score
         sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
         sorted_docs = document_embeddings[
             torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
@@ -91,16 +75,15 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             sampled_docs = random_sampling(sorted_docs, args.number_samples)
         elif args.sampling == 'score':
             sampled_docs = score_sampling(sorted_docs, sorted_scores, args.number_samples)
-        #elif args.sampling == 'cluster_kmeans':
-        #    sampled_docs = cluster_sampling(sorted_docs, args.number_samples)
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
-        elif args.sampling == 'attention':
-            sampled_docs = attention_sampling(query_embeddings, sorted_docs, reformulator, attention_weights)
+        else:
+            raise ValueError('sampling must be `rank`, `random`, `score` or `cluster_spectral`.')
 
         # for each sample do the reformulation and retrieval step
         for idx in range(args.number_samples):
             '''
+            TODO: remove?
             # reformulate the queries with sampled documents
             # freestyle test for transformer reformulator and sampling
             if args.reformulation_type == 'neural':
@@ -151,15 +134,15 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=k)
 
-            # use the new retrieved documents in retrieved order
+            # rerank retrieved documents
             if args.use_ranker_in_next_round:
                 batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
+            # or use the new retrieved documents in retrieved order
             else:
                 batch_score = torch.tensor(distances)
         batch_score = batch_score.detach().cpu().tolist()
 
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-            # rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
             rst_list = [(docid, score) for docid, score in zip(d_id, b_s)]
             rst_dict[q_id] = [(docid, score) for i, (docid, score) in enumerate(rst_list)
                               if not any(j == docid for j, _ in rst_list[:i])]
@@ -200,7 +183,7 @@ def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loa
     _ = metric.eval_run(args.test_qrels, args.res + ".test")
 
 
-def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, metric, device, k=100):
+def test_clustering(args, knn_index, ranking_model, test_loader, metric, device, k=100):
     timer = Timer()
     rst_dict_test = {}
     logger.info("processing test data...")
@@ -233,7 +216,8 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
 
         if not args.reformulate_before_ranking:
             batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
-            # sort doc embeddings according score and reformulate
+
+            # sort doc embeddings according score
             sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
             sorted_docs = document_embeddings[
                 torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
@@ -244,32 +228,29 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
             sorted_docs = document_embeddings.to(device)
             batch_score = distances
 
+        # add initial retrieved set to result
         if args.add_initial_retrieved:
-            # add initial retrieved set to result
             for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
                 if q_id in rst_dict_test:
                     rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
                 else:
                     rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
 
-
         # do sampling regarding chosen strategy
-
         if args.sampling == 'cluster_kmeans':
-            #if idx == 0:
-            #    sampled_docs = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, stats=stats, check_metrics=True)
-            #else:
             sampled_docs, q_clusters = cluster_sampling(sorted_docs, query_embeddings, qrels, document_labels, query_id,
                                                         args.number_samples, stats=stats, check_metrics=True, print_info=args.print_info)
+            # use the chosen query cluster as new query
+            if args.use_q_cluster_as_q:
+                new_queries = q_clusters
+                tmp = args.number_samples
+                args.number_samples = 1
+
         elif args.sampling == 'cluster_spectral':
             sampled_docs = spectral_cluster_sampling(sorted_docs, args.number_samples)
+
         elif args.sampling == 'attention':
             sampled_docs = attention_sampling(q_input_ids, q_input_mask, q_segment_ids, knn_index)
-
-        if args.use_q_cluster_as_q:
-            new_queries = q_clusters
-            tmp = args.number_samples
-            args.number_samples = 1
 
         for step_s in range(args.number_samples):
             if not args.use_q_cluster_as_q:
@@ -292,10 +273,6 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
                 else:
                     batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device),
                                                                  device)
-                # normalize batch score for comparability across different queries
-                #for idy in range(0, batch_score.shape[0]):
-                #    batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
-                #                       (batch_score[idy].max() - batch_score[idy].min())
             else:
                 batch_score = torch.tensor(distances)
 
@@ -306,13 +283,14 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
                     rst_dict_test[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
                 else:
                     rst_dict_test[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
-        if args.use_q_cluster_as_q:
+        if args.use_q_cluster_as_q and args.sampling == 'cluster_kmeans':
             args.number_samples = tmp
 
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(test_loader)}")
     timer.stop()
 
+    # print kmeans clustering stats
     if args.sampling == 'cluster_kmeans':
         for k, v in stats.items():
             print(f"{k}: {v}")
@@ -328,6 +306,21 @@ def test_clustering(args, knn_index, ranking_model, reformulator, test_loader, m
 
 
 def eval_base_line(args):
+    # evaluates the baseline with bm25 for dev and test set
+
+    def process_base_batch(batch, rst_dict):
+        query_ids = dev_batch['query_id']
+        queries = dev_batch['query']
+        for (qid, query) in zip(query_ids, queries):
+            hits = bm25searcher.query(query, k=args.k)
+            docids = [hit.docid for hit in hits]
+            scores = [hit.score for hit in hits]
+            for (d_id, b_s) in zip(docids, scores):
+                if qid not in rst_dict_dev:
+                    rst_dict_dev[qid] = [(d_id, b_s)]
+                else:
+                    rst_dict_dev[qid].append((d_id, b_s))
+
     rst_dict_dev = {}
     rst_dict_test = {}
     metric = msr.metrics.Metric()
@@ -345,6 +338,7 @@ def eval_base_line(args):
     )
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=8)
     bm25searcher = BM25Retriever(args.bm25_index)
+
     if args.use_rm3:
         bm25searcher.set_bm25(4.46, 0.82)
         bm25searcher.set_rm3(10, 10, 0.5)
@@ -353,17 +347,9 @@ def eval_base_line(args):
     for idx, dev_batch in enumerate(dev_loader):
         if dev_batch is None:
             continue
-        query_ids = dev_batch['query_id']
-        queries = dev_batch['query']
-        for (qid, query) in zip(query_ids, queries):
-            hits = bm25searcher.query(query, k=args.k)
-            docids = [hit.docid for hit in hits]
-            scores = [hit.score for hit in hits]
-            for (d_id, b_s) in zip(docids, scores):
-                if qid not in rst_dict_dev:
-                    rst_dict_dev[qid] = [(d_id, b_s)]
-                else:
-                    rst_dict_dev[qid].append((d_id, b_s))
+
+        process_base_batch(dev_batch, rst_dict_dev)
+
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(dev_loader)}")
 
@@ -371,19 +357,12 @@ def eval_base_line(args):
     for idx, test_batch in enumerate(test_loader):
         if test_batch is None:
             continue
-        query_ids = test_batch['query_id']
-        queries = test_batch['query']
-        for (qid, query) in zip(query_ids, queries):
-            hits = bm25searcher.query(query, k=args.k)
-            docids = [hit.docid for hit in hits]
-            scores = [hit.score for hit in hits]
-            for (d_id, b_s) in zip(docids, scores):
-                if qid not in rst_dict_test:
-                    rst_dict_test[qid] = [(d_id, b_s)]
-                else:
-                    rst_dict_test[qid].append((d_id, b_s))
+
+        process_base_batch(test_batch, rst_dict_test)
+
         if (idx + 1) % args.print_every == 0:
             logger.info(f"{idx + 1} / {len(test_loader)}")
+
     msr.utils.save_trec_inference(args.res + ".dev", rst_dict_dev)
     msr.utils.save_trec_inference(args.res + ".test", rst_dict_test)
     logger.info("Eval for Dev:")
@@ -394,6 +373,7 @@ def eval_base_line(args):
 
 
 def eval_ideal(args, knn_index, ranking_model, device, k):
+    # evaluates the ideal run, with sampling or single use of relevant documents
     def process_run_ideal(qrels, rst_dict):
         for idx, qid in enumerate(qrels):
             correct_docid = random.choice(qrels[qid])
@@ -433,7 +413,6 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                     batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
                                        (batch_score[idy].max() - batch_score[idy].min())
                 batch_score = batch_score.flatten()
-                # document_labels = document_labels.flatten()
                 document_labels = [label for dids in document_labels for label in dids]
                 batch_score = batch_score.detach().cpu().tolist()
             else:
@@ -445,17 +424,16 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                 else:
                     rst_dict[qid] = [(d_id, b_s)]
 
-            #for (d_id, b_s) in zip(document_labels, batch_score):
-            #    rst_dict[qid] = [(docid, score) for docid, score in zip(d_id, b_s)]
-
             if (idx + 1) % args.print_every == 0:
                 logger.info(f"{idx + 1} / {len(qrels)}")
+
     rst_dict_test = {}
     metric = msr.metrics.Metric()
     avg_stats = {}
     rst_dict_dev = {}
     dev_qrels = {}
     test_qrels = {}
+
     logger.info("Loading test data...")
     with open(args.test_qrels, "r") as f:
         for line in f:
@@ -477,6 +455,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 
     logger.info(f"len of dev qrels: {len(dev_qrels)}")
     logger.info(f"len of test qrels: {len(test_qrels)}")
+
     if not args.skip_dev:
         logger.info("processing dev")
         process_run_ideal(dev_qrels, rst_dict_dev)
@@ -484,6 +463,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
         _ = metric.eval_run(args.dev_qrels, args.res + ".dev")
 
     logger.info("processing test")
+    # since random sampling of relevant documents is random take average of number_ideal_runs
     for i in range(0, args.number_ideal_runs):
         if args.number_ideal_samples > 0:
             process_run_ideal_with_sampling(args, test_qrels, rst_dict_test)
@@ -517,8 +497,8 @@ def exact_knn(args, knn_index, metric, device, k=1000):
 
     logger.info("start large matrix multiplication...")
     first_scores = torch.matmul(test_queries.float(), torch.transpose(all_docs.float(), 0, 1))
-    torch.save(first_scores, "./results/tensors/matrix_multiplication_result.pt")
-    shape = all_docs.shape[0]
+
+    # torch.save(first_scores, "./results/tensors/matrix_multiplication_result.pt")
 
     del all_docs
     torch.cuda.empty_cache()
@@ -538,6 +518,7 @@ def exact_knn(args, knn_index, metric, device, k=1000):
 
 
 # generate tsv files for first 10 queries with relevant and not relevant documents
+# used in https://projector.tensorflow.org/ to visualize retrieved set and query
 def print_embeddings(args, knn_index):
     qrels = {}
     with open(args.test_qrels, "r") as f:
@@ -570,12 +551,14 @@ def print_embeddings(args, knn_index):
     sys.exit(0)
 
 
+# generate tsv files for first 3 queries with relevant and not relevant documents as well as relevant and not retrieved
+# used in https://projector.tensorflow.org/ to visualize retrieved set and query and reformulated query
+# also check https://projector.tensorflow.org/ for formatting
 def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, device, k):
     qrels = {}
     with open(args.test_qrels, "r") as f:
         for line in f:
             qid, _, did, label = line.split()
-            # if int(label) > 0:
             if qid in qrels:
                 qrels[qid].append((did, label))
             else:
@@ -593,9 +576,11 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
             for idy, qid in enumerate(qids):
                 queries[qid] = qs[idy]
 
+    # for the first 3 queries
     for idx, qid in enumerate(qrels):
         if idx == 3:
             break
+        # retrieve first set
         if args.print_attention_sampled_embeddings:
             document_labels, document_embeddings, distances, original_query = knn_index.knn_query_text(queries[qid], device, k=k)
         else:
@@ -620,7 +605,6 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
 
                 out_meta.write('doc id\tlabel\n')
                 out_meta.write(qid + '\t' + 'original query\n')
-                # print('\t'.join([str(x) for x in original_query[0].tolist()]) + '\n')
 
                 out_vector.write('\t'.join([str(x) for x in original_query[0].tolist()]) + '\n')
 
@@ -679,7 +663,6 @@ def print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, 
 
 
 def main():
-    # setting args
     parser = argparse.ArgumentParser()
     parser.register('type', 'bool', str2bool)
 
@@ -706,6 +689,8 @@ def main():
                                                                         'cluster_kmeans', 'cluster_spectral',
                                                                         'attention'],
                         help='type of sampling to use before reformulation, default is none, just use top documents')
+
+    # clustering settings
     parser.add_argument('-retrieves_per_sample', type=int, default=100, help='the number of retrieves per sample')
     parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
     parser.add_argument('-test_clustering', type='bool', default=False, help='test clustering and eval clustering metrics')
@@ -716,42 +701,40 @@ def main():
     parser.add_argument('-add_initial_retrieved', type='bool', default=True,
                         help='whether to add the first step retrieval to result')
 
+    # run options
     parser.add_argument('-baseline', type='bool', default='False', help="if true only use bm25 to score documents")
-    parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
-    parser.add_argument('-number_ideal_runs', type=int, default=10)
-    parser.add_argument('-number_ideal_samples', type=int, default=0)
-    parser.add_argument('-bm25_index', type=str, default='./data/indexes/anserini/index-msmarco-doc-20201117-f87c94')
-    parser.add_argument('-use_rm3', type='bool', default=False)
-
-    parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
-    parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
-    parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
-    parser.add_argument('-dev_qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
-    parser.add_argument('-skip_dev', type='bool', default=False)
-
-    parser.add_argument('-test_data', action=msr.utils.DictOrStr, default='./data/msmarco-test-queries-inference.jsonl')
-    parser.add_argument('-test_qrels', type=str, default='./data/msmarco-test-qrels.tsv')
-
-    parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
-    parser.add_argument('-metric', type=str, default='mrr_cut_100')
-    parser.add_argument('-batch_size', type=int, default=32)
-    parser.add_argument('-max_input', type=int, default=1280000)
-    parser.add_argument('-print_every', type=int, default=25)
-    parser.add_argument('-train', type='bool', default=False)
-    parser.add_argument('-full_ranking', type='bool', default=True)
-    parser.add_argument('-reformulate_before_ranking', type='bool', default=True)
-
     parser.add_argument('-print_embeddings', type='bool', default=False)
     parser.add_argument('-print_reformulated_embeddings', type='bool', default=False)
     parser.add_argument('-print_attention_sampled_embeddings', type='bool', default=False)
+    parser.add_argument('-ideal', type='bool', default='False', help='wether use correct doc embeddings as queries')
+    parser.add_argument('-number_ideal_runs', type=int, default=10)
+    parser.add_argument('-number_ideal_samples', type=int, default=0)
+    parser.add_argument('-exact_knn', type='bool', default=False)
+
+    # print options
     parser.add_argument('-vector_file_format', type=str,
                         default='./data/embeddings/embeddings_random_examples/qid_{}_judged_docs.tsv')
     parser.add_argument('-vector_meta_format', type=str,
                         default='./data/embeddings/embeddings_random_examples/qid_{}_meta.tsv')
 
-    parser.add_argument('-k', type=int, default=100)
-    parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
-    parser.add_argument('-exact_knn', type='bool', default=False)
+    parser.add_argument('-metric', type=str, default='mrr_cut_100')
+    parser.add_argument('-batch_size', type=int, default=32)
+    parser.add_argument('-max_input', type=int, default=1280000)
+    parser.add_argument('-print_every', type=int, default=25)
+    parser.add_argument('-train', type='bool', default=False)
+    parser.add_argument('-bm25_index', type=str, default='./data/indexes/anserini/index-msmarco-doc-20201117-f87c94')
+    parser.add_argument('-use_rm3', type='bool', default=False)
+    parser.add_argument('-skip_dev', type='bool', default=False)
+
+    # data options
+    parser.add_argument('-res', type=str, default='./results/twotowerbert.trec')
+    parser.add_argument('-two_tower_checkpoint', type=str, default='./checkpoints/twotowerbert.bin')
+    parser.add_argument('-ranker_checkpoint', type=str, default='./checkpoints/ranker_extra_layer_2500.ckpt')
+
+    parser.add_argument('-dev_data', action=msr.utils.DictOrStr, default='./data/msmarco-dev-queries-inference.jsonl')
+    parser.add_argument('-dev_qrels', type=str, default='./data/msmarco-docdev-qrels.tsv')
+    parser.add_argument('-test_data', action=msr.utils.DictOrStr, default='./data/msmarco-test-queries-inference.jsonl')
+    parser.add_argument('-test_qrels', type=str, default='./data/msmarco-test-qrels.tsv')
     parser.add_argument('-test_embeddings', type=str,
                         default='./data/embeddings/embeddings_random_examples/marco_test_query_embeddings_0.npy')
     parser.add_argument('-test_ids', type=str,
@@ -760,8 +743,13 @@ def main():
                         default='./data/embeddings/embeddings_random_examplesmarco_doc_embeddings_{}.npy')
     parser.add_argument('-doc_ids_format', type=str,
                         default='./data/embeddings/embeddings_random_examplesmarco_doc_embeddings_indices_{}.npy')
-    parser.add_argument('-save_exact_knn_path', type=str, default='./results/tensors/exact_mm_test_set.pt')
     parser.add_argument('-num_doc_files', type=int, default=13)
+
+    # pipeline options
+    parser.add_argument('-k', type=int, default=100)
+    parser.add_argument('-full_ranking', type='bool', default=True)
+    parser.add_argument('-reformulate_before_ranking', type='bool', default=True)
+    parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
 
     # re_args = get_reformulator_args(parser)
     index_args = get_knn_args(parser)
@@ -778,21 +766,20 @@ def main():
     # set metric
     metric = msr.metrics.Metric()
 
-    # Loading models
-    #    1. Load Retriever
-    logger.info("Loading Retriever...")
+    logger.info("Loading Retriever Model...")
     two_tower_bert = TwoTowerBert(index_args.pretrain)
     checkpoint = torch.load(args.two_tower_checkpoint)
-    # strict=False because some version mismatch between checkpoints
     two_tower_bert.load_state_dict(checkpoint)
     two_tower_bert.eval()
+
     knn_index = KnnIndex(index_args, two_tower_bert)
-    logger.info("Load Index File and set ef")
+    logger.info("Load Index File and set ef...")
     knn_index.load_index()
     knn_index.set_ef(index_args.efc)
     knn_index.set_device(device)
 
     if args.exact_knn:
+        logger.info("Start calculating exact knn")
         exact_knn(args, knn_index, metric, device, k=1000)
     if args.print_embeddings:
         logger.info("Start printing vectors to files...")
@@ -816,30 +803,16 @@ def main():
         elif args.reformulation_type == 'transformer':
             reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
                                                    args.dim_feedforward)
+            # maybe some issues regarding used pytorch version
             # reformulator.load_state_dict(checkpoint)
             reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
             reformulator.to_device(device)
             reformulator.eval()
-
-            # register hook to encoder layers, to get attention weights
-            state_dict = reformulator.state_dict()
-            for k, v in state_dict.items():
-                print(f"Key: {k}")
-            if args.sampling == 'attention':
-                for name, layer in reformulator.named_modules():
-                    # print("name: ", name)
-                    # print("layer: ", layer)
-                    if name == f'layers.{args.num_encoder_layers-1}.self_attn.in_proj_weight':
-                        layer.register_forward_hook(save_attention_hook)
-                        print('added hook on layer: ', layer)
-                    if name == f"layers.{args.num_encoder_layers-1}.self_attn":
-                        layer.register_forward_hook(save_attention_hook)
-                        print('added hook on layer: ', layer)
     else:
         reformulator = None
 
     if args.full_ranking or args.use_ranker_in_next_round:
-        #   2. Load Ranker
+        # Load Ranker
         logger.info("Loading Ranker...")
         ranking_model = NeuralRanker(ranker_args)
         checkpoint = torch.load(args.ranker_checkpoint)
@@ -852,7 +825,8 @@ def main():
 
     if args.ideal:
         eval_ideal(args, knn_index, ranking_model, device, k=args.k)
-    if args.print_reformulated_embeddings:
+
+    if args.print_reformulated_embeddings or args.print_attention_sampled_embeddings:
         print_reformulated_embeddings(args, knn_index, ranking_model, reformulator, device, k=args.k)
 
     # DataLoaders for dev
@@ -883,7 +857,8 @@ def main():
         args.number_samples = args.nhead
 
     if args.test_clustering:
-        test_clustering(args, knn_index, ranking_model, reformulator, test_loader, metric, device, args.k)
+        logger.info("Start cluster testing...")
+        test_clustering(args, knn_index, ranking_model, test_loader, metric, device, args.k)
 
     # starting inference
     logger.info("Starting inference...")
