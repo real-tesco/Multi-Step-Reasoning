@@ -1,16 +1,17 @@
 import os
-
 import argparse
-from msr.knn_retriever.retriever_config import get_args
-from transformers import AutoTokenizer, get_linear_schedule_with_warmup
+import logging
+import json
+
+import hnswlib
 import torch
+from torch.utils.tensorboard import SummaryWriter
+import numpy as np
+from transformers import AutoTokenizer, get_linear_schedule_with_warmup
+
 import msr as msr
 import msr.utils as utils
-import numpy as np
-import logging
-import hnswlib
-from torch.utils.tensorboard import SummaryWriter
-import json
+from msr.knn_retriever.retriever_config import get_args
 
 
 def str2bool(v):
@@ -320,8 +321,6 @@ def main(args):
         test_bert_checkpoint(args, model, metric, dev_loader, device)
 
     if args.save_embeddings > 0:
-        #if torch.cuda.device_count() > 1:
-        #    model = torch.nn.DataParallel(model)
         save_embeddings(args, model, embed_loader, device)
 
     elif not args.index:
