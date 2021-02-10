@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 
-# need to run this on server for ranking data
+# preprocess the data into jsonl format for training and evaluation of models
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-input_trec', type=str)
@@ -17,6 +17,7 @@ def main():
     parser.add_argument('-output', type=str)
     args = parser.parse_args()
 
+    # for indexing documents/queries
     if args.documents > 0 or args.queries > 0:
         with open(args.input_docs) as f_in, open(args.output, "w") as f_out:
             cnt = 0
@@ -38,6 +39,7 @@ def main():
                         content = line[1]
 
                 f_out.write(json.dumps({'doc_id': id, 'doc': content}) + '\n')
+    # for training/dev data
     else:
         qs = {}
         # generate dev data for ranker with embeddings
@@ -88,7 +90,7 @@ def main():
                     if line[0] not in qpls:
                         qpls[line[0]] = {}
                     qpls[line[0]][line[2]] = int(line[3])
-    #TODO: Here
+
         f = open(args.output, 'w')
         with open(args.input_trec, 'r') as r:
             for line in r:
