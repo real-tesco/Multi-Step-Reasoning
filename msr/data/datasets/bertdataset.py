@@ -1,10 +1,8 @@
-from typing import List, Tuple, Dict, Any
+from typing import List, Dict, Any
 
 import json
-
 import torch
 from torch.utils.data import Dataset
-
 from transformers import AutoTokenizer
 
 
@@ -92,7 +90,6 @@ class BertDataset(Dataset):
 
     def collate(self, batch: Dict[str, Any]):
         if self._mode == 'train':
-
             q_input_ids = torch.tensor([item['q_input_ids'] for item in batch])
             q_segment_ids = torch.tensor([item['q_segment_ids'] for item in batch])
             q_input_mask = torch.tensor([item['q_input_mask'] for item in batch])
@@ -117,6 +114,7 @@ class BertDataset(Dataset):
             return {'query_id': query_id, 'doc_id': doc_id, 'label': label, 'retrieval_score': retrieval_score,
                     'q_input_ids': q_input_ids, 'q_segment_ids': q_segment_ids, 'q_input_mask': q_input_mask,
                     'd_input_ids': d_input_ids, 'd_segment_ids': d_segment_ids, 'd_input_mask': d_input_mask}
+
         elif self._mode == 'test':
             query_id = [item['query_id'] for item in batch]
             doc_id = [item['doc_id'] for item in batch]
@@ -126,6 +124,7 @@ class BertDataset(Dataset):
             input_mask = torch.tensor([item['input_mask'] for item in batch])
             return {'query_id': query_id, 'doc_id': doc_id, 'retrieval_score': retrieval_score,
                     'input_ids': input_ids, 'segment_ids': segment_ids, 'input_mask': input_mask}
+
         elif self._mode == 'embed':
             doc_id = [item['doc_id'] for item in batch]
             input_ids = torch.tensor([item['d_input_ids'] for item in batch])
@@ -133,6 +132,7 @@ class BertDataset(Dataset):
             input_mask = torch.tensor([item['d_input_mask'] for item in batch])
             return {'doc_id': doc_id, 'd_input_ids': input_ids, 'd_segment_ids': segment_ids,
                     'd_input_mask': input_mask}
+
         elif self._mode == 'inference':
             query_id = [item['query_id'] for item in batch]
             input_ids = torch.tensor([item['input_ids'] for item in batch])
@@ -140,6 +140,7 @@ class BertDataset(Dataset):
             input_mask = torch.tensor([item['input_mask'] for item in batch])
             return {'query_id': query_id, 'q_input_ids': input_ids, 'q_segment_ids': segment_ids,
                     'q_input_mask': input_mask}
+
         else:
             raise ValueError('Mode must be `train`, `dev`, `test` or `embed`.')
 
@@ -226,7 +227,6 @@ class BertDataset(Dataset):
             example['doc'] = self._docs[example['doc_id']]
 
         if self._mode == 'train':
-
             query_tokens = self._tokenizer.tokenize(example['query'])[:self._query_max_len-2]
             doc_tokens = self._tokenizer.tokenize(example['doc'])[:self._seq_max_len-2]
             tokenized = self.pack_bert_features(query_tokens, doc_tokens, two_tower=True)
@@ -242,6 +242,7 @@ class BertDataset(Dataset):
             return {'query_id': example['query_id'], 'doc_id': example['doc_id'], 'label': example['label'], 'retrieval_score': example['retrieval_score'],
                     'q_input_ids': tokenized[0][0], 'q_segment_ids': tokenized[0][1], 'q_input_mask': tokenized[0][2],
                     'd_input_ids': tokenized[1][0], 'd_segment_ids': tokenized[1][1], 'd_input_mask': tokenized[1][2]}
+
         elif self._mode == 'test':
             query_tokens = self._tokenizer.tokenize(example['query'])[:self._query_max_len]
             doc_tokens = self._tokenizer.tokenize(example['doc'])[:self._seq_max_len-len(query_tokens)-3]
@@ -249,6 +250,7 @@ class BertDataset(Dataset):
             input_ids, input_mask, segment_ids = self.pack_bert_features(query_tokens, doc_tokens)
             return {'query_id': example['query_id'], 'doc_id': example['doc_id'], 'retrieval_score': example['retrieval_score'],
                     'input_ids': input_ids, 'input_mask': input_mask, 'segment_ids': segment_ids}
+
         elif self._mode == 'embed':
             if self._passage_type == 'reverse':
                 doc_tokens = self._tokenizer.tokenize(example['doc'])[-(self._seq_max_len-2):]
@@ -257,11 +259,13 @@ class BertDataset(Dataset):
             tokenized = self.pack_bert_features_doc_only(doc_tokens)
             return {'doc_id': example['doc_id'], 'd_input_ids': tokenized[0], 'd_segment_ids': tokenized[1],
                     'd_input_mask': tokenized[2]}
+
         elif self._mode == 'inference':
             query_tokens = self._tokenizer.tokenize(example['query'])[:self._query_max_len-2]
             input_ids, input_mask, segment_ids = self.pack_bert_features_q_only(query_tokens)
             return {'query_id': example['query_id'],
                     'input_ids': input_ids, 'input_mask': input_mask, 'segment_ids': segment_ids}
+
         else:
             raise ValueError('Mode must be `train`, `dev`, `test`, `embed`, or `inference`.')
 
