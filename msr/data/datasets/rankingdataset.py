@@ -1,9 +1,11 @@
-from typing import List, Tuple, Dict, Any
 import json
+import logging
+import numpy as np
+from typing import List
+
 import torch
 from torch.utils.data import Dataset
-import numpy as np
-import logging
+
 
 logger = logging.getLogger()
 
@@ -45,8 +47,6 @@ class RankingDataset(Dataset):
         self._queries = {idx: embed for idx, embed in zip(tmp_query_ids, tmp_queries)}
         logger.info(f"len of queries: {len(self._queries)}")
 
-        #del tmp_queries, tmp_query_ids, tmp_docs, tmp_docids
-
         self._dataset = dataset
 
         if self._dataset.split('.')[-1] == 'tsv' or self._dataset.split('.')[-2] == 'trec':
@@ -77,6 +77,7 @@ class RankingDataset(Dataset):
                         'negative_doc': self._docs[example[2]]}
             elif self._model == 'reformulator':
                 return {'query': self._queries[example[0]], 'query_id': example[0]}
+
         elif self._mode == 'dev':
             if self._model == 'ranker':
                 query_id = example['query_id']
@@ -88,6 +89,7 @@ class RankingDataset(Dataset):
             elif self._model == 'reformulator':
                 qid = example[0]
                 return {'query_id': qid, 'query': self._queries[qid]}
+
         elif self._mode == 'test':
             query_id = example[0]
             did = example[2]
@@ -96,7 +98,6 @@ class RankingDataset(Dataset):
     def collate(self, batch):
         if self._mode == 'train':
             if self._model == 'ranker':
-                #logger.info(f'COLLATE batch: {batch} | query: {[item["query"][:10] for item in batch]}')
                 queries = torch.stack([item['query'] for item in batch])
                 positive_docs = torch.stack([item['positive_doc'] for item in batch])
                 negative_docs = torch.stack([item['negative_doc'] for item in batch])
@@ -105,6 +106,7 @@ class RankingDataset(Dataset):
                 queries = torch.stack([item['query'] for item in batch])
                 qids = [item['query_id'] for item in batch]
                 return {'query_id': qids, 'query': queries}
+
         elif self._mode == 'dev':
             if self._model == 'ranker':
                 query_id = [item['query_id'] for item in batch]
@@ -119,6 +121,7 @@ class RankingDataset(Dataset):
                 query_id = [item['query_id'] for item in batch]
                 queries = torch.stack([item['query'] for item in batch])
                 return {'query_id': query_id, 'query': queries}
+
         elif self._mode == 'test':
             query_id = [item['query_id'] for item in batch]
             queries = torch.stack([item['query'] for item in batch])
