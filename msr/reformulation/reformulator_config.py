@@ -1,8 +1,6 @@
 import argparse
-import os
 import logging
-import torch
-import msr
+
 
 logger = logging.getLogger()
 
@@ -23,10 +21,9 @@ def get_args(parser=None):
     parser.add_argument('-num_encoder_layers', type=int, default=4)
     parser.add_argument('-dim_feedforward', type=int, default=3072)
 
-    #neural
+    # neural
     parser.add_argument('-dim_embedding', type=int, default=768)
     parser.add_argument('-hidden1', type=int, default=2500)
-
 
     args = parser.parse_args()
 
