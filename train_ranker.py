@@ -122,8 +122,8 @@ def train(args, loss, ranking_model, metric, optimizer, device, train_loader, de
                         msr.utils.save_trec(args.res + '.best', rst_dict)
                         best_mes = mes
                         logger.info('New best metric = {:2.4f}'.format(best_mes))
-                        logger.info('checkpointing  model at {}.ckpt'.format(args.checkpoint))
-                        torch.save(ranking_model.state_dict(), args.checkpoint + ".ckpt")
+                        logger.info('checkpointing  model at {}.ckpt'.format(args.save))
+                        torch.save(ranking_model.state_dict(), args.save + ".ckpt")
 
         # eval at the end of each epoch
         _ = metric.eval_run(args.qrels, args.res + '.best')
@@ -259,6 +259,7 @@ if __name__ == '__main__':
     parser.add_argument('-optimizer', type=str, default='adamax',
                         help='optimizer to use for training [sgd, adamax]')
     parser.add_argument('-checkpoint', type=str, default=None, help='Checkpoint name of ranker model')
+    parser.add_argument('-save', type=str, default='./checkpoints/ranker', help='path to store ranker model')
     parser.add_argument('-metric', type=str, default='ndcg_cut_10', help='metric to evaluate ranker with')
 
     # data settings
