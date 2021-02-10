@@ -1,7 +1,5 @@
 import argparse
-import os
 import logging
-import torch
 
 logger = logging.getLogger()
 
@@ -23,6 +21,5 @@ def get_args(parser=None):
                         help='hidden dimension of ranker')
 
     args = parser.parse_args()
-
 
     return args
