@@ -1,10 +1,14 @@
+import math
+import copy
+
 import torch
 import torch.nn as nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 import torch.nn.functional as F
 from torch.nn.modules.container import ModuleList
-import math
-import copy
+
+
+# file to put the reformulation methods/models
 
 
 class QueryReformulator:
@@ -104,7 +108,6 @@ class TransformerReformulator(nn.Module):
         encoder_layer = TransformerEncoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward)
         self.layers = _get_clones(encoder_layer, num_encoder_layers)
         self.dropout = nn.Dropout(p=dropout)
-        # self.decoder = nn.Linear(768, 768)
 
     def forward(self, query, source_embeddings):
         # source_embeddings: (S, N, E) S is source sequence length here=topk, N=batchsize, E=feature number here 768
@@ -113,11 +116,9 @@ class TransformerReformulator(nn.Module):
         source = source_embeddings[:, :self.topk].transpose(0, 1)
 
         query = query.unsqueeze(dim=0)
-        #cls = torch.full(query.shape, 0.5).to(query.device)
-
-        #source = torch.cat([cls, query, source])
         source = torch.cat([query, source])
         source = self.dropout(self.pos_enc(source * math.sqrt(self.d_model)))
+
         output = source
         for layer in self.layers:
             output = layer(output)
@@ -126,32 +127,6 @@ class TransformerReformulator(nn.Module):
         output = nn.functional.normalize(output, p=2, dim=1)
         return output
 
-    def attention_sampling(self, query, documents):
-        source = documents[:, :self.topk].transpose(0, 1)
-        query = query.unsqueeze(dim=0)
-
-        source = torch.cat([query, source])
-
-        samples = torch.empty(query.shape[0], self.nhead, self.d_model)
-        output = source
-        for layer in self.layers:
-            output = layer(output)
-            print("Attention mechanism: ")
-            print(type(layer.self_attn))
-            print(layer.self_attn)
-            print(len(layer.self_attn))
-
-
-        # output at index 0 is the cls token representation
-        print("Attention Sampling Debug:")
-        print(f"output shape {output.shape}")
-        output = output[0, :]
-        output = nn.functional.normalize(output, p=2, dim=1)
-
-        return samples
-
-    # refactor needed
-    # hack to not retrain the reformulators
     def load_fixed_checkpoint(self, path):
         m = torch.load(path)
         model_dict = self.state_dict()
@@ -171,26 +146,6 @@ class TransformerReformulator(nn.Module):
 
 def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
-
-
-# not needed
-class PositionalEncodingNNModule(nn.Module):
-    def __init__(self, d_model=768, dropout=0.1, max_len=10):
-        super(PositionalEncodingNNModule, self).__init__()
-        self.dropout = nn.Dropout(p=dropout)
-
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1)
-        self.register_buffer('pe', pe)
-
-    def forward(self, x):
-        x = x + self.pe[:x.size(0), :]
-        x = self.dropout(x)
-        return x
 
 
 class PositionalEncoding:
