@@ -1,8 +1,6 @@
-import msr.metrics.metric as metric
 import argparse
 import os
 import sys
-import pytrec_eval
 import msr.metrics.metric
 
 
