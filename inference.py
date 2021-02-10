@@ -498,8 +498,6 @@ def exact_knn(args, knn_index, metric, device, k=1000):
     logger.info("start large matrix multiplication...")
     first_scores = torch.matmul(test_queries.float(), torch.transpose(all_docs.float(), 0, 1))
 
-    # torch.save(first_scores, "./results/tensors/matrix_multiplication_result.pt")
-
     del all_docs
     torch.cuda.empty_cache()
     logger.info("sorting scores...")
@@ -669,10 +667,11 @@ def main():
     # reformulator args
     parser.add_argument('-reformulation_type', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
                                                                                 'transformer', 'neural'])
-    parser.add_argument('-reformulator_checkpoint', type=str, default='./checkpoints/reformulator_transformer_loss_ip_lr_top10.bin')
+    parser.add_argument('-reformulator_checkpoint', type=str,
+                        default='./checkpoints/reformulator_transformer_loss_ip_lr_top10.bin')
     parser.add_argument('-top_k_reformulator', type=int, default=10)
-    parser.add_argument('-avg_new_qs', type='bool', default=False, help='use the avg of new query embedding and original '
-                                                                        'query as input for rerun')
+    parser.add_argument('-avg_new_qs', type='bool', default=False, help='use the avg of new query embedding and '
+                                                                        'original query as input for rerun')
 
     # transformer
     parser.add_argument('-nhead', type=int, default=6)
@@ -693,11 +692,14 @@ def main():
     # clustering settings
     parser.add_argument('-retrieves_per_sample', type=int, default=100, help='the number of retrieves per sample')
     parser.add_argument('-number_samples', type=int, default=10, help='the number of samples per query')
-    parser.add_argument('-test_clustering', type='bool', default=False, help='test clustering and eval clustering metrics')
-    parser.add_argument('-use_q_cluster_as_q', type='bool', default=False, help='test clustering and eval clustering metrics')
-    parser.add_argument('-avg_new_qs_for_ranking', type='bool', default=False, help='test clustering and eval clustering metrics')
-    parser.add_argument('-rerank_to_new_qs', type='bool', default=False, help='test clustering and eval clustering metrics')
-    parser.add_argument('-print_info', type='bool', default=False, help='test clustering and eval clustering metrics')
+    parser.add_argument('-test_clustering', type='bool', default=False,
+                        help='test clustering and eval clustering metrics')
+    parser.add_argument('-use_q_cluster_as_q', type='bool', default=False,
+                        help='in test clustering use the q cluster centroid as query representation')
+    parser.add_argument('-avg_new_qs_for_ranking', type='bool', default=False,
+                        help='average the new queries and the original queries for ranking')
+    parser.add_argument('-rerank_to_new_qs', type='bool', default=False, help='rerank to new queries')
+    parser.add_argument('-print_info', type='bool', default=False, help='print clustering info in every step')
     parser.add_argument('-add_initial_retrieved', type='bool', default=True,
                         help='whether to add the first step retrieval to result')
 
@@ -748,14 +750,14 @@ def main():
     # pipeline options
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-full_ranking', type='bool', default=True)
-    parser.add_argument('-reformulate_before_ranking', type='bool', default=True)
-    parser.add_argument('-use_ranker_in_next_round', type='bool', default=True)
+    parser.add_argument('-reformulate_before_ranking', type='bool', default=True,
+                        help='if true dont use ranker before reformulation')
+    parser.add_argument('-use_ranker_in_next_round', type='bool', default=True,
+                        help='whether to use ranker in next round or not')
 
-    # re_args = get_reformulator_args(parser)
     index_args = get_knn_args(parser)
     ranker_args = get_ranker_args(parser)
     args = parser.parse_args()
-    ranker_args.train = False
 
     if args.baseline:
         eval_base_line(args)
