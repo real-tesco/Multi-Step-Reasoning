@@ -159,14 +159,13 @@ python train_reformulator.py \
         -model_name ./checkpoints/reformulator.bin \
         -epochs 20 \
         -metric mrr_cut_100 \
-        -loss_fn ip \
-        -eval_every 5000 \
+        -eval_every 10000 \
         -batch_size 32 \
-        -k 1000
+        -k 1000 \
         -res ./results/reformulator.trec \
         -tensorboard_output ./boards/train_reformulator \
         -top_k_reformulator 10 \
-        -reformulation_type [neural|weighted_avg|transformer]
+        -reformulation_type [neural|weighted_avg|transformer] \
 ```
 and chose one of the ```reformulator_type``` choices and set the corresponding hyper parameters respectively. Every reformulator considers the top top_k_reformulator documents of the retrieved set.
 
@@ -178,7 +177,7 @@ For the neural reformulator set hidden layer dimensions, if hidden2 is 0 don't u
         -hidden2 0 \
 ```
 
-For the transformer reformulator set the number of attentionheads, the number of encoder layers and the dimension of the feedforward layer in each encoder layer:
+For the transformer reformulator set the number of attention heads, the number of encoder layers and the dimension of the feedforward layer in each encoder layer:
 ``` 
         -nhead 4 \
         -num_encoder_layers 1 \
@@ -194,7 +193,7 @@ With the inference.py script different experiments are possible. The most import
 ```
 -baseline True -- evaluates the BM25 baseline with chosen anserini index 
 -exact_knn True -- evaluates the Two Tower model with exact knn, big matrix multiplication of all documents and queries
--ideal -- evaluates the ideal run where the reformulated query is an actualy relevant document
+-ideal -- evaluates the ideal run where the reformulated query is an actualy relevant document, set number_ideal_samples > 1 to do the retrieval steps for a query with given number of relevant documents for the query
 -print_embeddings True -- prints the embeddings and meta data of the first 3 queries to use on projector.tensorflow.org 
 -test_clustering True -- clustering method to improve recall is tested, need to set -sampling to [cluster_kmeans|cluster_spectral|attention] 
 ```

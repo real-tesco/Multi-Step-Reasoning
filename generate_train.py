@@ -59,40 +59,6 @@ def generate_triples(args):
     return stats
 
 
-def split_training(args):
-    # converts the list of triples to triples with encodings saved in numpy chunks
-    encoded_passages = np.load(args.passages)
-    encoded_queries = np.load(args.queries)
-    queries_indices = np.load(args.queries_indices)
-
-    qid2idx = {}
-    for idx, qid in enumerate(queries_indices):
-        qid2idx[qid] = idx
-
-    triples_with_encodings = []
-    with open(args.out_file, 'r', encoding="utf8") as f:
-        for idx, line in enumerate(f):
-            split = line.split('\t')
-            assert len(split) == 3
-            q = encoded_queries[qid2idx[split[0]]]
-            p = encoded_passages[int(split[1]) - 1]
-            n = encoded_passages[int(split[0]) - 1]
-            triples_with_encodings.append((q, p, n))
-            if idx > 0 and idx % 1000 == 0:
-                logger.info(f"Loaded {idx}/{len(f)} examples into list")
-        logger.info("Converting list to npy and save arrays in chunks")
-        triples_with_encodings = np.asarray(triples_with_encodings).astype(np.float32)
-    chunk_size = len(triples_with_encodings) // args.split_into_numpy
-    for i in range(0, args.split_into_numpy):
-        if i+1 not in range(0, args.split_into_numpy):
-            tmp_triples = triples_with_encodings[i*chunk_size:]
-        else:
-            tmp_triples = triples_with_encodings[i*chunk_size:(i+1)*chunk_size]
-        np.save(os.path.join(args.out_dir, f"train.triples.{i}.npy"), tmp_triples)
-        logger.info(f"Saved {i+1}/{args.split_into_numpy}")
-    logger.info("Finished..")
-
-
 def generate_pairs(args):
     device = args.device
     qrel = args.qrel
@@ -231,11 +197,7 @@ def generate_train(args):
 
 
 def main(args):
-    if args.generate_train:
-        generate_train(args)
-
-    if args.split_into_numpy > 0:
-        split_training(args)
+    generate_train(args)
 
 
 if __name__ == '__main__':
@@ -277,7 +239,6 @@ if __name__ == '__main__':
 
     # for ranker
     parser.add_argument('-anserini_index', type=str, default=None)#'indexes/msmarco_passaged_150_anserini/')
-    parser.add_argument('-generate_train', type='bool', default=True, help='generate training data')
     parser.add_argument('-queries', type=str, default='embeddings/query_embeddings/train.msmarco_queries_normed.npy',
                         help='all encoded queries in npy')
     parser.add_argument('-queries_indices', type=str,
