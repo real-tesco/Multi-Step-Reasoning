@@ -1,8 +1,5 @@
 # Query Modelling for Neural Retrieval
 
-
-*Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning).
-
 ## Introduction
 This git repository was created while pursuing my Master Thesis at the L3S institute at the Leibniz University Hannover.
 I did ground work of exploring the Query Modelling for full neural retrieval without classic enhancements like Neural Retrieval combined with BM25 as ensemble.
@@ -137,7 +134,7 @@ python train_ranker.py \
 ```
 The ```-document_embedding_format``` and ```-doc_ids_format``` are the formats the document embeddings and their document ids are stored in chunks respectively.
 The ```-dev_query_embedding_file``` and ```-dev_query_ids_file``` contain the encoded dev queries and their ids, also in .npy format.
-The ```triples``` file contains the triples for the training of the ranker with format:
+The triples file contains the triples for the training of the ranker with format:
 
 ```qid \t pos_id \t neg_id```
 
@@ -198,7 +195,7 @@ For the weighted average there is no additionaly argument necessary.
 
 ## Other Experiments 
 
-With the inference.py script different experiments are possible. The most important flags are:
+With the inference.py script different experiments with the trained components are possible. The most important flags are:
 
 ```
 -baseline True -- evaluates the BM25 baseline with chosen anserini index 
@@ -215,6 +212,9 @@ There are some other options which can be explored like:
 -rerank_to_new_qs -- rerank the new retrieved documents after reformulation to the reformulated queries 
 -avg_new_qs_for_ranking -- after reformulation average the new queries with the original ones
 ```
+
+*Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning). And a big thanks to Prof. Avishek Anand my first Reviewer and Jaspreet Singh my Tutor for all the help and suggestions you provided for me.
+
 
 ## Citation
 ```
