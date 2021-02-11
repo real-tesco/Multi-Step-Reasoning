@@ -138,7 +138,7 @@ To generate the file also use the generate_train script with following arguments
 python generate_train.py \
         -use_top_bm25_samples True \
         -doc_train_100_file msmarco-doctrain-top100 \
-        -random_sampling False \
+        -random_sample False \
         -negative_samples 10 \
         -pairs False \
         -base_dir <your base directory where the data is stored> \

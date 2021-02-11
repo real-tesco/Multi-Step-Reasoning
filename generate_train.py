@@ -270,7 +270,6 @@ if __name__ == '__main__':
     parser.add_argument('-doc_train_100_file', type=str, default="msmarco-doctrain-top100")
     parser.add_argument('-query_file', type=str, default='msmarco-doctrain-queries.tsv')
     parser.add_argument('-doc_lookup', type=str, default='msmarco-docs-lookup.tsv')
-    parser.add_argument('-out_dir', type=str, help='output directory')
 
     # for ranker
     parser.add_argument('-anserini_index', type=str, default=None)#'indexes/msmarco_passaged_150_anserini/')
@@ -289,7 +288,7 @@ if __name__ == '__main__':
     args.docid2pid = os.path.join(args.base_dir, args.docid2pid)
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
     args.doc_train_100_file = os.path.join(args.base_dir, args.doc_train_100_file)
-    args.out_file = os.path.join(args.out_dir, args.out_file)
+    args.out_file = os.path.join(args.base_dir, args.out_file)
     args.query_file = os.path.join(args.base_dir, args.query_file)
     args.doc_lookup = os.path.join(args.base_dir, args.doc_lookup)
 
