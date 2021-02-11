@@ -21,7 +21,7 @@ conda env create -f environment.yml
 ```
 
 ## Data
-The pre-processed data, index files and checkpoints are available for download so it is easier to get started. They can be downloaded from [here](http://iesl.cs.umass.edu/downloads/multi-step-reasoning-iclr19/data.tar.gz).
+The pre-processed data, index files and checkpoints are available for download so it is easier to get started. They can be downloaded from [here](http://google.com).
 After un-taring, you will find a data directory containing all the data with the following structure:
 ```
 embeddings/ -- containing the calculated embeddings in chunks (*.npy files)
