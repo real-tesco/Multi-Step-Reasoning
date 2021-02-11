@@ -3,6 +3,16 @@
 
 *Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning).
 
+## Introduction
+This git repository was created while pursuing my Master Thesis at the L3S institute at the Leibniz University Hannover.
+I did ground work of exploring the Query Modelling for full neural retrieval without classic enhancements like Neural Retrieval combined with BM25 as ensemble.
+
+The repository contains frameworks to train a Two Tower Model and generate an approximate KNN index on the MSMARCO document ranking dataset, as well as training a simple Ranker for the returned embeddings.
+
+The key components in this work are the reformulators which can be trained and evaluated, aswell as the clustering approaches explored.
+
+Feel free to clone this repository and explore this space even more.
+
 ## Setup
 The requirements are in the requirements file and the environment file for conda. 
 ```
