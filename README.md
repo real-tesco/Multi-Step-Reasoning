@@ -1,4 +1,4 @@
-# Multi Step Query Modelling for Document Retrieval
+# Query Modelling for Neural Retrieval
 
 
 *Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning).
@@ -21,7 +21,43 @@ msmarco document ranking train/dev/test files
 ```
 
 ## Train Two Tower Document Encoder
-If you want to train new document embeddings use following script:
+
+You need to generate the training for the Document Encoder. It accepts a .tsv file with lines in following format: 
+```
+qid docid label
+```
+
+To generate the pairs training data you have to download the msmarco training, dev and test files. Then you can use following script:
+
+```
+python generate_train.py \
+        -random_sample True \
+        -pairs True \
+        -negative_samples <number of negative samples per positive, here 4 negative samples were used>
+        -base_dir <your base directory where the data is stored> \
+        -out_file train-msmarco-pairs.tsv \
+        -qrels msmarco-doctrain-qrels.tsv \
+        -doc_lookup msmarco-docs-lookup.tsv \
+```
+
+You also have to preprocess the dev data into following jsonl format:
+
+```
+{"query": "<query text>", "doc": "<document text>", "label": <label>, "query_id": "<qid>, "doc_id": "<doc_id>", "retrieval_score", <retrieval_score>}
+```
+
+To do so use this script:
+
+```
+python preprocess.py \
+        -output <msmarco-doc.dev.jsonl name of output file>
+        -input_trec msmarco-docdev-top100 \
+        -input qrels msmarco-docdev-qrels.tsv \
+        -input_queries msmarco-docdev-queries.tsv \
+        -input_docs msmarco-docs.tsv \
+```
+
+If you want to train new document embeddings use following script, it also outputs a tensorboard visualization for the training:
 ```
 python train_retriever.py \
         -train  queries=./data/msmarco-doctrain-queries.tsv,docs=./data/msmarco-docs.tsv,qrels=./data/msmarco-doctrain-qrels.tsv,trec=./data/msmarco-train-pairs.tsv \        
@@ -43,7 +79,13 @@ python train_retriever.py \
         -tensorboard_output ./runs/train_two_tower
 ```
 
-To store the learned embeddings as chunks:
+To store the learned embeddings as chunks preprocess the documents/queries as jsonl with format:
+```
+{"doc_id": <document/query id>, "doc": <document/query text>}
+```
+
+and run:
+
 ```
 python train_retriever.py \
         -vocab bert-base-uncased \
@@ -57,14 +99,13 @@ python train_retriever.py \
         -docs_per_chunk 250000 \
         -embed_dir ./data/embeddings/ \
 ```
-if you want to encode queries also use the flag: 
+if you want to encode queries also use the flag and set max_doc_len to max_query_len: 
 ``` 
 -embed_queries 1
+-max_doc_len 64
+-max_query_len 64
 ```
-The documents/queries need to be in jsonl format, per line there is one document/query as json object
-```
-{"doc_id": "docid", "doc": "document_content"}  
-```
+
 ## Training Ranker
 
 To train the embedding ranker the documents and the queries need to be encoded as chunks by the retriever model. 
@@ -84,7 +125,27 @@ python train_ranker.py \
         -metric mrr_cut_100 \
         -extra_layer 2500
 ```
-The ```-document_embedding_format``` and ```-doc_ids_format``` are the formats the document embeddings and their document ids are stored respectively
+The ```-document_embedding_format``` and ```-doc_ids_format``` are the formats the document embeddings and their document ids are stored in chunks respectively.
+The ```-dev_query_embedding_file``` and ```-dev_query_ids_file``` contain the encoded dev queries and their ids, also in .npy format.
+The ```triples``` file contains the triples for the training of the ranker with format:
+
+```qid \t pos_id \t neg_id```
+
+Here I use 10 negative documents per query sampled from the top-100 documents, which are not in qrels file. The qrels file provided by MSMARCO only contains positive judged documents for a query.
+To generate the file also use the generate_train script with following arguments:
+
+```
+python generate_train.py \
+        -use_top_bm25_samples True \
+        -doc_train_100_file msmarco-doctrain-top100 \
+        -random_sampling False \
+        -negative_samples 10 \
+        -pairs False \
+        -base_dir <your base directory where the data is stored> \
+        -out_file trids_marco-doc-10.tsv \
+        -qrels msmarco-doctrain-qrels.tsv \
+        -doc_lookup msmarco-docs-lookup.tsv \
+```
 
 ## Training Reformulator
 
