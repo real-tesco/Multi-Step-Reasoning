@@ -35,6 +35,10 @@ def generate_triples(args):
         for idx, topicid in enumerate(qrel):
             positive_docid = random.choice(qrel[topicid])
 
+            if topicid not in top100_not_in_qrels:
+                stats["skipped_topicid_not_in_top100"] += 1
+                continue
+
             # getting top documents but negative for query
             if not args.random_sample:
                 negatives = random.choices(top100_not_in_qrels[topicid], k=args.negative_samples)
