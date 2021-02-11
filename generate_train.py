@@ -26,85 +26,31 @@ def str2bool(v):
 
 
 def generate_triples(args):
-    """Generates triples comprising:
-    - Query: The current topicid and query string
-    - Pos: One of the positively-judged documents for this query
-    - Rnd: Any of the top-100 documents for this query other than Pos
-    Since we have the URL, title and body of each document, this gives us ten columns in total:
-    topicid, query, posdocid, posurl, postitle, posbody, rnddocid, rndurl, rndtitle, rndbody
-    outfile: The filename where the triples are written
-    triples_to_generate: How many triples to generate
-    """
-    searcher = args.searcher
-    docid2pids = args.docid2pid
     qrel = args.qrel
     stats = defaultdict(int)
-    already_done_a_triple_for_topicid = -1
+    top100_not_in_qrels = args.top100_not_in_qrels
     negatives = []
 
-    with open(args.doc_train_100_file, 'rt', encoding='utf8') as top100f, \
-            open(args.triples_name, 'w', encoding="utf8") as out:
-        for idx, line in enumerate(top100f):
-            [topicid, _, unjudged_docid, _, _, _] = line.split()
-
-            if already_done_a_triple_for_topicid == topicid:
-                continue
-            # getting top 5 documents for query
-            elif not args.random_sample:
-                if unjudged_docid in docid2pids:
-                    negatives.append(unjudged_docid)
-                if len(negatives) < 5:
-                    continue
-
-            already_done_a_triple_for_topicid = topicid
-            assert topicid in qrel
-
-            # generate negative example
-            negative_passages = []
-            if not args.random_sample:
-                # 5 examples top rated in doctrain100 but not in qrels
-                negatives_unjudged = [value for value in negatives if value not in qrel[topicid]]
-                for neg in negatives_unjudged:
-                    for pid in docid2pids[neg]:
-                        negative_passages.append(pid)
-            else:
-                docs = random.choices(args.docids, k=5)
-                for doc in docs:
-                    if doc in docid2pids:
-                        for pid in docid2pids[doc]:
-                            negative_passages.append(pid)
-
-            # Use topicid to get our positive_docid
+    with open(args.out_file, 'w', encoding="utf8") as out:
+        for idx, topicid in enumerate(qrel):
             positive_docid = random.choice(qrel[topicid])
-            if positive_docid not in docid2pids:
-                stats['skipped_positive_not_in_docid2pid'] += 1
-                continue
 
-            assert positive_docid in docid2pids
-            positive_pids = docid2pids[positive_docid]
-            stats['kept'] += 1
+            # getting top documents but negative for query
+            if not args.random_sample:
+                negatives = random.choices(top100_not_in_qrels[topicid], k=args.negative_samples)
+            else:
+                docs = random.choices(args.docids, k=args.negative_samples)
+                for doc in docs:
+                    if doc not in qrel[topicid]:
+                        negatives.append(doc)
+                    else:
+                        stats['skipped_random_because_relevant'] += 1
 
-            # generate positive example, best bm25 passage regarding query, from positive judged document
-            query_text = args.queries[topicid]
-
-            hits = searcher.search(query_text)
-            if len(hits) == 0:
-                stats['skipped_hits_len_0'] += 1
-                continue
-            best_pid = -1
-            for i in range(0, min(args.topk, len(hits))):
-                if hits[i].docid in positive_pids:
-                    best_pid = hits[i].docid
-                    stats['best_pid_in_bm25'] += 1
-                    break
-            if best_pid == -1:
-                best_pid = hits[0].docid
-                stats['best_pid_not_in_positive_doc'] += 1
-
-            out.write("{}\t{}\t{}\n".format(topicid, best_pid, random.choice(negative_passages)))
-            stats['total'] += 1
+            for neg in negatives:
+                out.write("{}\t{}\t{}\n".format(topicid, positive_docid, neg))
+                stats['total'] += 1
             if idx % 1000 == 0:
-                logger.info(f"{idx} / {len(qrel)} examples done!")
+                logger.info(f"{idx} / {len(qrel)} queries done!")
             negatives = []
     return stats
 
@@ -120,7 +66,7 @@ def split_training(args):
         qid2idx[qid] = idx
 
     triples_with_encodings = []
-    with open(args.triples_name, 'r', encoding="utf8") as f:
+    with open(args.out_file, 'r', encoding="utf8") as f:
         for idx, line in enumerate(f):
             split = line.split('\t')
             assert len(split) == 3
@@ -151,7 +97,7 @@ def generate_pairs(args):
     index = args.index
     stats = defaultdict(int)
 
-    with open(args.triples_name, 'w', encoding="utf8") as out:
+    with open(args.out_file, 'w', encoding="utf8") as out:
         for idx, topicid in tqdm(enumerate(qrel)):
             out.write("{} {} {}\n".format(topicid, random.choice(qrel[topicid]), 1))
             stats["kept"] += 1
@@ -230,6 +176,7 @@ def generate_train(args):
     args.queries = queries
     args.qrel = qrel
     # args.docid2pid = docid2pid
+    args.searcher = None
     if args.anserini_index is not None:
         logger.info("Opened files")
         logger.info(f"Loading anserini index from path {args.anserini_index}...")
@@ -255,6 +202,7 @@ def generate_train(args):
     if torch.cuda.device_count() > 0:
         logger.info("using cuda if torch model is used")
 
+    args.index = None
     if args.use_knn_index_generation:
         logger.info(f"Loading Two Tower from {args.use_knn_index_generation}")
         args.index_file = args.use_knn_index_generation
@@ -318,11 +266,14 @@ if __name__ == '__main__':
                         help='the json file with dict for doc id to passage id mapping')
     parser.add_argument('-base_dir', type=str, help='base directory for files')
     parser.add_argument('-qrels_file', type=str, default='msmarco-doctrain-qrels.tsv')
-    parser.add_argument('-triples_name', type=str, default='msmarco_train_triples.tsv')
+    parser.add_argument('-out_file', type=str, default='msmarco_train_triples.tsv')
     parser.add_argument('-doc_train_100_file', type=str, default="msmarco-doctrain-top100")
-    parser.add_argument('-anserini_index', type=str, default=None)#'indexes/msmarco_passaged_150_anserini/')
     parser.add_argument('-query_file', type=str, default='msmarco-doctrain-queries.tsv')
     parser.add_argument('-doc_lookup', type=str, default='msmarco-docs-lookup.tsv')
+    parser.add_argument('-out_dir', type=str, help='output directory')
+
+    # for ranker
+    parser.add_argument('-anserini_index', type=str, default=None)#'indexes/msmarco_passaged_150_anserini/')
     parser.add_argument('-generate_train', type='bool', default=True, help='generate training data')
     parser.add_argument('-queries', type=str, default='embeddings/query_embeddings/train.msmarco_queries_normed.npy',
                         help='all encoded queries in npy')
@@ -332,16 +283,16 @@ if __name__ == '__main__':
     parser.add_argument('-passages', type=str, default='input/msmarco_passages_normed_f32.npy',
                         help='all encoded passages in npy')
     parser.add_argument('-passages_indices', type=str, default='input/msmarco_indices.npy')
-    parser.add_argument('-out_dir', type=str, help='output directory')
 
     args = parser.parse_args()
 
     args.docid2pid = os.path.join(args.base_dir, args.docid2pid)
     args.qrels_file = os.path.join(args.base_dir, args.qrels_file)
     args.doc_train_100_file = os.path.join(args.base_dir, args.doc_train_100_file)
-    args.triples_name = os.path.join(args.out_dir, args.triples_name)
+    args.out_file = os.path.join(args.out_dir, args.out_file)
     args.query_file = os.path.join(args.base_dir, args.query_file)
     args.doc_lookup = os.path.join(args.base_dir, args.doc_lookup)
+
     args.passages = os.path.join(args.base_dir, args.passages)
     args.passages_indices = os.path.join(args.base_dir, args.passages_indices)
     args.queries_indices = os.path.join(args.base_dir, args.queries_indices)
