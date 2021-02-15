@@ -136,41 +136,13 @@ def test_index(args):
     index.load_index(args.hnsw_index)
 
     logger.info('Evaluate self-recall on first chunk...')
-    model = args.model
     current_passage_file = os.path.join(args.embed_dir, "marco_doc_embeddings_0.npy")
-    current_index_file = os.path.join(args.embed_dir, "marco_doc_embeddings_0.npy")
     with open(current_passage_file, "rb") as f:
         chunk = torch.from_numpy(np.load(f)).cuda()
-    with open(current_index_file, "rb") as f:
-        indices = np.load(f)
-    d1 = model.document_transformer.forward(chunk)
-    labels, distances = index.knn_query(d1.cpu().detach().numpy(), k=1)
+        lbls = np.arange(len(chunk))
+    labels, distances = index.knn_query(chunk, k=1)
     logger.info("Recall for dataset encoded with doc transformer: "
-                "{}".format(np.mean(labels.reshape(labels.shape[0]) == indices)))
-    d2 = model.query_transformer.forward(chunk)
-    labels, distances = index.knn_query(d2.cpu().detach().numpy(), k=1)
-    logger.info("Recall for dataset encoded with query transformer: "
-                "{}".format(np.mean(labels.reshape(labels.shape[0]) == indices)))
-
-    logger.info("Evaluating trec metrics for dev set...")
-    with open(args.dev_queries, "rb") as f:
-        dev_queries = torch.from_numpy(np.load(f)).cuda()
-    with open(args.dev_qids, "rb") as f:
-        dev_qids = np.load(f)
-    dev_queries = model.query_transformer.forward(dev_queries)
-    labels, distances = index.knn_query(dev_queries.cpu().detach().numpy(), k=100)
-    with open(args.out_file, "w") as f:
-        for idx, qid in enumerate(dev_qids):
-            ranked_docids = []
-            current_rank = 1
-            for idy, (label, distance) in enumerate(zip(labels[idx], distances[idx])):
-                docid = args.pid2docid_dict[str(label)]
-                if docid in ranked_docids:
-                    continue
-                f.write("{} Q0 {} {} {} {}\n".format(qid, docid, current_rank, 1.0 - distance, args.hnsw_index))
-                current_rank += 1
-                ranked_docids.append(docid)
-    logger.info("Done with evaluation, use trec_eval to evaluate run...")
+                "{}".format(np.mean(labels.reshape(labels.shape[0]) == lbls)))
 
 
 def build_index(args):
