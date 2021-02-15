@@ -215,7 +215,7 @@ def main(args):
         dev_query_embedding_list = [args.dev_query_embedding_file]
         dev_query_ids_list = [args.dev_query_ids_file]
         dev_loader = make_dataloader(doc_embedding_list, doc_ids_list, dev_query_embedding_list,
-                                     dev_query_ids_list, args.dev_data, mode='test')
+                                     dev_query_ids_list, args.dev_data, mode='dev')
 
         logger.info("loading test data")
         doc_embedding_list = (args.doc_embedding_format.format(i) for i in range(0, args.num_doc_files))
@@ -223,7 +223,7 @@ def main(args):
         test_query_embedding_list = [args.test_query_embedding_file]
         test_query_ids_list = [args.test_query_ids_file]
         test_loader = make_dataloader(doc_embedding_list, doc_ids_list, test_query_embedding_list,
-                                      test_query_ids_list, args.test_data, mode='test')
+                                      test_query_ids_list, args.test_data, mode='dev')
 
         dev_dict, test_dict = eval_ranker(args, ranker_model, dev_loader, device, test_loader)
 
