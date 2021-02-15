@@ -138,7 +138,7 @@ def test_index(args):
     logger.info('Evaluate self-recall on first chunk...')
     current_passage_file = os.path.join(args.embed_dir, "marco_doc_embeddings_0.npy")
     with open(current_passage_file, "rb") as f:
-        chunk = torch.from_numpy(np.load(f)).cuda()
+        chunk = np.load(f)
         lbls = np.arange(len(chunk))
     labels, distances = index.knn_query(chunk, k=1)
     logger.info("Recall for dataset encoded with doc transformer: "
