@@ -132,8 +132,8 @@ def save_embeddings(args, model, doc_loader, device):
 def test_index(args):
     logger.info("Load index")
     index = hnswlib.Index(space=args.similarity, dim=args.dim_hidden)
-    logger.info(args.hnsw_index)
-    index.load_index(args.hnsw_index)
+    logger.info(args.index_file)
+    index.load_index(args.index_file)
 
     logger.info('Evaluate self-recall on first chunk...')
     current_passage_file = os.path.join(args.embed_dir, "marco_doc_embeddings_0.npy")
