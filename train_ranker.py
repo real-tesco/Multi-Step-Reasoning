@@ -144,7 +144,6 @@ def process_batch(model, batch, rst_dict, device):
 
 
 def eval_ranker(args, model, dev_loader, device, test_loader=None):
-    logger.info("Evaluating trec metrics for dev set...")
     rst_dict_dev = {}
     rst_dict_test = None
     model.eval()
@@ -158,6 +157,7 @@ def eval_ranker(args, model, dev_loader, device, test_loader=None):
             if (step + 1) % args.print_every == 0:
                 print(f"-- eval: {step + 1}/{len(test_loader)} --")
 
+    logger.info("Evaluating trec metrics for dev set...")
     for step, dev_batch in enumerate(dev_loader):
         process_batch(model, dev_batch, rst_dict_dev, device)
         if (step + 1) % args.print_every == 0:
