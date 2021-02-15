@@ -295,7 +295,13 @@ def main(args):
     if args.save_embeddings > 0:
         save_embeddings(args, model, embed_loader, device)
 
-    elif not args.index:
+    elif args.index:
+        build_index(args)
+
+    elif args.test_index:
+        test_index(args)
+
+    else:
         loss_fn = torch.nn.BCELoss()
         loss_fn.to(device)
 
@@ -312,10 +318,6 @@ def main(args):
 
         logger.info("starting training...")
         train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_loader, device, writer)
-    elif args.test_index:
-        test_index(args)
-    else:
-        build_index(args)
 
 
 if __name__ == '__main__':
