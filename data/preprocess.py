@@ -100,7 +100,7 @@ def main():
                 if args.input_qrels is not None:
                     if line[0] in qpls and line[2] in qpls[line[0]]:
                         label = qpls[line[0]][line[2]]
-                        print("if true with label: ", label)
+                        # print("if true with label: ", label)
                     else:
                         label = 0
                     f.write(json.dumps({'query': qs[line[0]], 'doc': ds[line[2]], 'label': label, 'query_id': line[0], 'doc_id': line[2], 'retrieval_score': float(line[4])}) + '\n')

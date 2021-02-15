@@ -147,11 +147,7 @@ def eval_ranker(args, model, dev_loader, device, test_loader=None):
     logger.info("Evaluating trec metrics for dev set...")
     rst_dict_dev = {}
     rst_dict_test = None
-    model.train = False
-    for step, dev_batch in enumerate(dev_loader):
-        process_batch(model, dev_batch, rst_dict_dev, device)
-        if (step + 1) % args.print_every == 0:
-            print(f"-- eval: {step + 1}/{len(dev_loader)} --")
+    model.eval()
 
     if test_loader:
         logger.info("Evaluating trec metrics for test set")
@@ -162,7 +158,12 @@ def eval_ranker(args, model, dev_loader, device, test_loader=None):
             if (step + 1) % args.print_every == 0:
                 print(f"-- eval: {step + 1}/{len(test_loader)} --")
 
-    model.train = True
+    for step, dev_batch in enumerate(dev_loader):
+        process_batch(model, dev_batch, rst_dict_dev, device)
+        if (step + 1) % args.print_every == 0:
+            print(f"-- eval: {step + 1}/{len(dev_loader)} --")
+
+    model.train()
     return rst_dict_dev, rst_dict_test
 
 
