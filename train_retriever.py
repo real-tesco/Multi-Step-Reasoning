@@ -312,6 +312,8 @@ def main(args):
 
         logger.info("starting training...")
         train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_loader, device, writer)
+    elif args.test_index:
+        test_index(args)
     else:
         build_index(args)
 
@@ -351,6 +353,7 @@ if __name__ == '__main__':
     parser.add_argument('-reverse_passage', type='bool', default=False)
     parser.add_argument('-max_elems', type=int)
     parser.add_argument('-learn_projection', type='bool', default=False)
+    parser.add_argument('-test_index', type='bool', default=False)
 
     args = get_args(parser)
 
