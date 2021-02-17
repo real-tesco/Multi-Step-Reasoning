@@ -119,6 +119,8 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             new_queries = reformulator(sorted_docs, sorted_scores.to(device))
         elif args.reformulation_type == 'transformer':
             new_queries = reformulator(query_embeddings.to(device), sorted_docs)
+        elif args.reformulation_type == 'top1' or args.reformulation_type == 'top5':
+            new_queries = reformulator(sorted_docs)
         else:
             # baseline
             second_run = False
@@ -810,6 +812,10 @@ def main():
             reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
             reformulator.to_device(device)
             reformulator.eval()
+        elif args.reformulation_type == 'top1':
+            reformulator = QueryReformulator(mode='top1')
+        elif args.reformulation_type == 'top5':
+            reformulator = QueryReformulator(mode='top5', topk=5)
     else:
         reformulator = None
 
