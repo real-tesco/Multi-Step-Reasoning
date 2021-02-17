@@ -670,7 +670,7 @@ def main():
     parser.add_argument('-reformulation_type', type=str, default=None, choices=[None, 'top1', 'top5', 'weighted_avg',
                                                                                 'transformer', 'neural'])
     parser.add_argument('-reformulator_checkpoint', type=str,
-                        default='./checkpoints/reformulator_transformer_loss_ip_lr_top10.bin')
+                        default='./checkpoints/reformulator_transformer_loss_ip_head6_nl4.bin')
     parser.add_argument('-top_k_reformulator', type=int, default=10)
     parser.add_argument('-avg_new_qs', type='bool', default=False, help='use the avg of new query embedding and '
                                                                         'original query as input for rerun')
