@@ -409,10 +409,10 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                 batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
                                                              device)
                 # normalize score over all the queries
-                for idy in range(0, batch_score.shape[0]):
-                    batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
-                                       (batch_score[idy].max() - batch_score[idy].min())
-                batch_score = batch_score.flatten()
+                #for idy in range(0, batch_score.shape[0]):
+                #    batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
+                #                       (batch_score[idy].max() - batch_score[idy].min())
+                #batch_score = batch_score.flatten()
                 document_labels = [label for dids in document_labels for label in dids]
                 batch_score = batch_score.detach().cpu().tolist()
             else:
