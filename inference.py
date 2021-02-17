@@ -412,7 +412,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                 #for idy in range(0, batch_score.shape[0]):
                 #    batch_score[idy] = (batch_score[idy] - batch_score[idy].min()) / \
                 #                       (batch_score[idy].max() - batch_score[idy].min())
-                #batch_score = batch_score.flatten()
+                batch_score = batch_score.flatten()
                 document_labels = [label for dids in document_labels for label in dids]
                 batch_score = batch_score.detach().cpu().tolist()
             else:
