@@ -479,6 +479,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                 avg_stats[key] = val
             else:
                 avg_stats[key] += val
+        rst_dict_test = {}
 
     logger.info("Final result after averaging:")
     for key in avg_stats:
