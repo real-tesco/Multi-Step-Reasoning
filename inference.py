@@ -240,8 +240,9 @@ def test_clustering(args, knn_index, ranking_model, test_loader, metric, device,
 
         # do sampling regarding chosen strategy
         if args.sampling == 'cluster_kmeans':
+            check_metrics = args.print_info
             sampled_docs, q_clusters = cluster_sampling(sorted_docs, query_embeddings, args.number_samples, qrels,
-                                                        document_labels, query_id, stats=stats, check_metrics=True,
+                                                        document_labels, query_id, stats=stats, check_metrics=check_metrics,
                                                         print_info=args.print_info)
             # use the chosen query cluster as new query
             if args.use_q_cluster_as_q:
