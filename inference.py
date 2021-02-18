@@ -295,7 +295,7 @@ def test_clustering(args, knn_index, ranking_model, test_loader, metric, device,
     timer.stop()
 
     # print kmeans clustering stats
-    if args.sampling == 'cluster_kmeans':
+    if args.sampling == 'cluster_kmeans' and args.print_info:
         for k, v in stats.items():
             print(f"{k}: {v}")
         print(f"mean_query_sil_score: {stats['query_sil_score'] / stats['count']}")
