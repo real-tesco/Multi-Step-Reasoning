@@ -405,7 +405,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
 
                 query[idy] = torch.tensor(knn_index.get_document(did))
 
-            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(query, k=100)
+            document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(query, k=args.retrieves_per_sample)
 
             if args.full_ranking:
                 batch_score = ranking_model.rerank_documents(query.to(device), document_embeddings.to(device),
