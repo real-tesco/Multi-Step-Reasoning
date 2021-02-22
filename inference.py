@@ -822,7 +822,7 @@ def main():
     else:
         reformulator = None
 
-    if args.full_ranking or args.use_ranker_in_next_round:
+    if args.full_ranking or args.use_ranker_in_next_round or not args.reformulate_before_ranking:
         # Load Ranker
         logger.info("Loading Ranker...")
         ranking_model = NeuralRanker(ranker_args)
