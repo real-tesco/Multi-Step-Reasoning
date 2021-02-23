@@ -755,9 +755,9 @@ def main():
     # pipeline options
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-full_ranking', type='bool', default=True)
-    parser.add_argument('-reformulate_before_ranking', type='bool', default=True,
+    parser.add_argument('-reformulate_before_ranking', type='bool', default=False,
                         help='if true dont use ranker before reformulation')
-    parser.add_argument('-use_ranker_in_next_round', type='bool', default=True,
+    parser.add_argument('-use_ranker_in_next_round', type='bool', default=False,
                         help='whether to use ranker in next round or not')
 
     index_args = get_knn_args(parser)
