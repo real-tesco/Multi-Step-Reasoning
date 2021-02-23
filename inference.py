@@ -422,9 +422,11 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                 document_labels = [label for dids in document_labels for label in dids]
                 batch_score = batch_score.detach().cpu().tolist()
             else:
-                batch_score = 1.0 - torch.tensor(distances)
+                batch_score = 1.0 - torch.tensor(distances).flatten()
                 document_labels = [label for dids in document_labels for label in dids]
                 batch_score = batch_score.tolist()
+                print(f"len labels: {len(document_labels)}, len score {len(batch_score)}")
+                print(f"len labels 0: {len(document_labels[0])}, len score 0 : {len(batch_score[0])}")
 
             for (d_id, b_s) in zip(document_labels, batch_score):
                 if qid in rst_dict:
