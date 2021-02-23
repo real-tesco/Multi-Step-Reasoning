@@ -67,6 +67,13 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
         sorted_scores = 1.0 - torch.tensor(distances)
         batch_score = sorted_scores
 
+    if args.add_initial_retrieved:
+        for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
+            if q_id in rst_dict:
+                rst_dict[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
+            else:
+                rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
+
     # do sampling regarding chosen strategy
     if args.sampling != 'none':
         if args.sampling == 'rank':
