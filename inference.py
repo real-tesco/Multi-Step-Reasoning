@@ -141,7 +141,7 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
                 batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
             # or use the new retrieved documents in retrieved order
             else:
-                batch_score = torch.tensor(distances)
+                batch_score = 1.0 - torch.tensor(distances)
         batch_score = batch_score.detach().cpu().tolist()
 
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
@@ -755,7 +755,7 @@ def main():
     # pipeline options
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('-full_ranking', type='bool', default=True)
-    parser.add_argument('-reformulate_before_ranking', type='bool', default=False,
+    parser.add_argument('-reformulate_before_ranking', type='bool', default=True,
                         help='if true dont use ranker before reformulation')
     parser.add_argument('-use_ranker_in_next_round', type='bool', default=False,
                         help='whether to use ranker in next round or not')
