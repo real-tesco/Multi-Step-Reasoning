@@ -102,8 +102,9 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=args.retrieves_per_sample)
 
-            batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
-
+            # batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
+            sorted_scores = 1.0 - torch.tensor(distances)
+            batch_score = sorted_scores
             batch_score = batch_score.detach().cpu().tolist()
 
             for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
