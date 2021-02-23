@@ -422,6 +422,7 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                 batch_score = batch_score.detach().cpu().tolist()
             else:
                 batch_score = 1.0 - torch.tensor(distances)
+                document_labels = [label for dids in document_labels for label in dids]
                 batch_score = batch_score.tolist()
 
             for (d_id, b_s) in zip(document_labels, batch_score):
