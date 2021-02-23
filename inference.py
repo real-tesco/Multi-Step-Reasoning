@@ -390,7 +390,8 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                                                              device)
                 batch_score = batch_score.detach().cpu().tolist()
             else:
-                batch_score = distances
+                batch_score = 1.0 - torch.tensor(distances)
+                batch_score = batch_score.tolist()
 
             for (d_id, b_s) in zip(document_labels, batch_score):
                 rst_dict[qid] = [(docid, score) for docid, score in zip(d_id, b_s)]
@@ -420,7 +421,8 @@ def eval_ideal(args, knn_index, ranking_model, device, k):
                 document_labels = [label for dids in document_labels for label in dids]
                 batch_score = batch_score.detach().cpu().tolist()
             else:
-                batch_score = distances
+                batch_score = 1.0 - torch.tensor(distances)
+                batch_score = batch_score.tolist()
 
             for (d_id, b_s) in zip(document_labels, batch_score):
                 if qid in rst_dict:
