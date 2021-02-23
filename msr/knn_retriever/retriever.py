@@ -52,10 +52,7 @@ class KnnIndex:
     def knn_query_inference(self, q_input_ids, q_segment_ids, q_input_mask, k=100):
         query_embedding = self._model.calculate_embedding(q_input_ids, q_segment_ids, q_input_mask, doc=False)
         labels, distances = self._index.knn_query(query_embedding.detach().cpu().numpy(), k=k)
-        print(f"as array: {distances.shape}")
-        print(f"array 0: {distances[0]}")
         distances = distances.tolist()
-        print(f"labels list len {len(distances)} 0 len: {len(distances[0])}")
         document_labels = [[self._indexid2docid[labels[j][i]] for i in range(len(labels[j]))] for j in
                            range(len(labels))]
         document_embeddings = torch.tensor(self._index.get_items(labels.flatten()))
