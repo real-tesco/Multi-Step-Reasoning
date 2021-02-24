@@ -138,7 +138,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
 
             query_embeddings = query_embeddings.to(device)
 
-            if not args.reranking:
+            if args.reranking:
                 batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
                 # sort doc embeddings according score and reformulate
                 scores_sorted, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
