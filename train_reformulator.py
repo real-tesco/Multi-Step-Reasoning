@@ -319,6 +319,7 @@ def main():
     knn_index.set_ef(index_args.efc)
     knn_index.set_device(device)
 
+    ranking_model = None
     if args.reranking:
         #   2. Load Ranker
         logger.info("Loading Ranker...")
