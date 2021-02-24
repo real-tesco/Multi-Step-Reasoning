@@ -69,8 +69,11 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
                 dev_batch['q_input_ids'].to(device), dev_batch['q_segment_ids'].to(device), dev_batch['q_input_mask'].to(device))
             query_embeddings = query_embeddings.to(device)
 
-            batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device),
-                                                         device)
+            if args.reranking:
+                batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device),
+                                                             device)
+            else:
+                batch_score = 1.0 - torch.tensor(distances)
 
             # sort doc embeddings according score and reformulate
             sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
@@ -90,8 +93,12 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu())
 
-            batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
-                                                         device)
+            if args.reranking:
+                batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device),
+                                                             device)
+            else:
+                batch_score = 1.0 - torch.tensor(distances)
+
             batch_score = batch_score.detach().cpu().tolist()
 
             for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
@@ -131,7 +138,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
 
             query_embeddings = query_embeddings.to(device)
 
-            if not args.reformulate_before_ranking:
+            if not args.reranking:
                 batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device), device)
                 # sort doc embeddings according score and reformulate
                 scores_sorted, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
@@ -139,7 +146,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                     torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
             else:
                 sorted_docs = document_embeddings.to(device)
-                scores_sorted = torch.tensor(distances)
+                scores_sorted = 1.0 - torch.tensor(distances)
 
             # load relevant documents for current queries
             # new_queries should match document representation of relevant document
@@ -220,8 +227,7 @@ def main():
     parser.add_argument('-hidden2', type=int, default=1500)
 
     # run options
-    parser.add_argument('-reformulate_before_ranking', type='bool', default=False)
-    parser.add_argument('-full_ranking', type='bool', default=True)
+    parser.add_argument('-reranking', type='bool', default=False)
 
     # training args
     parser.add_argument('-reformulation_mode', type=str, default=None, choices=[None, 'top1', 'top5'])
@@ -313,13 +319,14 @@ def main():
     knn_index.set_ef(index_args.efc)
     knn_index.set_device(device)
 
-    #   2. Load Ranker
-    logger.info("Loading Ranker...")
-    ranking_model = NeuralRanker(ranker_args)
-    checkpoint = torch.load(args.ranker_checkpoint)
-    ranking_model.load_state_dict(checkpoint)
-    ranking_model.to(device)
-    ranking_model.eval()
+    if args.reranking:
+        #   2. Load Ranker
+        logger.info("Loading Ranker...")
+        ranking_model = NeuralRanker(ranker_args)
+        checkpoint = torch.load(args.ranker_checkpoint)
+        ranking_model.load_state_dict(checkpoint)
+        ranking_model.to(device)
+        ranking_model.eval()
 
     #   3. Load Reformulator
     logger.info('Loading Reformulator...')
