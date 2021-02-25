@@ -65,8 +65,8 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
     else:
         sorted_docs = document_embeddings.to(device)
         sorted_scores = 1.0 - torch.tensor(distances)
+        print(f"batch_score max : {torch.max(sorted_scores)} min: {torch.min(sorted_scores)}")
         batch_score = sorted_scores.detach().cpu().tolist()
-        print(f"batch_score max : {max(batch_score)} min: {min(batch_score)}")
 
     if args.add_initial_retrieved:
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
