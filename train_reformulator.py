@@ -170,7 +170,11 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 writer.add_graph(reformulator, inputs)
 
             if args.loss_fn == 'cross_entropy':
+                print(new_queries.shape)
+                print(target_embeddings.shape)
                 scores = (new_queries * target_embeddings).sum(dim=-1)
+                print(scores.shape)
+                print(scores)
                 ones = torch.ones_like(scores)
                 batch_loss = loss_fn(scores, ones)
             else:
@@ -362,7 +366,8 @@ def main():
     if args.loss_fn == 'ip':
         loss_fn = inner_product
     elif args.loss_fn == 'cross_entropy':
-        loss_fn = cross_entropy
+        loss_fn = torch.nn.BCELoss()
+        loss_fn.to(device)
 
     # set optimizer and scheduler
     if args.reformulation_type == 'weighted_avg':
