@@ -34,8 +34,8 @@ def inner_product(prediction, target):
 
 
 def cross_entropy(prediction, target):
-    prediction = softmax(prediction, dim=1)
-    target = softmax(target, dim=1)
+    #prediction = softmax(prediction, dim=1)
+    #target = softmax(target, dim=1)
     m = prediction.shape[0]
     log_likelihood = - (torch.log(prediction) * target)
     loss = log_likelihood.sum() / m
@@ -169,7 +169,12 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
             elif idx == 0:
                 writer.add_graph(reformulator, inputs)
 
-            batch_loss = loss_fn(new_queries, target_embeddings)
+            if args.loss_fn == 'cross_entropy':
+                scores = (new_queries * target_embeddings).sum(dim=-1)
+                ones = torch.ones_like(scores)
+                batch_loss = loss_fn(scores, ones)
+            else:
+                batch_loss = loss_fn(new_queries, target_embeddings)
 
             optimizer.zero_grad()
             batch_loss.backward()
