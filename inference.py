@@ -151,7 +151,8 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             # or use the new retrieved documents in retrieved order
             else:
                 batch_score = 1.0 - torch.tensor(distances)
-        batch_score = batch_score.detach().cpu().tolist()
+
+            batch_score = batch_score.detach().cpu().tolist()
 
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
             rst_list = [(docid, score) for docid, score in zip(d_id, b_s)]
