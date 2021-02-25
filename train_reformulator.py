@@ -170,11 +170,8 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 writer.add_graph(reformulator, inputs)
 
             if args.loss_fn == 'cross_entropy':
-                print(new_queries.shape)
-                print(target_embeddings.shape)
                 scores = (new_queries * target_embeddings).sum(dim=-1)
-                print(scores.shape)
-                print(scores)
+                scores = torch.clamp(scores, min=0.0, max=1.0)
                 ones = torch.ones_like(scores)
                 batch_loss = loss_fn(scores, ones)
             else:
