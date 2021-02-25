@@ -238,7 +238,7 @@ def test_clustering(args, knn_index, ranking_model, test_loader, metric, device,
             sorted_docs = document_embeddings.to(device)
             batch_score = 1.0 - torch.tensor(distances)
             batch_score = batch_score.detach().cpu().tolist()
-            print(batch_score)
+            print(f"batch_score max : {max(batch_score)} min: {min(batch_score)}")
 
         # add initial retrieved set to result
         if args.add_initial_retrieved:
