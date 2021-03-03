@@ -72,13 +72,13 @@ def eval_pipeline(args, knn_index, ranking_model, reformulator, dev_loader, devi
             if args.reranking:
                 batch_score = ranking_model.rerank_documents(query_embeddings, document_embeddings.to(device),
                                                              device)
+                # sort doc embeddings according score and reformulate
+                sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
+                sorted_docs = document_embeddings[
+                    torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
             else:
-                batch_score = 1.0 - torch.tensor(distances)
-
-            # sort doc embeddings according score and reformulate
-            sorted_scores, scores_sorted_indices = torch.sort(batch_score, dim=1, descending=True)
-            sorted_docs = document_embeddings[
-                torch.arange(document_embeddings.shape[0]).unsqueeze(-1), scores_sorted_indices].to(device)
+                sorted_scores = 1.0 - torch.tensor(distances)
+                sorted_docs = document_embeddings.to(device)
 
             if args.reformulation_type == 'neural':
                 new_queries = reformulator(query_embeddings, sorted_docs)
