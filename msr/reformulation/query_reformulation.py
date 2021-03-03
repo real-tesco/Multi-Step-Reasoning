@@ -122,7 +122,7 @@ class TransformerReformulator(nn.Module):
         output = source
         for layer in self.layers:
             output = layer(output)
-        # output at index 0 is the cls token representation
+        # output at index 0 is the query representation
         output = output[0, :]
         output = nn.functional.normalize(output, p=2, dim=1)
         return output
