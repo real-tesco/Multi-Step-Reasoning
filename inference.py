@@ -141,6 +141,8 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             # average over original query embedding and new calculated query embedding
             if args.avg_new_qs:
                 new_queries = torch.mean(torch.stack([query_embeddings, new_queries], dim=-1), dim=-1)
+            elif args.query_lambda > 0.0:
+                new_queries = query_embeddings * args.query_lambda + (1 - args.query_lambda) * new_queries
 
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=k)
@@ -691,6 +693,8 @@ def main():
     parser.add_argument('-top_k_reformulator', type=int, default=10)
     parser.add_argument('-avg_new_qs', type='bool', default=False, help='use the avg of new query embedding and '
                                                                         'original query as input for rerun')
+    parser.add_argument('-query_lambda', type=float, default=0.0, help='weighting of the original query, '
+                                                                 'if > 0 original query is used')
 
     # transformer
     parser.add_argument('-nhead', type=int, default=6)

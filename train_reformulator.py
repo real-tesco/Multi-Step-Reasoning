@@ -356,8 +356,10 @@ def main():
 
         if args.reformulation_type == 'weighted_avg':
             reformulator.layer.load_state_dict(checkpoint)
+            reformulator.layer.train()
         else:
             reformulator.load_state_dict(checkpoint)
+            reformulator.train()
 
     # set loss_fn
     if args.loss_fn == 'ip':
