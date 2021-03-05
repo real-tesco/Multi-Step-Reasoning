@@ -141,8 +141,10 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             # average over original query embedding and new calculated query embedding
             if args.avg_new_qs:
                 new_queries = torch.mean(torch.stack([query_embeddings, new_queries], dim=-1), dim=-1)
+                new_queries = torch.nn.functional.normalize(new_queries, p=2, dim=1)
             elif args.query_lambda > 0.0:
                 new_queries = query_embeddings * args.query_lambda + (1 - args.query_lambda) * new_queries
+                new_queries = torch.nn.functional.normalize(new_queries, p=2, dim=1)
 
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=k)
