@@ -159,9 +159,10 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             batch_score = batch_score.detach().cpu().tolist()
 
         for (q_id, d_id, b_s) in zip(query_id, document_labels, batch_score):
-            rst_list = [(docid, score) for docid, score in zip(d_id, b_s)]
-            rst_dict[q_id] = [(docid, score) for i, (docid, score) in enumerate(rst_list)
-                              if not any(j == docid for j, _ in rst_list[:i])]
+            if q_id in rst_dict:
+                rst_dict[q_id].extend([(docid, score) for docid, score in zip(d_id, b_s)])
+            else:
+                rst_dict[q_id] = [(docid, score) for docid, score in zip(d_id, b_s)]
 
 
 def inference(args, knn_index, ranking_model, reformulator, dev_loader, test_loader, metric, device, k=100):
