@@ -726,7 +726,7 @@ def main():
                         help='average the new queries and the original queries for ranking')
     parser.add_argument('-rerank_to_new_qs', type='bool', default=False, help='rerank to new queries')
     parser.add_argument('-print_info', type='bool', default=False, help='print clustering info in every step')
-    parser.add_argument('-add_initial_retrieved', type='bool', default=True,
+    parser.add_argument('-add_initial_retrieved', type='bool', default=False,
                         help='whether to add the first step retrieval to result')
 
     # run options
