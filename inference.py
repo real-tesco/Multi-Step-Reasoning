@@ -739,6 +739,7 @@ def main():
     parser.add_argument('-exact_knn', type='bool', default=False)
 
     # print options
+    parser.add_argument('-print_model_params', type='bool', default=False)
     parser.add_argument('-vector_file_format', type=str,
                         default='./data/embeddings/embeddings_random_examples/qid_{}_judged_docs.tsv')
     parser.add_argument('-vector_meta_format', type=str,
@@ -820,13 +821,17 @@ def main():
             reformulator.load_state_dict(checkpoint)
             reformulator.to(device)
             reformulator.eval()
-            print_number_parameters(reformulator)
+            if args.print_model_params:
+                print_number_parameters(reformulator)
+
         elif args.reformulation_type == 'weighted_avg':
             reformulator = QueryReformulator(mode='weighted_avg', topk=args.top_k_reformulator)
             reformulator.layer.load_state_dict(checkpoint)
             reformulator.layer.to(device)
             reformulator.layer.eval()
-            print_number_parameters(reformulator.layer)
+            if args.print_model_params:
+                print_number_parameters(reformulator.layer)
+
         elif args.reformulation_type == 'transformer':
             reformulator = TransformerReformulator(args.top_k_reformulator, args.nhead, args.num_encoder_layers,
                                                    args.dim_feedforward)
@@ -835,7 +840,9 @@ def main():
             reformulator.load_fixed_checkpoint(args.reformulator_checkpoint)
             reformulator.to_device(device)
             reformulator.eval()
-            print_number_parameters(reformulator)
+            if args.print_model_params:
+                print_number_parameters(reformulator)
+
         elif args.reformulation_type == 'top1':
             reformulator = QueryReformulator(mode='top1')
         elif args.reformulation_type == 'top5':
