@@ -343,6 +343,7 @@ def main(args):
         test_index(args)
 
     else:
+        logger.info(f"Loss_fn: {args.loss_fn}")
         if args.loss_fn == 'bce':
             loss_fn = torch.nn.BCELoss()
             loss_fn.to(device)
@@ -355,6 +356,7 @@ def main(args):
             model = torch.nn.DataParallel(model)
 
         if args.freeze_doc_tower:
+            logger.info("Freezing document BERT")
             model.freeze_document_tower()
 
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
