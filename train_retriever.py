@@ -388,7 +388,7 @@ if __name__ == '__main__':
     parser.add_argument('-epoch', type=int, default=1)
     parser.add_argument('-batch_size', type=int, default=8)
     parser.add_argument('-lr', type=float, default=2e-5)
-    parser.add_argument('loss_fn', type=str, default='bce', choices=['bce', 'ranked_net'])
+    parser.add_argument('-loss_fn', type=str, default='bce', choices=['bce', 'ranked_net'])
     parser.add_argument('-tau', type=float, default=1)
     parser.add_argument('-n_warmup_steps', type=int, default=10000)
     parser.add_argument('-eval_every', type=int, default=10000)
