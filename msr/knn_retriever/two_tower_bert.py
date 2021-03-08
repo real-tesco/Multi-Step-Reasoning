@@ -87,6 +87,9 @@ class TwoTowerBert(nn.Module):
 
         return score, query, document
 
+    def freeze_document_tower(self):
+        self._document_model.eval()
+
     def freeze_berts(self):
         self._query_model.eval()
         self._document_model.eval()

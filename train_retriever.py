@@ -2,6 +2,7 @@ import os
 import argparse
 import logging
 import json
+from itertools import product
 
 import hnswlib
 import torch
@@ -63,7 +64,10 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                       train_batch['d_segment_ids'].to(device))
 
             batch_score, _, _ = model(*inputs)
-            batch_loss = loss_fn(batch_score.float(), train_batch['label'].float().to(device))
+            if args.loss_fn == 'bce':
+                batch_loss = loss_fn(batch_score.float(), train_batch['label'].float().to(device))
+            elif args.loss_fn == 'ranked_net':
+                batch_loss = loss_fn(batch_score, train_batch['label'].to(device), device)
 
             if torch.cuda.device_count() > 1:
                 batch_loss = batch_loss.mean()
@@ -209,8 +213,45 @@ def test_bert_checkpoint(args, model, metric, dev_loader, device):
     _ = metric.eval_run(args.qrels, args.res)
 
 
-def main(args):
+def ranknet(y_pred, y_true, device):
+    """
+    RankNet loss introduced in "Learning to Rank using Gradient Descent".
+    :param y_pred: predictions from the model, shape [batch_size, slate_length]
+    :param y_true: ground truth labels, shape [batch_size, slate_length]
+    :param weight_by_diff: flag indicating whether to weight the score differences by ground truth differences.
+    :param weight_by_diff_powed: flag indicating whether to weight the score differences by the squared ground truth differences.
+    :return: loss value, a torch.Tensor
+    """
+    y_pred = y_pred.clone()
+    y_true = y_true.clone()
 
+    # here we generate every pair of indices from the range of document length in the batch
+    document_pairs_candidates = list(product(range(y_true.shape[1]), repeat=2))
+
+    pairs_true = y_true[:, document_pairs_candidates]
+    selected_pred = y_pred[:, document_pairs_candidates]
+
+    # here we calculate the relative true relevance of every candidate pair
+    true_diffs = pairs_true[:, :, 0] - pairs_true[:, :, 1]
+    pred_diffs = selected_pred[:, :, 0] - selected_pred[:, :, 1]
+
+    # here we filter just the pairs that are 'positive' and did not involve a padded instance
+    # we can do that since in the candidate pairs we had symetric pairs so we can stick with
+    # positive ones for a simpler loss function formulation
+    the_mask = (true_diffs > 0) & (~torch.isinf(true_diffs))
+
+    pred_diffs = pred_diffs[the_mask]
+
+    # here we 'binarize' true relevancy diffs since for a pairwise loss we just need to know
+    # whether one document is better than the other and not about the actual difference in
+    # their relevancy levels
+    true_diffs = (true_diffs > 0).type(torch.float32)
+    true_diffs = true_diffs[the_mask]
+
+    return torch.nn.BCEWithLogitsLoss(pred_diffs, true_diffs).to(device)
+
+
+def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.vocab)
     if args.save_embeddings > 0:
         logger.info('reading documents to embed..')
@@ -302,13 +343,19 @@ def main(args):
         test_index(args)
 
     else:
-        loss_fn = torch.nn.BCELoss()
-        loss_fn.to(device)
+        if args.loss_fn == 'bce':
+            loss_fn = torch.nn.BCELoss()
+            loss_fn.to(device)
+        elif args.loss_fn == 'ranked_net':
+            loss_fn = ranknet
 
         if torch.cuda.device_count() > 1:
             logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
             loss_fn = torch.nn.DataParallel(loss_fn)
             model = torch.nn.DataParallel(model)
+
+        if args.freeze_doc_tower:
+            model.freeze_document_tower()
 
         m_optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
         m_scheduler = get_linear_schedule_with_warmup(m_optim, num_warmup_steps=args.n_warmup_steps,
@@ -339,6 +386,7 @@ if __name__ == '__main__':
     parser.add_argument('-epoch', type=int, default=1)
     parser.add_argument('-batch_size', type=int, default=8)
     parser.add_argument('-lr', type=float, default=2e-5)
+    parser.add_argument('loss_fn', type=str, default='bce', choices=['bce', 'ranked_net'])
     parser.add_argument('-tau', type=float, default=1)
     parser.add_argument('-n_warmup_steps', type=int, default=10000)
     parser.add_argument('-eval_every', type=int, default=10000)
@@ -355,6 +403,7 @@ if __name__ == '__main__':
     parser.add_argument('-reverse_passage', type='bool', default=False)
     parser.add_argument('-max_elems', type=int)
     parser.add_argument('-learn_projection', type='bool', default=False)
+    parser.add_argument('-freeze_doc_tower', type='bool', default=False)
     parser.add_argument('-test_index', type='bool', default=False)
 
     args = get_args(parser)
