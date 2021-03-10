@@ -319,7 +319,7 @@ def main(args):
         if args.loss_fn == 'bce':
             loss_fn = torch.nn.BCELoss()
             loss_fn.to(device)
-        elif args.loss_fn == 'ranked_net':
+        elif args.loss_fn == 'ranknet':
             loss_fn = ranknet
 
         if torch.cuda.device_count() > 1:
