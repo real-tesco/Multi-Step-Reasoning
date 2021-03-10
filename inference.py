@@ -149,6 +149,10 @@ def process_batch(args, rst_dict, knn_index, ranking_model, reformulator, dev_ba
             document_labels, document_embeddings, distances, _ = knn_index.knn_query_embedded(
                 new_queries.cpu(), k=k)
 
+            if args.print_reformulator_distance:
+                sim = (new_queries * query_embeddings).sum(-1)
+                print(f"Mean sim new and original query: {sim.mean(-1)}")
+
             # rerank retrieved documents
             if args.use_ranker_in_next_round:
                 batch_score = ranking_model.rerank_documents(new_queries.to(device), document_embeddings.to(device), device)
@@ -745,6 +749,7 @@ def main():
                         default='./data/embeddings/embeddings_random_examples/qid_{}_judged_docs.tsv')
     parser.add_argument('-vector_meta_format', type=str,
                         default='./data/embeddings/embeddings_random_examples/qid_{}_meta.tsv')
+    parser.add_argument('-print_reformulator_distance', type='bool', default=False)
 
     parser.add_argument('-metric', type=str, default='mrr_cut_100')
     parser.add_argument('-batch_size', type=int, default=32)
