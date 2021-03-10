@@ -214,8 +214,8 @@ def test_bert_checkpoint(args, model, metric, dev_loader, device):
     _ = metric.eval_run(args.qrels, args.res)
 
 
-def ranknet(y_pred_pos, y_pred_neg):
-    diff = torch.empty(y_pred_pos.shape[0], y_pred_neg.shape[0])
+def ranknet(y_pred_pos, y_pred_neg, device):
+    diff = torch.empty(y_pred_pos.shape[0], y_pred_neg.shape[0]).to(device)
     for i in range(y_pred_pos.shape[0]):
         for j in range(y_pred_neg.shape[0]):
             diff[i, j] = y_pred_pos[i] - y_pred_neg[i, j]
