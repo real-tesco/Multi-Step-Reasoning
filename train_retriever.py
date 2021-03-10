@@ -223,11 +223,6 @@ def ranknet(y_pred_pos, y_pred_neg):
     return loss
 
 
-diff = torch.empty(score.shape[0], batch_score_negatives.shape[0])
-for i in range(score.shape[0]):
-    for j in range(batch_score_negatives.shape[0]):
-        diff[i, j] = score[i] - batch_score_negatives[i, j]
-
 def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.vocab)
     if args.save_embeddings > 0:
