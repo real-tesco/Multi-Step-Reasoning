@@ -18,7 +18,7 @@ conda env create -f environment.yml
 ```
 
 ## Data
-The pre-processed data, index files and checkpoints are available for download so it is easier to get started. They can be downloaded from [here](http://google.com).
+The pre-processed data, index files and checkpoints are available for download at our institute server so it is easier to get started. To get access just get in touch with us. Otherwise all used data can be generated using the preprocessing scripts. 
 After un-taring, you will find a data directory containing all the data with the following structure:
 ```
 embeddings/ -- containing the calculated embeddings in chunks (*.npy files)
@@ -115,7 +115,7 @@ if you want to encode queries also use the flag and set max_doc_len to max_query
 
 ## Training Ranker
 
-To train the embedding ranker the documents and the queries need to be encoded as chunks by the retriever model. 
+In this work no ranker was used. But a simple reranking architecture was implemented. To train the embedding ranker the documents and the queries need to be encoded as chunks by the retriever model. 
 You can start training with following script: 
 
 ```
@@ -138,7 +138,7 @@ The triples file contains the triples for the training of the ranker with format
 
 ```qid \t pos_id \t neg_id```
 
-Here I use 10 negative documents per query sampled from the top-100 documents, which are not in qrels file. The qrels file provided by MSMARCO only contains positive judged documents for a query.
+Here I use 10 negative documents per query sampled from the top-100 BM25 documents, which are not in qrels file. The qrels file provided by MSMARCO only contains positive judged documents for a query.
 To generate the file also use the generate_train script with following arguments:
 
 ```
@@ -203,14 +203,6 @@ With the inference.py script different experiments with the trained components a
 -ideal -- evaluates the ideal run where the reformulated query is an actualy relevant document, set number_ideal_samples > 1 to do the retrieval steps for a query with given number of relevant documents for the query
 -print_embeddings True -- prints the embeddings and meta data of the first 3 queries to use on projector.tensorflow.org 
 -test_clustering True -- clustering method to improve recall is tested, need to set -sampling to [cluster_kmeans|cluster_spectral|attention] 
-```
-There are some other options which can be explored like:
-
-``` 
--reformulate_before_ranking -- used to reformulate the query before the initial retrieved list is reranked
--use_ranker_in_next_round -- after reformulation use ranker 
--rerank_to_new_qs -- rerank the new retrieved documents after reformulation to the reformulated queries 
--avg_new_qs_for_ranking -- after reformulation average the new queries with the original ones
 ```
 
 *Acknowledgement*: This codebase started from [Multi-Step-Reasoning](https://github.com/rajarshd/Multi-Step-Reasoning). And a big thanks to Prof. Avishek Anand my first Reviewer and Jaspreet Singh my Tutor for all the help and suggestions you provided for me.
