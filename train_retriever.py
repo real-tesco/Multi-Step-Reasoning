@@ -219,7 +219,7 @@ def ranknet(y_pred_pos, y_pred_neg, device):
     for i in range(y_pred_pos.shape[0]):
         for j in range(y_pred_neg.shape[0]):
             diff[i, j] = y_pred_pos[i] - y_pred_neg[i, j]
-    loss = torch.log(1 + torch.exp(diff)).sum(-1).sum(-1)
+    loss = torch.log(1 + torch.exp(diff)).mean(-1).mean(-1)
     return loss
 
 
