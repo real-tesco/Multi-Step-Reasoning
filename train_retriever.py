@@ -64,9 +64,6 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                       train_batch['d_segment_ids'].to(device))
 
             batch_score, queries, documents = model(*inputs)
-            print("batchscore: ", batch_score.shape)
-            print("qs: ", queries.shape)
-            print("ds: ", documents.shape)
             if args.loss_fn == 'bce':
                 batch_loss = loss_fn(batch_score.float(), train_batch['label'].float().to(device))
                 if torch.cuda.device_count() > 1:
