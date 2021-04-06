@@ -64,6 +64,9 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                       train_batch['d_segment_ids'].to(device))
 
             batch_score, queries, documents = model(*inputs)
+            print("batchscore: ", batch_score.shape)
+            print("qs: ", queries.shape)
+            print("ds: ", documents.shape)
             if args.loss_fn == 'bce':
                 batch_loss = loss_fn(batch_score.float(), train_batch['label'].float().to(device))
                 if torch.cuda.device_count() > 1:
@@ -71,6 +74,10 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
             elif args.loss_fn == 'ranknet':
                 batch_score_negatives = torch.mm(queries, documents.t())
                 batch_loss = loss_fn(batch_score, batch_score_negatives, device)
+            elif args.loss_fn == 'margin_ranking':
+                prepare_margin(batch_score, queries, documents, device)
+
+
 
             avg_loss += batch_loss.item()
             batch_loss.backward()
@@ -214,6 +221,25 @@ def test_bert_checkpoint(args, model, metric, dev_loader, device):
     _ = metric.eval_run(args.qrels, args.res)
 
 
+def prepare_margin(pos_scores, queries, documents, device):
+    # pos_scores [batchsize x 1]
+    neg_scores = torch.empy(queries.shape[0], queries.shape[0]-1).to(device)
+    j1 = 0
+    for i in range(queries.shape[0]):
+        for j in range(documents.shape[0]):
+            if i == j:
+                continue
+            else:
+                neg_scores[i, j1] = (queries[i] * documents[j]).sum()
+                j1 += 1
+        j1 = 0
+    print("neg_shape: ", neg_scores.shape)
+
+    positives = torch.cat([pos_scores[i] for i in range(queries.shape[0]) for _ in range(queries.shape[0]-1)])
+    print("pos_shape: ", positives.shape)
+    print("pos: ", positives)
+
+
 def ranknet(y_pred_pos, y_pred_neg, device):
     diff = torch.empty(y_pred_pos.shape[0], y_pred_neg.shape[0]).to(device)
     for i in range(y_pred_pos.shape[0]):
@@ -321,6 +347,8 @@ def main(args):
             loss_fn.to(device)
         elif args.loss_fn == 'ranknet':
             loss_fn = ranknet
+        elif args.loss_fn == 'margin_ranking':
+            loss_fn = torch.nn.MarginRankingLoss()
 
         if torch.cuda.device_count() > 1:
             logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')

@@ -89,6 +89,7 @@ class TwoTowerBert(nn.Module):
 
     def freeze_document_tower(self):
         self._document_model.eval()
+        self._query_model.train()
 
     def freeze_berts(self):
         self._query_model.eval()
