@@ -75,9 +75,8 @@ def train(args, model, loss_fn, m_optim, m_scheduler, metric, train_loader, dev_
                 batch_score_negatives = torch.mm(queries, documents.t())
                 batch_loss = loss_fn(batch_score, batch_score_negatives, device)
             elif args.loss_fn == 'margin_ranking':
-                prepare_margin(batch_score, queries, documents, device)
-
-
+                positives, negatives = prepare_margin(batch_score, queries, documents, device)
+                batch_loss = loss_fn(positives, negatives, torch.ones_like(positives))
 
             avg_loss += batch_loss.item()
             batch_loss.backward()
@@ -223,21 +222,24 @@ def test_bert_checkpoint(args, model, metric, dev_loader, device):
 
 def prepare_margin(pos_scores, queries, documents, device):
     # pos_scores [batchsize x 1]
-    neg_scores = torch.empty(queries.shape[0], queries.shape[0]-1).to(device)
-    j1 = 0
+    #neg_scores = torch.empty(queries.shape[0], queries.shape[0]-1).to(device)
+    positives = []
+    negatives = []
     for i in range(queries.shape[0]):
         for j in range(documents.shape[0]):
             if i == j:
                 continue
             else:
-                neg_scores[i, j1] = (queries[i] * documents[j]).sum()
-                j1 += 1
-        j1 = 0
-    print("neg_shape: ", neg_scores.shape)
+                negatives.append((queries[i] * documents[j]).sum())
+                positives.append(pos_scores[i])
 
-    positives = torch.cat([pos_scores[i] for i in range(queries.shape[0]) for _ in range(queries.shape[0]-1)])
+    positives = torch.cat(positives)
+    negatives = torch.cat(negatives)
+    print("neg_shape: ", negatives.shape)
     print("pos_shape: ", positives.shape)
     print("pos: ", positives)
+    print("negs: ", negatives)
+    return positives, negatives
 
 
 def ranknet(y_pred_pos, y_pred_neg, device):
