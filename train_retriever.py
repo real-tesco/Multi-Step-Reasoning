@@ -233,8 +233,8 @@ def prepare_margin(pos_scores, queries, documents, device):
                 negatives.append((queries[i] * documents[j]).sum())
                 positives.append(pos_scores[i])
 
-    positives = torch.tensor(positives)
-    negatives = torch.tensor(negatives)
+    positives = torch.tensor(positives, requires_grad=True)
+    negatives = torch.tensor(negatives, requires_grad=True)
     print("neg_shape: ", negatives.shape)
     print("pos_shape: ", positives.shape)
     print("pos: ", positives)
