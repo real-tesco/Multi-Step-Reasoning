@@ -347,7 +347,7 @@ def main(args):
         elif args.loss_fn == 'ranknet':
             loss_fn = ranknet
         elif args.loss_fn == 'margin_ranking':
-            loss_fn = torch.nn.MarginRankingLoss()
+            loss_fn = torch.nn.MarginRankingLoss(reduction='sum')
 
         if torch.cuda.device_count() > 1:
             logger.info(f'Using DataParallel with {torch.cuda.device_count()} GPUs...')
