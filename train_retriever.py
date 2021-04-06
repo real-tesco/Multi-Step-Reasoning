@@ -223,7 +223,7 @@ def test_bert_checkpoint(args, model, metric, dev_loader, device):
 
 def prepare_margin(pos_scores, queries, documents, device):
     # pos_scores [batchsize x 1]
-    neg_scores = torch.empy(queries.shape[0], queries.shape[0]-1).to(device)
+    neg_scores = torch.empty(queries.shape[0], queries.shape[0]-1).to(device)
     j1 = 0
     for i in range(queries.shape[0]):
         for j in range(documents.shape[0]):
