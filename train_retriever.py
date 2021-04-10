@@ -220,18 +220,25 @@ def test_bert_checkpoint(args, model, metric, dev_loader, device):
 def prepare_margin(pos_scores, queries, documents, device):
     # pos_scores [batchsize x 1]
     #neg_scores = torch.empty(queries.shape[0], queries.shape[0]-1).to(device)
-    positives = []
-    negatives = []
+    #positives = []
+    #negatives = []
+    positives = torch.empty(queries.shape[0]*(queries.shape[0]-1), requires_grad=True).to(device)
+    negatives = torch.empty(queries.shape[0]*(queries.shape[0]-1), requires_grad=True).to(device)
+    index = 0
     for i in range(queries.shape[0]):
         for j in range(documents.shape[0]):
             if i == j:
                 continue
             else:
-                negatives.append((queries[i] * documents[j]).sum())
-                positives.append(pos_scores[i])
+                #negatives.append((queries[i] * documents[j]).sum())
+                #positives.append(pos_scores[i])
 
-    positives = torch.tensor(positives, requires_grad=True)
-    negatives = torch.tensor(negatives, requires_grad=True)
+                negatives[index] = (queries[i] * documents[j]).sum()
+                positives[index] = pos_scores[i]
+                index += 1
+
+    #positives = torch.tensor(positives, requires_grad=True)
+    #negatives = torch.tensor(negatives, requires_grad=True)
     #print("neg_shape: ", negatives.shape)
     #print("pos_shape: ", positives.shape)
     #print("pos: ", positives)
