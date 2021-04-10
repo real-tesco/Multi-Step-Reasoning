@@ -113,6 +113,25 @@ if you want to encode queries also use the flag and set max_doc_len to max_query
 -max_query_len 64
 ```
 
+## Build Index
+
+For index construction the hnswlib is used. The script to generate the index file is also the train_retriever.py script with appropriate flags.
+The document embeddings need to be encoded in ``num_passage_files``chunks in ``embed_dir``. For hnswlib arguments refer their git.
+```
+python train_retriever.py \
+        -batch_size 128 \
+        -docs_per_chunk 250000 \
+        -num_passage_files 13 \
+        -embed_dir ./data/embeddings/embeddings_random_examples \
+        -index True \
+        -index_mapping ./data/indexes/mapping_docid2indexid.json \
+        -max_elems 3220000 \
+        -M 84 \
+        -efc 500 \
+        -similarity ip \
+```
+
+
 ## Training Ranker
 
 In this work no ranker was used. But a simple reranking architecture was implemented. To train the embedding ranker the documents and the queries need to be encoded as chunks by the retriever model. 
