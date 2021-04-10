@@ -174,6 +174,8 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 scores = torch.clamp(scores, min=0.0, max=1.0)
                 ones = torch.ones_like(scores)
                 batch_loss = loss_fn(scores, ones)
+            elif args.loss_fn == 'cross_entropy_embed':
+                batch_loss = loss_fn(torch.sigmoid(new_queries), torch.sigmoid(target_embeddings))
             else:
                 batch_loss = loss_fn(new_queries, target_embeddings)
 
@@ -364,8 +366,9 @@ def main():
     # set loss_fn
     if args.loss_fn == 'ip':
         loss_fn = inner_product
-    elif args.loss_fn == 'cross_entropy':
+    elif args.loss_fn == 'cross_entropy' or args.loss_fn == 'cross_entropy_embed':
         loss_fn = torch.nn.BCELoss()
+        # TODO: bce loss with sigmoid of q embed and reformulated
         loss_fn.to(device)
 
     # set optimizer and scheduler
