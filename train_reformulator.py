@@ -176,7 +176,7 @@ def train(args, knn_index, ranking_model, reformulator, loss_fn, optimizer, m_sc
                 batch_loss = loss_fn(scores, ones)
             elif args.loss_fn == 'cosine_embed':
                 ones = torch.ones(new_queries.shape[0])
-                batch_loss = loss_fn(new_queries, target_embeddings, ones)
+                batch_loss = loss_fn(new_queries, target_embeddings, ones.to(device))
             else:
                 batch_loss = loss_fn(new_queries, target_embeddings)
 
